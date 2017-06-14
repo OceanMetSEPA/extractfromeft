@@ -83,8 +83,8 @@ euroClassNameVariations[6] = ['7Euro 6', '6Euro VI', '1Euro 6', '2Euro 6', '2Eur
 
 location = 'Scotland'
 vehSplit = "Detailed Option 3"
-years = [2013, 2014] #range(2013, 2031)
-euroClasses = [0,1,6] #range(7)
+years = range(2013, 2031)
+euroClasses = range(7)
 
 euroClassNameVariationsAll = euroClassNameVariations[0]
 for ei in range(1,7):
