@@ -12,8 +12,8 @@ from __future__ import print_function
 import os
 import sys
 from os import path
-from time import sleep
 import subprocess
+import time
 import shutil
 import random
 import string
@@ -21,6 +21,8 @@ import numpy as np
 import pandas as pd
 import win32com.client as win32
 
+# Define some global variables. These may need to be augmented if a new EFT
+# version is released.
 workingDir = os.getcwd()
 
 ahkexe = 'C:\Program Files\AutoHotkey\AutoHotkey.exe'
@@ -81,7 +83,7 @@ euroClassNameVariations[6] = ['7Euro 6', '6Euro VI', '1Euro 6', '2Euro 6', '2Eur
           '4Euro 6', '5Euro 6', '6Euro 6', '7Euro 6', '8Euro VI',
           '7Euro 6c', '7Euro 6d']
 
-location = 'Scotland'
+areas = ['England (not London)', 'Northern Ireland', 'Scotland', 'Wales']
 vehSplit = "Detailed Option 3"
 years = range(2013, 2031)
 euroClasses = range(7)
@@ -112,7 +114,7 @@ def euroSearchTerms(N):
   return ES
 
 def checkEuroClasses(workBook, vehRowStarts, vehRowEnds, EuroClassNameColumns):
-  print("Checking all euro class names are understood.")
+  print("      Checking all euro class names are understood.")
   ws_euro = workBook.Worksheets("UserEuro")
   for [vi, vehRowStart] in enumerate(vehRowStarts):
     vehRowEnd = vehRowEnds[vi]
@@ -126,17 +128,29 @@ def checkEuroClasses(workBook, vehRowStarts, vehRowEnds, EuroClassNameColumns):
           continue
         if ecn not in euroClassNameVariationsAll:
           raise ValueError('Unrecognized Euro Class Name: "{}".'.format(ecn))
-  print("  All understood.")
+  print("        All understood.")
 
 
-def specifyEuros(euroClass, workBook, vehRowStarts, vehRowEnds,
-                 EuroClassNameColumns, DefaultEuroColumns, UserDefinedEuroColumns):
-  # Define some euro class search terms.
-  #euroSearchTerms_ = euroSearchTerms(euroClass)
-  print("    Setting euro ratios to 100% for euro {}.".format(euroClass))
+def specifyEuroProportions(euroClass, workBook, vehRowStarts, vehRowEnds,
+                 EuroClassNameColumns, DefaultEuroColumns, UserDefinedEuroColumns, MC=False):
+  """
+  Specify the euro class proportions.
+  Will return the defualt proportions.
+  """
+  defaultProps = {}
+  #print("    Setting euro ratios to 100% for euro {}.".format(euroClass))
   ws_euro = workBook.Worksheets("UserEuro")
   for [vi, vehRowStart] in enumerate(vehRowStarts):
-    print("      Setting euro ratios for {}.".format(ws_euro.Range("A{row}".format(row=vehRowStart-1)).Value))
+    if MC:
+      vehNameA = ws_euro.Range("A{row}".format(row=vehRowStart)).Value
+      vehNameB = ws_euro.Range("A{row}".format(row=vehRowStart+1)).Value
+      if vehNameB is None:
+        vehName = 'Motorcycle - {}'.format(vehNameA)
+      else:
+        vehName = 'Motorcycle - {} - {}'.format(vehNameA, vehNameB)
+    else:
+      vehName = ws_euro.Range("A{row}".format(row=vehRowStart-1)).Value
+    #print("      Setting euro ratios for {}.".format(vehName))
     vehRowEnd = vehRowEnds[vi]
     for [ci, euroNameCol] in enumerate(EuroClassNameColumns):
       userDefinedCol = UserDefinedEuroColumns[ci]
@@ -164,9 +178,11 @@ def specifyEuros(euroClass, workBook, vehRowStarts, vehRowEnds,
             got = True
             break
         if not got:
-          print('      No values available for euro {}, trying euro {}.'.format(euroClass_, euroClass_-1))
+          #print('      No values available for euro {}, trying euro {}.'.format(euroClass_, euroClass_-1))
           euroClass_ -= 1
-
+      ignoreForPropRecord = False
+      if euroClass_ != euroClass:
+        ignoreForPropRecord = True
       # Get the default proportions.
       defaultProportions = []
       for row in rowsToDo:
@@ -174,6 +190,13 @@ def specifyEuros(euroClass, workBook, vehRowStarts, vehRowEnds,
         defaultProportion = ws_euro.Range(propRange).Value
         defaultProportions.append(defaultProportion)
       defaultProportions = np.array(defaultProportions)
+      if ci == 0:
+        if ignoreForPropRecord:
+          #print('        Default proportions taken as 0.00%.')
+          defaultProps[vehName] = 0
+        else:
+          #print('        Default proportions are {:.2f}%.'.format(100*sum(defaultProportions)))
+          defaultProps[vehName] = 100*sum(defaultProportions)
       # Normalize them.
       if sum(defaultProportions) < 0.00001:
         defaultProportions = defaultProportions + 1
@@ -187,22 +210,32 @@ def specifyEuros(euroClass, workBook, vehRowStarts, vehRowEnds,
         userRange = "{col}{row}".format(col=userDefinedCol, row=row)
         value = userProportions[ri]
         ws_euro.Range(userRange).Value = value
-  print('    All complete')
+  #print('    All complete')
+  return defaultProps
 
-def splitSourceNameS(row):
-  s = row[SourceNameName]
-  s, v = s.split(' - ')
+def splitSourceNameS(row, SourceName='Source Name'):
+  s = row[SourceName]
+  s, v, t = s.split(' - ')
   row['vehicle'] = v
   return int(s[1:])
 
-def splitSourceNameV(row):
-  s = row[SourceNameName]
-  s, v = s.split(' - ')
+def splitSourceNameV(row, SourceName='Source Name'):
+  s = row[SourceName]
+  s, v, t = s.split(' - ')
   return v
 
-def processEFT(fileName):
-  global SourceNameName, AllLDVName, AllHDVName, ahkahk
+def splitSourceNameT(row, SourceName='Source Name'):
+  s = row[SourceName]
+  s, v, t = s.split(' - ')
+  return t
 
+def processEFT(fileName, locations):
+  tic = time.clock()
+  # Make sure location is a list that can be iterated through.
+  if type(locations) is str:
+    locations = [locations]
+
+  # Check that the auto hot key executable, and control file, are available.
   if not path.isfile(ahkexe):
     raise ValueError('The Autohotkey executable file {} could not be found.'.format(ahkexe))
   if not path.isfile(ahkahk):
@@ -210,8 +243,12 @@ def processEFT(fileName):
     if not path.isfile(ahkahk_):
       raise ValueError('The Autohotkey file {} could not be found.'.format(ahkahk))
     else:
-      ahkahk = ahkahk_
+      ahkahkg = ahkahk_
+  else:
+    ahkahkg = ahkahk
 
+  # Get the absolute path to the file. The excel win32 stuff doesn't seem to
+  # work with relative paths.
   fileName = path.abspath(fileName)
   if not path.isfile(fileName):
     raise ValueError('Could not find {}.'.format(fileName))
@@ -243,7 +280,6 @@ def processEFT(fileName):
       version_ = version
       versionp = availableVersions[versioncloseI]
       print('Unknown version {}, will process as version {}.'.format(version, versionp))
-
       version = versionp
     else:
       maxAvailableVersions = max(availableVersions)
@@ -252,6 +288,8 @@ def processEFT(fileName):
       version_ = 'Unknown Version as {}'.format(maxAvailableVersions)
     print('You may wish to edit the versionDetails global variables to account for the new version.')
 
+  # Now get the version dependent properties, mainly to do with which rows of
+  # the spreadsheet contain which data.
   vehRowStarts = versionDetails[version]['vehRowStarts']
   vehRowEnds = versionDetails[version]['vehRowEnds']
   vehRowStartsMC = versionDetails[version]['vehRowStartsMC']
@@ -261,119 +299,174 @@ def processEFT(fileName):
   AllHDVName = versionDetails[version]['AllHDVName']
   AllVehName = versionDetails[version]['AllVehName']
   PolName = versionDetails[version]['PolName']
-  # Make a temporary copy of the filename.
+
+  # Make a temporary copy of the filename, so that we do no processing on the
+  # original. Just in case we brake it. Also define temporary file names and
+  # output save locations, etc.
   [FN, FE] =  path.splitext(fileName)
   fileNameT = FN + '_TEMP_' + randomString() + FE
   fileNameTm = fileNameT.replace(FE, '_.xlsm')
   fileNameCSV_ = fileName.replace(FE, '.csv')
+  fileNameCSVNotComplete = fileNameCSV_.replace('prefilledValues', 'inProduction')
   fileNameCSV = fileNameCSV_.replace('prefilledValues', 'processedValues')
+  fileNameDefaultProportions = fileNameCSV_.replace('prefilledValues', 'defaultProportions')
+  fileNameDefaultProportionsNotComplete = fileNameCSV_.replace('prefilledValues', 'defaultProportionsInProduction')
   vi = 1
   while path.isfile(fileNameCSV):
     vi += 1
     fileNameCSV = fileNameCSV_.replace('prefilledValues', 'processedValues({})'.format(vi))
+    fileNameDefaultProportions  = fileNameCSV_.replace('prefilledValues', 'defaultProportions({})'.format(vi))
   shutil.copyfile(fileName, fileNameT)
 
   # Create the Excel Application object.
   excel = win32.gencache.EnsureDispatch('Excel.Application')
+
+  # And now start the processing!
   first = True
   tempFilesCreated = [fileNameT]
+  #defaultProportions = pd.DataFrame(columns=['year', 'area', 'vehicle', 'euroClass', 'proportion'])
+  for location in locations:
+    ticloc = time.clock()
+    print('Location: {}'.format(location))
+    for year in years:
+      ticyear = time.clock()
+      print('  Year: {}'.format(year))
+      for euroClass in euroClasses:
+        ticeuro = time.clock()
+        print('    Euro class: {}'.format(euroClass))
 
-  for year in years:
-    print('Year: {}'.format(year))
-    # Ensure that the correct detailed split is specified. Setting it will raise a
-    # popup and delete the traffic array, so we want to avoid that.
+        # Start off the autohotkey script as a (parallel) subprocess. This will
+        # continually check until the compatibility warning appears, and then
+        # close the warning.
+        subprocess.Popen([ahkexe, ahkahkg])
 
-    for euroClass in euroClasses:
-      print('  Euro class: {}'.format(euroClass))
-      # Open the document.
-      subprocess.Popen([ahkexe, ahkahk])  # Closes the warning, when it appears.
-      wb = excel.Workbooks.Open(fileNameT)
-      excel.Visible = True
+        # Open the document.
+        wb = excel.Workbooks.Open(fileNameT)
+        excel.Visible = True
 
-      # Set the default values in the Input Data sheet.
-      ws_input = wb.Worksheets("Input Data")
-      ws_input.Range("B4").Value = location
-      ws_input.Range("B5").Value = year
-      if ws_input.Range("B6").Value != vehSplit:
-        raise ValueError('Traffic Format should be "{}".'.format(vehSplit))
+        # Set the default values in the Input Data sheet.
+        ws_input = wb.Worksheets("Input Data")
+        ws_input.Range("B4").Value = location
+        ws_input.Range("B5").Value = year
+        # Ensure that the correct detailed split is specified. Setting it will
+        # raise a popup and delete the traffic array, so we want to avoid that.
+        if ws_input.Range("B6").Value != vehSplit:
+          raise ValueError('Traffic Format should be "{}".'.format(vehSplit))
 
-      if first:
-        checkEuroClasses(wb, vehRowStartsMC, vehRowEndsMC, EuroClassNameColumnsMC)
-        checkEuroClasses(wb, vehRowStarts, vehRowEnds, EuroClassNameColumns)
-      # Now we need to populate the UserEuro table with the defaults.
-      excel.Application.Run("PasteDefaultEuroProportions")
+        if first:
+          # Check that all of the euro class names within the document are as
+          # we would expect. An error will be raised if there are any surprises
+          # and this will mean that the global variables at the start of the
+          # code will need to be edited.
+          checkEuroClasses(wb, vehRowStartsMC, vehRowEndsMC, EuroClassNameColumnsMC)
+          checkEuroClasses(wb, vehRowStarts, vehRowEnds, EuroClassNameColumns)
 
-      # Now specify that we only want the specified euro class.
-      # Motorcycles first
-      specifyEuros(euroClass, wb, vehRowStartsMC, vehRowEndsMC,
-                   EuroClassNameColumnsMC, DefaultEuroColumnsMC, UserDefinedEuroColumns)
-      # And all other vehicles
-      specifyEuros(euroClass, wb, vehRowStarts, vehRowEnds,
-                   EuroClassNameColumns, DefaultEuroColumns, UserDefinedEuroColumns)
+        # Now we need to populate the UserEuro table with the defaults. Probably
+        # only need to do this once per year, per area, but will do it every time
+        # just in case.
+        excel.Application.Run("PasteDefaultEuroProportions")
 
-      # Now run the tool.
-      ws_input.Select()# = wb.Worksheets("Input Data")
-      print('    Running EFT routine.')
-      excel.Application.Run("RunEfTRoutine")
-      # Save and Close. Saving as an xlsm, rather than a xlsb, file, so that it
-      # can be opened by pandas.
-      fsave = fileNameTm.replace('.xlsm', '({}E{}).xlsm'.format(year, euroClass))
-      wb.SaveAs(fsave, win32.constants.xlOpenXMLWorkbookMacroEnabled)
-      tempFilesCreated.append(fsave)
-      wb.Close()
-      sleep(1)
-      print('    Done')
+        # Now specify that we only want the specified euro class, by turning the
+        # proportions for that class to 1, (or a weighted value if there are more
+        # than one row for the particular euro class). This function also reads
+        # the default proportions.
+        # Motorcycles first
+        print('      Assigning fleet euro proportions for motorcycles.')
+        defaultProportionsMC_ = specifyEuroProportions(euroClass, wb, vehRowStartsMC, vehRowEndsMC,
+                     EuroClassNameColumnsMC, DefaultEuroColumnsMC, UserDefinedEuroColumns, MC=True)
+        # And all other vehicles
+        print('      Assigning fleet euro proportions for all other vehicle types.')
+        defaultProportions_ = specifyEuroProportions(euroClass, wb, vehRowStarts, vehRowEnds,
+                     EuroClassNameColumns, DefaultEuroColumns, UserDefinedEuroColumns)
+        # save the default proportions to a data frame.
+        defaultProportions = pd.DataFrame(columns=['year', 'area', 'vehicle', 'euroClass', 'proportion'])
+        for key, value in defaultProportionsMC_.items():
+          defaultProportionsRow = pd.DataFrame([[year, location, key, euroClass, value]],
+                                               columns=['year', 'area', 'vehicle', 'euroClass', 'proportion'])
+          defaultProportions = defaultProportions.append(defaultProportionsRow)
+        for key, value in defaultProportions_.items():
+          defaultProportionsRow = pd.DataFrame([[year, location, key, euroClass, value]],
+                                               columns=['year', 'area', 'vehicle', 'euroClass', 'proportion'])
+          defaultProportions = defaultProportions.append(defaultProportionsRow)
+        #defaultProportions = defaultProportions.drop_duplicates()
+        # Now run the EFT tool.
+        ws_input.Select() # Select the appropriate sheet, we can't run the macro
+                          # from another sheet.
+        print('      Running EFT routine.')
+        excel.Application.Run("RunEfTRoutine")
+        # Save and Close. Saving as an xlsm, rather than a xlsb, file, so that it
+        # can be opened by pandas.
+        fsave = fileNameTm.replace('.xlsm', '({}_{}_E{}).xlsm'.format(location, year, euroClass))
+        wb.SaveAs(fsave, win32.constants.xlOpenXMLWorkbookMacroEnabled)
+        tempFilesCreated.append(fsave)
+        wb.Close()
+        time.sleep(1) # To allow all systems to catch up.
+        print('      Done, reading output values.')
 
-      # Now get the new values.
-      ex = pd.ExcelFile(fsave)
-      output = ex.parse("Output")
-      output['year'] = year
-      output['euro'] = euroClass
-      output['version'] = version_
-      output['speed'] = output.apply(splitSourceNameS, axis=1)
-      output['vehicle'] = output.apply(splitSourceNameV, axis=1)
-      output = output.drop(SourceNameName, 1)
-      output = output.drop(AllLDVName, 1)
-      output = output.drop(AllHDVName, 1)
-      # pivot the table so each pollutant has a column.
-      Pollutants = list(output[PolName].unique())
-      output = output.rename(columns={PolName: 'RowIndex'}) # Because after the
-      # pivot the 'column' name will become the index name.
-      output = output.pivot_table(index=['year',
-                                         'euro',
-                                         'version',
-                                         'speed',
-                                         'vehicle'],
-                                  columns='RowIndex',
-                                  values=AllVehName)
-      output = output.reset_index()
-      renames = {}
-      for Pol in Pollutants:
-        if Pol == 'PM25':
-          Pol_ = 'PM2.5'
+        # Now get the output values as a dataframe.
+        ex = pd.ExcelFile(fsave)
+        output = ex.parse("Output")
+        # Add some other columns to the dataframe.
+        output['version'] = version_
+        output['year'] = year
+        output['area'] = location
+        output['type'] = output.apply(splitSourceNameT, SourceName=SourceNameName, axis=1)
+        output['vehicle'] = output.apply(splitSourceNameV, SourceName=SourceNameName, axis=1)
+        output['euro'] = euroClass
+        output['speed'] = output.apply(splitSourceNameS, SourceName=SourceNameName, axis=1)
+        # Drop columns that are not required anymore.
+        output = output.drop(SourceNameName, 1)
+        output = output.drop(AllLDVName, 1)
+        output = output.drop(AllHDVName, 1)
+        # Pivot the table so each pollutant has a column.
+        Pollutants = list(output[PolName].unique())
+        # Rename, because after the pivot the 'column' name will become the
+        # index name.
+        output = output.rename(columns={PolName: 'RowIndex'})
+        output = output.pivot_table(index=['year', 'area', 'euro', 'version',
+                                           'speed', 'vehicle', 'type'],
+                                    columns='RowIndex',
+                                    values=AllVehName)
+        output = output.reset_index()
+        renames = {}
+        # Rename the pollutant columns to include the units.
+        for Pol in Pollutants:
+          if Pol == 'PM25':
+            Pol_ = 'PM2.5'
+          else:
+            Pol_ = Pol
+          renames[Pol] = '{} (g/km/s/veh)'.format(Pol_)
+        output = output.rename(columns=renames)
+        print('      Writing to file')
+        if first:
+          # Save to a new csv file.
+          output.to_csv(fileNameCSVNotComplete, index=False)
+          defaultProportions.to_csv(fileNameDefaultProportionsNotComplete, index=False)
+          first = False
         else:
-          Pol_ = Pol
-        renames[Pol] = '{} (g/km/s/veh)'.format(Pol_)
-      output = output.rename(columns=renames)
-
-      if first:
-        allOutput = output
-        first = False
-      else:
-        allOutput = allOutput.append(output)
-  print('Saving to {}.'.format(fileNameCSV))
-  allOutput.to_csv(fileNameCSV)
+          # Append to the csv file.
+          output.to_csv(fileNameCSVNotComplete, mode='a', header=False, index=False)
+          defaultProportions.to_csv(fileNameDefaultProportionsNotComplete, mode='a', header=False, index=False)
+        toceuro = time.clock()
+        print('      Processing for euro {} complete in {:.1f} seconds.'.format(euroClass, toceuro-ticeuro))
+      tocyear = time.clock()
+      print('      Processing for year {} complete in {:.1f} seconds.'.format(year, tocyear-ticyear))
+    tocloc = time.clock()
+    print('      Processing for area {} complete in {:.1f} seconds.'.format(location, tocloc-ticloc))
+  shutil.move(fileNameCSVNotComplete, fileNameCSV)
+  shutil.move(fileNameDefaultProportionsNotComplete, fileNameDefaultProportions)
+  print('Processing complete. Output saved in the following files.')
+  print('  {}'.format(fileNameCSV))
+  print('  {}'.format(fileNameDefaultProportions))
   print('Deleting temporary files.')
   for tf in tempFilesCreated:
     os.remove(tf)
+  toc = time.clock()
+  print('Process complete in {} seconds.'.format(toc-tic))
 
 if __name__ == '__main__':
   args = sys.argv
   if len(args) > 1:
     fNames = args[1:]
     for fName in fNames:
-      processEFT(fName)
-
-  #processEFT('C:\Users\edward.barratt\Documents\Modelling\EmissionFactors\EmissionsFactorsToolkit\EFT2014_v6.0.2_prefilledValues.xls')
-  #processEFT('C:\Users\edward.barratt\Documents\Modelling\EmissionFactors\EmissionsFactorsToolkit\EFT2016_v7.0_prefilledValues.xlsb')
-  #processEFT('C:\Users\edward.barratt\Documents\Modelling\EmissionFactors\EmissionsFactorsToolkit\EFT2017_v7.4_prefilledValues.xlsb')
+      processEFT(fName, areas)
