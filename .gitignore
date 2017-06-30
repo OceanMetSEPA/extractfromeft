@@ -1,9 +1,8 @@
 # My own
 *TEMP*
 
-output/*
+output/
 input/old/
-input/old/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
