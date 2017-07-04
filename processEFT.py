@@ -176,7 +176,6 @@ def specifyEuroProportions(euroClass, workBook, vehRowStarts, vehRowEnds,
           if name in euroSearchTerms_:
             rowsToDo.append(vehRowStart + ei)
             got = True
-            break
         if not got:
           #print('      No values available for euro {}, trying euro {}.'.format(euroClass_, euroClass_-1))
           euroClass_ -= 1
@@ -189,6 +188,8 @@ def specifyEuroProportions(euroClass, workBook, vehRowStarts, vehRowEnds,
         propRange = "{col}{row}".format(col=defaultEuroCol, row=row)
         defaultProportion = ws_euro.Range(propRange).Value
         defaultProportions.append(defaultProportion)
+        #print(propRange)
+        #print(defaultProportions)
       defaultProportions = np.array(defaultProportions)
       if ci == 0:
         if ignoreForPropRecord:
@@ -206,6 +207,7 @@ def specifyEuroProportions(euroClass, workBook, vehRowStarts, vehRowEnds,
       userRange = "{col}{rstart}:{col}{rend}".format(col=userDefinedCol, rstart=vehRowStart, rend=vehRowEnd)
       ws_euro.Range(userRange).Value = 0
       # Then set the specific values.
+      #print(rowsToDo)
       for [ri, row] in enumerate(rowsToDo):
         userRange = "{col}{row}".format(col=userDefinedCol, row=row)
         value = userProportions[ri]
