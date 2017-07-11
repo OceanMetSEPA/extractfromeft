@@ -88,7 +88,7 @@ vehSplit = "Detailed Option 3"
 years = range(2013, 2031)
 euroClasses = range(7)
 
-euroClassNameVariationsAll = euroClassNameVariations[0]
+euroClassNameVariationsAll = euroClassNameVariations[0][:]
 for ei in range(1,7):
   euroClassNameVariationsAll.extend(euroClassNameVariations[ei])
 euroClassNameVariationsAll = list(set(euroClassNameVariationsAll))
@@ -177,7 +177,7 @@ def specifyEuroProportions(euroClass, workBook, vehRowStarts, vehRowEnds,
             rowsToDo.append(vehRowStart + ei)
             got = True
         if not got:
-          #print('      No values available for euro {}, trying euro {}.'.format(euroClass_, euroClass_-1))
+          # print('      No values available for euro {}, trying euro {}.'.format(euroClass_, euroClass_-1))
           euroClass_ -= 1
       ignoreForPropRecord = False
       if euroClass_ != euroClass:
@@ -439,6 +439,10 @@ def processEFT(fileName, locations):
             Pol_ = Pol
           renames[Pol] = '{} (g/km/s/veh)'.format(Pol_)
         output = output.rename(columns=renames)
+        # Rename some values in the default proportion table too.
+        renames['euroClass'] = 'euro'
+        defaultProportions.rename(columns=renames)
+        defaultProportions['version'] = version_
         print('      Writing to file')
         if first:
           # Save to a new csv file.
