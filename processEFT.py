@@ -21,12 +21,14 @@ import numpy as np
 import pandas as pd
 import win32com.client as win32
 
+from tools import secondsToString
+
 # Define some global variables. These may need to be augmented if a new EFT
 # version is released.
 workingDir = os.getcwd()
 
-ahkexe = 'C:\Program Files\AutoHotkey\AutoHotkey.exe'
-ahkahk = 'closeWarning.ahk'
+ahk_exepath = 'C:\Program Files\AutoHotkey\AutoHotkey.exe'
+ahk_ahkpath = 'closeWarning.ahk'
 
 versionDetails = {}
 versionDetails[7.4] = {}
@@ -34,6 +36,7 @@ versionDetails[7.4]['vehRowStarts'] = [69, 79, 91, 101, 114, 130, 146, 161]
 versionDetails[7.4]['vehRowEnds']   = [76, 87, 98, 109, 125, 141, 157, 172]
 versionDetails[7.4]['vehRowStartsMC'] = [177, 183, 189, 195, 201, 207]
 versionDetails[7.4]['vehRowEndsMC']   = [182, 188, 194, 200, 206, 212]
+versionDetails[7.4]['busCoachRow']   = [429, 430]
 versionDetails[7.4]['SourceNameName'] = 'Source Name'
 versionDetails[7.4]['AllLDVName'] = 'All LDVs (g/km/s)'
 versionDetails[7.4]['AllHDVName'] = 'All HDVs (g/km/s)'
@@ -44,6 +47,7 @@ versionDetails[7.0]['vehRowStarts'] = [69, 79, 100, 110, 123, 139, 155, 170]
 versionDetails[7.0]['vehRowEnds']   = [75, 87, 106, 119, 134, 150, 166, 181]
 versionDetails[7.0]['vehRowStartsMC'] = [186, 192, 198, 204, 210, 216]
 versionDetails[7.0]['vehRowEndsMC']   = [191, 197, 203, 209, 215, 221]
+versionDetails[7.0]['busCoachRow']   = [482, 483]
 versionDetails[7.0]['SourceNameName'] = 'Source Name'
 versionDetails[7.0]['AllLDVName'] = 'All LDVs (g/km/s)'
 versionDetails[7.0]['AllHDVName'] = 'All HDVs (g/km/s)'
@@ -54,6 +58,7 @@ versionDetails[6.0]['vehRowStarts'] = [69, 79, 100, 110, 123, 139, 155, 170]
 versionDetails[6.0]['vehRowEnds']   = [75, 87, 106, 119, 134, 150, 166, 181]
 versionDetails[6.0]['vehRowStartsMC'] = [186, 192, 198, 204, 210, 216]
 versionDetails[6.0]['vehRowEndsMC']   = [191, 197, 203, 209, 215, 221]
+versionDetails[6.0]['busCoachRow']   = [482, 483]
 versionDetails[6.0]['SourceNameName'] = 'Source_Name'
 versionDetails[6.0]['AllLDVName'] = 'All LDV (g/km/s)'
 versionDetails[6.0]['AllHDVName'] = 'All HDV (g/km/s)'
@@ -83,10 +88,8 @@ euroClassNameVariations[6] = ['7Euro 6', '6Euro VI', '1Euro 6', '2Euro 6', '2Eur
           '4Euro 6', '5Euro 6', '6Euro 6', '7Euro 6', '8Euro VI',
           '7Euro 6c', '7Euro 6d']
 
-areas = ['England (not London)', 'Northern Ireland', 'Scotland', 'Wales']
-vehSplit = "Detailed Option 3"
-years = range(2013, 2031)
-euroClasses = range(7)
+vehSplit2 = "Detailed Option 2"
+vehSplit3 = "Detailed Option 3"
 
 euroClassNameVariationsAll = euroClassNameVariations[0][:]
 for ei in range(1,7):
@@ -100,6 +103,10 @@ DefaultEuroColumns = ["B", "I"]
 UserDefinedEuroColumns = ["D", "K"]
 EuroClassNameColumnsMC = ["B", "H"]
 DefaultEuroColumnsMC = ["C", "I"]
+UserDefinedBusColumn = ["D"]
+UserDefinedBusMWColumn = ["E"]
+DefaultBusColumn = ["B"]
+DefaultBusMWColumn = ["C"]
 
 def randomString(N = 10):
   return ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for x in range(N))
@@ -113,8 +120,16 @@ def euroSearchTerms(N):
   ES = euroClassNameVariations[N]
   return ES
 
-def checkEuroClasses(workBook, vehRowStarts, vehRowEnds, EuroClassNameColumns):
-  print("      Checking all euro class names are understood.")
+def checkEuroClassesValid(workBook, vehRowStarts, vehRowEnds, EuroClassNameColumns, MC=0):
+  """
+  Check that all of the available euro classes are specified.
+  """
+  if MC == 1:
+    print("      Checking all motorcycle euro class names are understood.")
+  elif MC == -1:
+    print("      Checking all non-motorcycle euro class names are understood.")
+  else:
+    print("      Checking all euro class names are understood.")
   ws_euro = workBook.Worksheets("UserEuro")
   for [vi, vehRowStart] in enumerate(vehRowStarts):
     vehRowEnd = vehRowEnds[vi]
@@ -130,6 +145,30 @@ def checkEuroClasses(workBook, vehRowStarts, vehRowEnds, EuroClassNameColumns):
           raise ValueError('Unrecognized Euro Class Name: "{}".'.format(ecn))
   print("        All understood.")
 
+
+def specifyBusCoach(wb, busCoach, busCoachRow, UserDefinedBusColumn,
+                    UserDefinedBusMWColumn, DefaultBusColumn, DefaultBusMWColumn):
+  defaultBusProps = {}
+  ws_euro = wb.Worksheets("UserEuro")
+  defaultBusProps['bus_non_mw'] = ws_euro.Range("{}{}".format(DefaultBusColumn[0], busCoachRow[0])).Value
+  defaultBusProps['coach_non_mw'] = ws_euro.Range("{}{}".format(DefaultBusColumn[0], busCoachRow[1])).Value
+  defaultBusProps['bus_mw'] = ws_euro.Range("{}{}".format(DefaultBusMWColumn[0], busCoachRow[0])).Value
+  defaultBusProps['coach_mw'] = ws_euro.Range("{}{}".format(DefaultBusMWColumn[0], busCoachRow[1])).Value
+
+  if busCoach != 'default':
+    if busCoach == 'bus':
+      ws_euro.Range("{}{}".format(UserDefinedBusColumn[0], busCoachRow[0])).Value = 1
+      ws_euro.Range("{}{}".format(UserDefinedBusColumn[0], busCoachRow[1])).Value = 0
+      ws_euro.Range("{}{}".format(UserDefinedBusMWColumn[0], busCoachRow[0])).Value = 1
+      ws_euro.Range("{}{}".format(UserDefinedBusMWColumn[0], busCoachRow[1])).Value = 0
+    elif busCoach == 'coach':
+      ws_euro.Range("{}{}".format(UserDefinedBusColumn[0], busCoachRow[0])).Value = 0
+      ws_euro.Range("{}{}".format(UserDefinedBusColumn[0], busCoachRow[1])).Value = 1
+      ws_euro.Range("{}{}".format(UserDefinedBusMWColumn[0], busCoachRow[0])).Value = 0
+      ws_euro.Range("{}{}".format(UserDefinedBusMWColumn[0], busCoachRow[1])).Value = 1
+    else:
+      raise ValueError("busCoach should be either 'bus' or 'coach'. '{}' is not understood.".format(busCoach))
+  return defaultBusProps
 
 def specifyEuroProportions(euroClass, workBook, vehRowStarts, vehRowEnds,
                  EuroClassNameColumns, DefaultEuroColumns, UserDefinedEuroColumns, MC=False):
@@ -231,39 +270,19 @@ def splitSourceNameT(row, SourceName='Source Name'):
   s, v, t = s.split(' - ')
   return t
 
-def processEFT(fileName, locations):
-  tic = time.clock()
-  # Make sure location is a list that can be iterated through.
-  if type(locations) is str:
-    locations = [locations]
-
-  # Check that the auto hot key executable, and control file, are available.
-  if not path.isfile(ahkexe):
-    raise ValueError('The Autohotkey executable file {} could not be found.'.format(ahkexe))
-  if not path.isfile(ahkahk):
-    ahkahk_ = workingDir + '\\' + ahkahk
-    if not path.isfile(ahkahk_):
-      raise ValueError('The Autohotkey file {} could not be found.'.format(ahkahk))
-    else:
-      ahkahkg = ahkahk_
-  else:
-    ahkahkg = ahkahk
-
-  # Get the absolute path to the file. The excel win32 stuff doesn't seem to
-  # work with relative paths.
-  fileName = path.abspath(fileName)
-  if not path.isfile(fileName):
-    raise ValueError('Could not find {}.'.format(fileName))
-
+def extractVersion(fileName):
+  """
+  Extract the version number from the filename.
+  """
   # See what version we're looking at.
   version = False
   for versiono in availableVersions:
     if fileName.find('v{:.1f}'.format(versiono)) >= 0:
       version = versiono
-      version_ = versiono
+      version_for_output = versiono
       break
   if version:
-    print('Processing EFT of version {}.'.format(version))
+    print('{} is EFT of version {}.'.format(fileName, version))
   else:
     # Not one that is predefined, see if we can get the version number.
     fv = fileName.find('v')
@@ -279,40 +298,344 @@ def processEFT(fileName, locations):
     if version:
       # Get closest version number
       versioncloseI = np.argmin(abs(np.array(availableVersions) - version))
-      version_ = version
+      version_for_output = version
       versionp = availableVersions[versioncloseI]
-      print('Unknown version {}, will process as version {}.'.format(version, versionp))
+      print('{} looks like EFT of unknown version {}, will process as version {}.'.format(fileName, version, versionp))
       version = versionp
     else:
       maxAvailableVersions = max(availableVersions)
-      print('Cannot parse version number from filename, will attempt to process as version {}.'.format(maxAvailableVersions))
+      print('Cannot parse version number from "{}", will attempt to process as version {}.'.format(fileName, maxAvailableVersions))
       version = maxAvailableVersions
-      version_ = 'Unknown Version as {}'.format(maxAvailableVersions)
+      version_for_output = 'Unknown Version as {}'.format(maxAvailableVersions)
     print('You may wish to edit the versionDetails global variables to account for the new version.')
+  return version, version_for_output
+
+def prepareToExtract(fileNames, locations):
+  """
+  Extract the pre-processing information from the filenames and locations.
+  """
+  # Make sure location is a list that can be iterated through.
+  if type(locations) is str:
+    locations = [locations]
+  # Make sure fileNames is a list that can be iterated through.
+  if type(fileNames) is str:
+    fileNames = [fileNames]
+
+  # Check that the auto hot key executable, and control file, are available.
+  if not path.isfile(ahk_exepath):
+    raise ValueError('The Autohotkey executable file {} could not be found.'.format(ahk_exepath))
+  if not path.isfile(ahk_ahkpath):
+    ahk_ahkpath_ = workingDir + '\\' + ahk_ahkpath
+    if not path.isfile(ahk_ahkpath_):
+      raise ValueError('The Autohotkey file {} could not be found.'.format(ahk_ahkpath))
+    else:
+      ahk_ahkpathGot = ahk_ahkpath_
+  else:
+    ahk_ahkpathGot = ahk_ahkpath
+
+  versionNos = []
+  versionForOutputs = []
+  for fNi, fN in enumerate(fileNames):
+    # Extract the version number.
+    version, versionForOutput = extractVersion(fN)
+    versionNos.append(version)
+    versionForOutputs.append(versionForOutput)
+
+    # Get the absolute path to the file. The excel win32 stuff doesn't seem to
+    # work with relative paths.
+    fN_ = path.abspath(fN)
+    if not path.isfile(fN):
+      raise ValueError('Could not find {}.'.format(fN))
+    fileNames[fNi] = fN_
+
+  return ahk_ahkpathGot, fileNames, versionNos, versionForOutputs
+
+def runAndExtract(excel, fileName, location, year, euroClass, ahk_exepath,
+                  ahk_ahkpathG, vehSplit, details, versionForOutPut,
+                  checkEuroClasses=False, DoMCycles=True, DoBusCoach=False,
+                  busCoach='default'):
+  """
+  Prepare the file for running the macro.
+  """
+  # Start off the autohotkey script as a (parallel) subprocess. This will
+  # continually check until the compatibility warning appears, and then
+  # close the warning.
+  subprocess.Popen([ahk_exepath, ahk_ahkpathG])
+
+  # Open the document.
+  wb = excel.Workbooks.Open(fileName)
+  excel.Visible = True
+
+  if checkEuroClasses:
+    # Check that all of the euro class names within the document are as
+    # we would expect. An error will be raised if there are any surprises
+    # and this will mean that the global variables at the start of the
+    # code will need to be edited.
+    if DoMCycles:
+      checkEuroClassesValid(wb, details['vehRowStartsMC'], details['vehRowEndsMC'], EuroClassNameColumnsMC, MC=1)
+    checkEuroClassesValid(wb, details['vehRowStarts'], details['vehRowEnds'], EuroClassNameColumns, MC=-1)
+
+  # Set the default values in the Input Data sheet.
+  ws_input = wb.Worksheets("Input Data")
+  ws_input.Range("B4").Value = location
+  ws_input.Range("B5").Value = year
+  # Ensure that the correct detailed split is specified. Setting it will
+  # raise a popup and delete the traffic array, so we want to avoid that.
+  if ws_input.Range("B6").Value != vehSplit:
+    raise ValueError('Traffic Format should be "{}".'.format(vehSplit))
+
+  # Now we need to populate the UserEuro table with the defaults. Probably
+  # only need to do this once per year, per area, but will do it every time
+  # just in case.
+  excel.Application.Run("PasteDefaultEuroProportions")
+
+  # Now specify that we only want the specified euro class, by turning the
+  # proportions for that class to 1, (or a weighted value if there are more
+  # than one row for the particular euro class). This function also reads
+  # the default proportions.
+  defaultProportions = pd.DataFrame(columns=['year', 'area', 'vehicle', 'euro', 'proportion'])
+  # Motorcycles first
+  if DoMCycles:
+    print('      Assigning fleet euro proportions for motorcycles.')
+    defaultProportionsMC_ = specifyEuroProportions(euroClass, wb,
+                                details['vehRowStartsMC'], details['vehRowEndsMC'],
+                                EuroClassNameColumnsMC, DefaultEuroColumnsMC,
+                                UserDefinedEuroColumns, MC=True)
+    for key, value in defaultProportionsMC_.items():
+      defaultProportionsRow = pd.DataFrame([[year, location, key, euroClass, value]],
+                                           columns=['year', 'area', 'vehicle', 'euro', 'proportion'])
+      defaultProportions = defaultProportions.append(defaultProportionsRow)
+    print('      Assigning fleet euro proportions for all other vehicle types.')
+  else:
+    print('      Assigning fleet euro proportions for all vehicle types except motorcycles.')
+  # And all other vehicles
+  defaultProportions_ = specifyEuroProportions(euroClass, wb,
+                           details['vehRowStarts'], details['vehRowEnds'],
+                           EuroClassNameColumns, DefaultEuroColumns,
+                           UserDefinedEuroColumns)
+  # Organise the default proportions.
+  for key, value in defaultProportions_.items():
+    defaultProportionsRow = pd.DataFrame([[year, location, key, euroClass, value]],
+                                         columns=['year', 'area', 'vehicle', 'euro', 'proportion'])
+    defaultProportions = defaultProportions.append(defaultProportionsRow)
+  defaultProportions['version'] = versionForOutPut
+
+  busCoachProportions = 'NotMined'
+  if DoBusCoach:
+    # Set the bus - coach proportions.
+    busCoachProportions = specifyBusCoach(wb, busCoach, details['busCoachRow'],
+                                          UserDefinedBusColumn, UserDefinedBusMWColumn,
+                                          DefaultBusColumn, DefaultBusMWColumn)
+
+  # Now run the EFT tool.
+  ws_input.Select() # Select the appropriate sheet, we can't run the macro
+                    # from another sheet.
+  print('      Running EFT routine.')
+  excel.Application.Run("RunEfTRoutine")
+
+  # Save and Close. Saving as an xlsm, rather than a xlsb, file, so that it
+  # can be opened by pandas.
+  (FN, FE) =  path.splitext(fileName)
+  if DoBusCoach:
+    tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}).xlsm'.format(location, year, euroClass, busCoach))
+  else:
+    tempSaveName = fileName.replace(FE, '({}_{}_E{}).xlsm'.format(location, year, euroClass))
+  wb.SaveAs(tempSaveName, win32.constants.xlOpenXMLWorkbookMacroEnabled)
+  wb.Close()
+  time.sleep(1) # To allow all systems to catch up.
+
+  return tempSaveName, defaultProportions, busCoachProportions
+
+def extractOutput(fileName, versionForOutPut, year, location, euroClass, details):
+  ex = pd.ExcelFile(fileName)
+  output = ex.parse("Output")
+  # Add some other columns to the dataframe.
+  output['version'] = versionForOutPut
+  output['year'] = year
+  output['area'] = location
+  output['type'] = output.apply(splitSourceNameT, SourceName=details['SourceNameName'], axis=1)
+  output['vehicle'] = output.apply(splitSourceNameV, SourceName=details['SourceNameName'], axis=1)
+  output['euro'] = euroClass
+  output['speed'] = output.apply(splitSourceNameS, SourceName=details['SourceNameName'], axis=1)
+  # Drop columns that are not required anymore.
+  output = output.drop(details['SourceNameName'], 1)
+  output = output.drop(details['AllLDVName'], 1)
+  output = output.drop(details['AllHDVName'], 1)
+  # Pivot the table so each pollutant has a column.
+  pollutants = list(output[details['PolName']].unique())
+  # Rename, because after the pivot the 'column' name will become the
+  # index name.
+  output = output.rename(columns={details['PolName']: 'RowIndex'})
+  output = output.pivot_table(index=['year', 'area', 'euro', 'version',
+                                     'speed', 'vehicle', 'type'],
+                                    columns='RowIndex',
+                                    values=details['AllVehName'])
+  output = output.reset_index()
+
+  renames = {}
+  # Rename the pollutant columns to include the units.
+  for Pol in pollutants:
+    if Pol == 'PM25':
+      Pol_ = 'PM2.5'
+    else:
+      Pol_ = Pol
+    renames[Pol] = '{} (g/km/s/veh)'.format(Pol_)
+  output = output.rename(columns=renames)
+  return output
+
+def extractPetrolDieselCarProportions(fileName2, fileName3, locations, keepTempFiles=False):
+  tic = time.clock()
+
+  # get the files are ready for processing.
+  ahk_ahkpathG, fileNames, versions, versionsForOutput = prepareToExtract([fileName2, fileName3], locations)
+  fileName2 = fileNames[0]
+  fileName3 = fileNames[1]
+  version2 = versions[0]
+  version3 = versions[1]
+  if version2 != version3:
+    raise ValueError('Input files should be of the same version.')
+  version = version2
+  versionForOutPut = versionsForOutput[0]
 
   # Now get the version dependent properties, mainly to do with which rows of
   # the spreadsheet contain which data.
-  vehRowStarts = versionDetails[version]['vehRowStarts']
-  vehRowEnds = versionDetails[version]['vehRowEnds']
-  vehRowStartsMC = versionDetails[version]['vehRowStartsMC']
-  vehRowEndsMC = versionDetails[version]['vehRowEndsMC']
-  SourceNameName = versionDetails[version]['SourceNameName']
-  AllLDVName = versionDetails[version]['AllLDVName']
-  AllHDVName = versionDetails[version]['AllHDVName']
-  AllVehName = versionDetails[version]['AllVehName']
-  PolName = versionDetails[version]['PolName']
+  details = versionDetails[version]
+
+  # Make a temporary copy of the filename, so that we do no processing on the
+  # original. Just in case we brake it. Also define temporary file names and
+  # output save locations, etc.
+  [FN2, FE2] =  path.splitext(fileName2)
+  [FN3, FE3] =  path.splitext(fileName3)
+  fileName2T = FN2 + '_TEMP_' + randomString() + FE2
+  fileName3T = FN3 + '_TEMP_' + randomString() + FE3
+  shutil.copyfile(fileName2, fileName2T)
+  shutil.copyfile(fileName3, fileName3T)
+  fileNameCSVNotComplete = fileName2.replace('prefilled_CarsDetailed2', 'CarFuelRatios_InPreparation')
+  fileNameCSVNotComplete = fileNameCSVNotComplete.replace(FE2, '.csv')
+  fileNameCSV = fileNameCSVNotComplete.replace('_InPreparation', '')
+
+  # Create the Excel Application object.
+  excel = win32.gencache.EnsureDispatch('Excel.Application')
+
+  # And now start the processing!
+  first = True
+  tempFilesCreated = [fileName2T, fileName3T]
+  #defaultProportions = pd.DataFrame(columns=['year', 'area', 'vehicle', 'euroClass', 'proportion'])
+
+  for location in locations:
+    ticloc = time.clock()
+    print('Location: {}'.format(location))
+    for year in years:
+      ticyear = time.clock()
+      print('  Year: {}'.format(year))
+      for euroClass in euroClasses:
+        ticeuro = time.clock()
+        carRatios = pd.DataFrame(columns=['year', 'area', 'euro', 'roadType', 'petrol', 'diesel', 'maximumFitResidual'])
+        print('    Euro class: {}'.format(euroClass))
+        if first:
+          newSavedFile2, defaultProportions2, k = runAndExtract(excel, fileName2T, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit2, details, versionForOutPut, checkEuroClasses=True, DoMCycles=False)
+          newSavedFile3, defaultProportions3, k = runAndExtract(excel, fileName3T, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, checkEuroClasses=True, DoMCycles=False)
+        else:
+          newSavedFile2, defaultProportions2, k = runAndExtract(excel, fileName2T, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit2, details, versionForOutPut, DoMCycles=False)
+          newSavedFile3, defaultProportions3, k = runAndExtract(excel, fileName3T, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, DoMCycles=False)
+        tempFilesCreated.extend([newSavedFile2, newSavedFile3])
+        print('      Done, reading output values.')
+
+        # Now get the output values as a dataframe.
+        output2 = extractOutput(newSavedFile2, versionForOutPut, year, location, euroClass, details)
+        output3 = extractOutput(newSavedFile3, versionForOutPut, year, location, euroClass, details)
+
+        # Assume that the diesel/car ratio could depend on road type but not on
+        # speed.
+        roadTypes2 = set(output2['type'])
+        roadTypes3 = set(output3['type'])
+        if roadTypes2 != roadTypes3:
+          raise ValueError('road types do not agree.')
+        roadTypes = roadTypes2
+        for roadType in roadTypes:
+          output2_r = output2[output2['type'] == roadType]
+          output3_r = output3[output3['type'] == roadType]
+          output_allCars = output2_r[output2_r['vehicle'] == '2. Cars']
+          output_petrolCars = output3_r[output3_r['vehicle'] == '2. Petrol Cars']
+          output_dieselCars = output3_r[output3_r['vehicle'] == '3. Diesel Cars']
+          Pols = ['NOx (g/km/s/veh)', 'PM10 (g/km/s/veh)', 'PM2.5 (g/km/s/veh)']
+          EAll = []
+          EPetrol = []
+          EDiesel = []
+          for Pol in Pols:
+            EAll.extend(list(output_allCars[Pol]))
+            EPetrol.extend(list(output_petrolCars[Pol]))
+            EDiesel.extend(list(output_dieselCars[Pol]))
+          # Now we have the emissions for all cars (EAll), for only diesel cars
+          # (EDiesel), and for only petrol cars (EPetrol).
+          # We assume that EAll = A*EPetrol + B*EDiesel and solve for A and B.
+          # That is equivalent to EAll = C*P, where C = [[EPetrol EDiesel]] and
+          # P = [[A], [B]]. We use numpy.linalg.lstsq to solve for P.
+          EPetrol = np.array(EPetrol)
+          EDiesel = np.array(EDiesel)
+          EAll = np.array(EAll)
+          C = np.vstack([EPetrol, EDiesel]).T
+          solution, sumResSquared, _notneeded_, _notneeded2_ = np.linalg.lstsq(C, EAll)
+          A, B = solution
+          # Get the residuals.
+          res = abs(EAll - np.dot(C, solution))
+          maxres = np.max(res)
+
+          ratioSingle = pd.DataFrame([[year, location, euroClass, roadType, A, B, maxres]], columns=['year', 'area', 'euro', 'roadType', 'petrol', 'diesel', 'maximumFitResidual'])
+          carRatios = carRatios.append(ratioSingle)
+          carRatios['version'] = versionForOutPut
+
+        print('      Writing to file')
+        if first:
+          # Save to a new csv file.
+          carRatios.to_csv(fileNameCSVNotComplete, index=False)
+          first = False
+        else:
+          # Append to the csv file.
+          carRatios.to_csv(fileNameCSVNotComplete, mode='a', header=False, index=False)
+        toceuro = time.clock()
+        print('      Processing for euro {} complete in {}.'.format(euroClass, secondsToString(toceuro-ticeuro, form='long')))
+      tocyear = time.clock()
+      print('      Processing for year {} complete in {}.'.format(year, secondsToString(tocyear-ticyear, form='long')))
+    tocloc = time.clock()
+    print('      Processing for area {} complete in {}.'.format(location, secondsToString(tocloc-ticloc, form='long')))
+
+  shutil.move(fileNameCSVNotComplete, fileNameCSV)
+  print('Processing complete. Output saved in the following files.')
+  print('  {}'.format(fileNameCSV))
+  if not keepTempFiles:
+    print('Deleting temporary files.')
+    for tf in tempFilesCreated:
+      os.remove(tf)
+
+  toc = time.clock()
+  print('Process complete in {}.'.format(secondsToString(toc-tic,  form='long')))
+
+
+def processEFT(fileName, locations, splitBusCoach=False, keepTempFiles=False):
+  tic = time.clock()
+
+  # Get the files are ready for processing.
+  ahk_ahkpathG, fileNames, versions, versionsForOutput = prepareToExtract(fileName, locations)
+  fileName = fileNames[0]
+  version = versions[0]
+  versionForOutPut = versionsForOutput[0]
+
+
+  details = versionDetails[version]
 
   # Make a temporary copy of the filename, so that we do no processing on the
   # original. Just in case we brake it. Also define temporary file names and
   # output save locations, etc.
   [FN, FE] =  path.splitext(fileName)
   fileNameT = FN + '_TEMP_' + randomString() + FE
-  fileNameTm = fileNameT.replace(FE, '_.xlsm')
   fileNameCSV_ = fileName.replace(FE, '.csv')
   fileNameCSVNotComplete = fileNameCSV_.replace('prefilledValues', 'inProduction')
   fileNameCSV = fileNameCSV_.replace('prefilledValues', 'processedValues')
   fileNameDefaultProportions = fileNameCSV_.replace('prefilledValues', 'defaultProportions')
   fileNameDefaultProportionsNotComplete = fileNameCSV_.replace('prefilledValues', 'defaultProportionsInProduction')
+  fileNameBusSplit = fileNameCSV_.replace('prefilledValues', 'BusCoachProportions')
+  fileNameBusSplitNotComplete = fileNameCSV_.replace('prefilledValues', 'BusCoachProportionsInProduction')
   vi = 1
   while path.isfile(fileNameCSV):
     vi += 1
@@ -326,6 +649,7 @@ def processEFT(fileName, locations):
   # And now start the processing!
   first = True
   tempFilesCreated = [fileNameT]
+
   #defaultProportions = pd.DataFrame(columns=['year', 'area', 'vehicle', 'euroClass', 'proportion'])
   for location in locations:
     ticloc = time.clock()
@@ -333,116 +657,38 @@ def processEFT(fileName, locations):
     for year in years:
       ticyear = time.clock()
       print('  Year: {}'.format(year))
+      busCoachSplit = pd.DataFrame(columns=['year', 'area', 'version', 'type', 'Buses', 'Coaches'])
       for euroClass in euroClasses:
         ticeuro = time.clock()
         print('    Euro class: {}'.format(euroClass))
-
-        # Start off the autohotkey script as a (parallel) subprocess. This will
-        # continually check until the compatibility warning appears, and then
-        # close the warning.
-        subprocess.Popen([ahkexe, ahkahkg])
-
-        # Open the document.
-        wb = excel.Workbooks.Open(fileNameT)
-        excel.Visible = True
-
-        # Set the default values in the Input Data sheet.
-        ws_input = wb.Worksheets("Input Data")
-        ws_input.Range("B4").Value = location
-        ws_input.Range("B5").Value = year
-        # Ensure that the correct detailed split is specified. Setting it will
-        # raise a popup and delete the traffic array, so we want to avoid that.
-        if ws_input.Range("B6").Value != vehSplit:
-          raise ValueError('Traffic Format should be "{}".'.format(vehSplit))
-
         if first:
-          # Check that all of the euro class names within the document are as
-          # we would expect. An error will be raised if there are any surprises
-          # and this will mean that the global variables at the start of the
-          # code will need to be edited.
-          checkEuroClasses(wb, vehRowStartsMC, vehRowEndsMC, EuroClassNameColumnsMC)
-          checkEuroClasses(wb, vehRowStarts, vehRowEnds, EuroClassNameColumns)
-
-        # Now we need to populate the UserEuro table with the defaults. Probably
-        # only need to do this once per year, per area, but will do it every time
-        # just in case.
-        excel.Application.Run("PasteDefaultEuroProportions")
-
-        # Now specify that we only want the specified euro class, by turning the
-        # proportions for that class to 1, (or a weighted value if there are more
-        # than one row for the particular euro class). This function also reads
-        # the default proportions.
-        # Motorcycles first
-        print('      Assigning fleet euro proportions for motorcycles.')
-        defaultProportionsMC_ = specifyEuroProportions(euroClass, wb, vehRowStartsMC, vehRowEndsMC,
-                     EuroClassNameColumnsMC, DefaultEuroColumnsMC, UserDefinedEuroColumns, MC=True)
-        # And all other vehicles
-        print('      Assigning fleet euro proportions for all other vehicle types.')
-        defaultProportions_ = specifyEuroProportions(euroClass, wb, vehRowStarts, vehRowEnds,
-                     EuroClassNameColumns, DefaultEuroColumns, UserDefinedEuroColumns)
-        # save the default proportions to a data frame.
-        defaultProportions = pd.DataFrame(columns=['year', 'area', 'vehicle', 'euroClass', 'proportion'])
-        for key, value in defaultProportionsMC_.items():
-          defaultProportionsRow = pd.DataFrame([[year, location, key, euroClass, value]],
-                                               columns=['year', 'area', 'vehicle', 'euroClass', 'proportion'])
-          defaultProportions = defaultProportions.append(defaultProportionsRow)
-        for key, value in defaultProportions_.items():
-          defaultProportionsRow = pd.DataFrame([[year, location, key, euroClass, value]],
-                                               columns=['year', 'area', 'vehicle', 'euroClass', 'proportion'])
-          defaultProportions = defaultProportions.append(defaultProportionsRow)
-        #defaultProportions = defaultProportions.drop_duplicates()
-        # Now run the EFT tool.
-        ws_input.Select() # Select the appropriate sheet, we can't run the macro
-                          # from another sheet.
-        print('      Running EFT routine.')
-        excel.Application.Run("RunEfTRoutine")
-        # Save and Close. Saving as an xlsm, rather than a xlsb, file, so that it
-        # can be opened by pandas.
-        fsave = fileNameTm.replace('.xlsm', '({}_{}_E{}).xlsm'.format(location, year, euroClass))
-        wb.SaveAs(fsave, win32.constants.xlOpenXMLWorkbookMacroEnabled)
-        tempFilesCreated.append(fsave)
-        wb.Close()
-        time.sleep(1) # To allow all systems to catch up.
-        print('      Done, reading output values.')
-
+          newSavedFile, defaultProportions, k = runAndExtract(excel, fileNameT, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, checkEuroClasses=True)
+        else:
+          newSavedFile, defaultProportions, k = runAndExtract(excel, fileNameT, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut)
+        tempFilesCreated.append(newSavedFile)
         # Now get the output values as a dataframe.
-        ex = pd.ExcelFile(fsave)
-        output = ex.parse("Output")
-        # Add some other columns to the dataframe.
-        output['version'] = version_
-        output['year'] = year
-        output['area'] = location
-        output['type'] = output.apply(splitSourceNameT, SourceName=SourceNameName, axis=1)
-        output['vehicle'] = output.apply(splitSourceNameV, SourceName=SourceNameName, axis=1)
-        output['euro'] = euroClass
-        output['speed'] = output.apply(splitSourceNameS, SourceName=SourceNameName, axis=1)
-        # Drop columns that are not required anymore.
-        output = output.drop(SourceNameName, 1)
-        output = output.drop(AllLDVName, 1)
-        output = output.drop(AllHDVName, 1)
-        # Pivot the table so each pollutant has a column.
-        Pollutants = list(output[PolName].unique())
-        # Rename, because after the pivot the 'column' name will become the
-        # index name.
-        output = output.rename(columns={PolName: 'RowIndex'})
-        output = output.pivot_table(index=['year', 'area', 'euro', 'version',
-                                           'speed', 'vehicle', 'type'],
-                                    columns='RowIndex',
-                                    values=AllVehName)
-        output = output.reset_index()
-        renames = {}
-        # Rename the pollutant columns to include the units.
-        for Pol in Pollutants:
-          if Pol == 'PM25':
-            Pol_ = 'PM2.5'
-          else:
-            Pol_ = Pol
-          renames[Pol] = '{} (g/km/s/veh)'.format(Pol_)
-        output = output.rename(columns=renames)
-        # Rename some values in the default proportion table too.
-        renames['euroClass'] = 'euro'
-        defaultProportions.rename(columns=renames)
-        defaultProportions['version'] = version_
+        print('      Done, reading output values.')
+        output = extractOutput(newSavedFile, versionForOutPut, year, location, euroClass, details)
+        if splitBusCoach:
+          if euroClass == euroClasses[-1]:
+            print('      Done, splitting buses from coaches.')
+            newSavedFileBus, k, busCoachRatio = runAndExtract(excel, fileNameT, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, DoMCycles=False, DoBusCoach=True, busCoach='bus')
+            newSavedFileCoa, k, busCoachRatio = runAndExtract(excel, fileNameT, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, DoMCycles=False, DoBusCoach=True, busCoach='coach')
+            tempFilesCreated.append(newSavedFileBus)
+            tempFilesCreated.append(newSavedFileCoa)
+            outputBus = extractOutput(newSavedFileBus, versionForOutPut, year, location, euroClass, details)
+            outputCoa = extractOutput(newSavedFileCoa, versionForOutPut, year, location, euroClass, details)
+            outputBus = outputBus[outputBus['vehicle'] == '5. Buses and Coaches']
+            outputCoa = outputCoa[outputCoa['vehicle'] == '5. Buses and Coaches']
+            outputBus['vehicle'] = '5a. Buses'
+            outputCoa['vehicle'] = '5b. Coaches'
+
+            # Remove the bus and Coach rows from the output.
+            output= output[output['vehicle'] != '5. Buses and Coaches']
+            # And append the 'Bus' and 'Coach' only rows.
+            output = output.append(outputBus)
+            output = output.append(outputCoa)
+        output = output.sort_values(['year', 'area', 'type', 'euro', 'speed', 'vehicle'])
         print('      Writing to file')
         if first:
           # Save to a new csv file.
@@ -454,25 +700,95 @@ def processEFT(fileName, locations):
           output.to_csv(fileNameCSVNotComplete, mode='a', header=False, index=False)
           defaultProportions.to_csv(fileNameDefaultProportionsNotComplete, mode='a', header=False, index=False)
         toceuro = time.clock()
-        print('      Processing for euro {} complete in {:.1f} seconds.'.format(euroClass, toceuro-ticeuro))
+        print('      Processing for euro {} complete in {}.'.format(euroClass, secondsToString(toceuro-ticeuro, form='long')))
+      if splitBusCoach:
+        busCoachSplitRow = pd.DataFrame([[year, location, versionForOutPut,
+                                       'Motorway', busCoachRatio['bus_mw'],
+                                       busCoachRatio['coach_mw']]],
+                                     columns=['year', 'area', 'version',
+                                              'type', 'Buses', 'Coaches'])
+        busCoachSplit = busCoachSplit.append(busCoachSplitRow)
+        busCoachSplitRow = pd.DataFrame([[year, location, versionForOutPut,
+                                       'Non-Motorway', busCoachRatio['bus_non_mw'],
+                                       busCoachRatio['coach_non_mw']]],
+                                     columns=['year', 'area', 'version',
+                                              'type', 'Buses', 'Coaches'])
+        busCoachSplit = busCoachSplit.append(busCoachSplitRow)
+        if location == locations[0]:
+          busCoachSplit.to_csv(fileNameBusSplitNotComplete, index=False)
+        else:
+          busCoachSplit.to_csv(fileNameBusSplitNotComplete, mode='a', header=False, index=False)
       tocyear = time.clock()
-      print('      Processing for year {} complete in {:.1f} seconds.'.format(year, tocyear-ticyear))
+      print('      Processing for year {} complete in {}.'.format(year, secondsToString(tocyear-ticyear, form='long')))
     tocloc = time.clock()
-    print('      Processing for area {} complete in {:.1f} seconds.'.format(location, tocloc-ticloc))
+    print('      Processing for area {} complete in {}.'.format(location, secondsToString(tocloc-ticloc, form='long')))
   shutil.move(fileNameCSVNotComplete, fileNameCSV)
   shutil.move(fileNameDefaultProportionsNotComplete, fileNameDefaultProportions)
+  shutil.move(fileNameBusSplitNotComplete, fileNameBusSplit)
   print('Processing complete. Output saved in the following files.')
   print('  {}'.format(fileNameCSV))
   print('  {}'.format(fileNameDefaultProportions))
-  print('Deleting temporary files.')
-  for tf in tempFilesCreated:
-    os.remove(tf)
+  if not keepTempFiles:
+    print('Deleting temporary files.')
+    for tf in tempFilesCreated:
+      os.remove(tf)
   toc = time.clock()
-  print('Process complete in {} seconds.'.format(toc-tic))
+  print('Process complete in {}.'.format(secondsToString(toc-tic, form='long')))
 
 if __name__ == '__main__':
   args = sys.argv
-  if len(args) > 1:
-    fNames = args[1:]
+  args = args[1:]
+  Mode = 'ExtractAll'
+  areas = ['England (not London)', 'Northern Ireland', 'Scotland', 'Wales']
+  years = range(2013, 2031)
+  euroClasses = range(7)
+  keepTempFiles = False
+  if '--years' in args:
+    yi = args.index('--years') + 1
+    years_ = args[yi]
+    years = []
+    years_ = years_.split(',')
+    for year_ in years_:
+      years.append(int(year_))
+    del args[yi]
+    args.remove('--years')
+  if '--areas' in args:
+    ai = args.index('--areas') + 1
+    areas_ = args[ai]
+    areas = []
+    areas_ = areas_.split(',')
+    for area_ in areas_:
+      areas.append(area_)
+    del args[ai]
+    args.remove('--areas')
+  if '--euros' in args:
+    ei = args.index('--euros') + 1
+    euros_ = args[ei]
+    euroClasses = []
+    euros_ = euros_.split(',')
+    for euro_ in euros_:
+      euroClasses.append(int(euro_))
+    del args[ei]
+    args.remove('--euros')
+  if '--ExtractCarRatio' in args:
+    args.remove('--ExtractCarRatio')
+    Mode = 'ExtractCarRatio'
+  if '--ExtractBus' in args:
+    args.remove('--ExtractBus')
+    Mode = 'ExtractBus'
+  if '--KeepTempFiles' in args:
+    args.remove('--KeepTempFiles')
+    keepTempFiles = True
+  if len(args) > 0:
+    fNames = args
+
+  if Mode == 'ExtractAll':
     for fName in fNames:
-      processEFT(fName, areas)
+      processEFT(fName, areas, keepTempFiles=keepTempFiles)
+  elif Mode == 'ExtractCarRatio':
+    if len(fNames) != 2:
+      raise ValueError('Two files are required for ExtractCarRatio mode.')
+    extractPetrolDieselCarProportions(fNames[0], fNames[1], areas, keepTempFiles=keepTempFiles)
+  elif Mode == 'ExtractBus':
+    for fName in fNames:
+      processEFT(fName, areas, splitBusCoach=True, keepTempFiles=keepTempFiles)
