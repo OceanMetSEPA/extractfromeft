@@ -14,6 +14,7 @@ import sys
 from os import path
 import subprocess
 import time
+from datetime import datetime
 import shutil
 import random
 import string
@@ -430,8 +431,15 @@ def runAndExtract(excel, fileName, location, year, euroClass, ahk_exepath,
   # Now run the EFT tool.
   ws_input.Select() # Select the appropriate sheet, we can't run the macro
                     # from another sheet.
-  print('      Running EFT routine.')
-  excel.Application.Run("RunEfTRoutine")
+  print('      Running EFT routine. Ctrl+C will pause processing...')
+  try:
+    excel.Application.Run("RunEfTRoutine")
+    print('        Complete. Ctrl+C will now halt entire programme as usual.')
+    time.sleep(0.5)
+  except KeyboardInterrupt:
+    print('Process paused at {}.'.format(datetime.strftime(datetime.now(), '%H:%M:%S on %d-%m-%Y')))
+    raw_input('Press enter to resume.')
+    print('Resumed at {}.'.format(datetime.strftime(datetime.now(), '%H:%M:%S on %d-%m-%Y')))
 
   # Save and Close. Saving as an xlsm, rather than a xlsb, file, so that it
   # can be opened by pandas.
