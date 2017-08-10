@@ -21,6 +21,7 @@ import string
 import numpy as np
 import pandas as pd
 import win32com.client as win32
+import pywintypes
 
 from tools import secondsToString
 
@@ -160,13 +161,20 @@ def specifyBusCoach(wb, busCoach, busCoachRow, UserDefinedBusColumn,
     if busCoach == 'bus':
       ws_euro.Range("{}{}".format(UserDefinedBusColumn[0], busCoachRow[0])).Value = 1
       ws_euro.Range("{}{}".format(UserDefinedBusColumn[0], busCoachRow[1])).Value = 0
-      ws_euro.Range("{}{}".format(UserDefinedBusMWColumn[0], busCoachRow[0])).Value = 1
-      ws_euro.Range("{}{}".format(UserDefinedBusMWColumn[0], busCoachRow[1])).Value = 0
+      try:
+        ws_euro.Range("{}{}".format(UserDefinedBusMWColumn[0], busCoachRow[0])).Value = 1
+        ws_euro.Range("{}{}".format(UserDefinedBusMWColumn[0], busCoachRow[1])).Value = 0
+      except pywintypes.com_error:
+        # Doesn't work in version 6, it doesn't let you specify the motorway proportion.
+        pass
     elif busCoach == 'coach':
       ws_euro.Range("{}{}".format(UserDefinedBusColumn[0], busCoachRow[0])).Value = 0
       ws_euro.Range("{}{}".format(UserDefinedBusColumn[0], busCoachRow[1])).Value = 1
-      ws_euro.Range("{}{}".format(UserDefinedBusMWColumn[0], busCoachRow[0])).Value = 0
-      ws_euro.Range("{}{}".format(UserDefinedBusMWColumn[0], busCoachRow[1])).Value = 1
+      try:
+        ws_euro.Range("{}{}".format(UserDefinedBusMWColumn[0], busCoachRow[0])).Value = 0
+        ws_euro.Range("{}{}".format(UserDefinedBusMWColumn[0], busCoachRow[1])).Value = 1
+      except pywintypes.com_error:
+        pass
     else:
       raise ValueError("busCoach should be either 'bus' or 'coach'. '{}' is not understood.".format(busCoach))
   return defaultBusProps
@@ -431,28 +439,43 @@ def runAndExtract(excel, fileName, location, year, euroClass, ahk_exepath,
   # Now run the EFT tool.
   ws_input.Select() # Select the appropriate sheet, we can't run the macro
                     # from another sheet.
-  print('      Running EFT routine. Ctrl+C will pause processing...')
+  print('      Running EFT routine. Ctrl+C will pause processing at the end of the routine...')
+  alreadySaved = False
   try:
     excel.Application.Run("RunEfTRoutine")
     print('        Complete. Ctrl+C will now halt entire programme as usual.')
     time.sleep(0.5)
   except KeyboardInterrupt:
     print('Process paused at {}.'.format(datetime.strftime(datetime.now(), '%H:%M:%S on %d-%m-%Y')))
+    # Save and Close. Saving as an xlsm, rather than a xlsb, file, so that it
+    # can be opened by pandas.
+    (FN, FE) =  path.splitext(fileName)
+    if DoBusCoach:
+      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}).xlsm'.format(location, year, euroClass, busCoach))
+    else:
+      tempSaveName = fileName.replace(FE, '({}_{}_E{}).xlsm'.format(location, year, euroClass))
+    wb.SaveAs(tempSaveName, win32.constants.xlOpenXMLWorkbookMacroEnabled)
+    wb.Close()
+    excel.Quit()
+    alreadySaved = True
+    time.sleep(1)
     raw_input('Press enter to resume.')
     print('Resumed at {}.'.format(datetime.strftime(datetime.now(), '%H:%M:%S on %d-%m-%Y')))
+    excel = win32.gencache.EnsureDispatch('Excel.Application')
 
-  # Save and Close. Saving as an xlsm, rather than a xlsb, file, so that it
-  # can be opened by pandas.
-  (FN, FE) =  path.splitext(fileName)
-  if DoBusCoach:
-    tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}).xlsm'.format(location, year, euroClass, busCoach))
-  else:
-    tempSaveName = fileName.replace(FE, '({}_{}_E{}).xlsm'.format(location, year, euroClass))
-  wb.SaveAs(tempSaveName, win32.constants.xlOpenXMLWorkbookMacroEnabled)
-  wb.Close()
+  if not alreadySaved:
+    # Save and Close. Saving as an xlsm, rather than a xlsb, file, so that it
+    # can be opened by pandas.
+    (FN, FE) =  path.splitext(fileName)
+    if DoBusCoach:
+      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}).xlsm'.format(location, year, euroClass, busCoach))
+    else:
+      tempSaveName = fileName.replace(FE, '({}_{}_E{}).xlsm'.format(location, year, euroClass))
+    wb.SaveAs(tempSaveName, win32.constants.xlOpenXMLWorkbookMacroEnabled)
+    wb.Close()
+
   time.sleep(1) # To allow all systems to catch up.
-
-  return tempSaveName, defaultProportions, busCoachProportions
+  return excel, tempSaveName, defaultProportions, busCoachProportions
 
 def extractOutput(fileName, versionForOutPut, year, location, euroClass, details):
   ex = pd.ExcelFile(fileName)
@@ -541,11 +564,11 @@ def extractPetrolDieselCarProportions(fileName2, fileName3, locations, keepTempF
         carRatios = pd.DataFrame(columns=['year', 'area', 'euro', 'roadType', 'petrol', 'diesel', 'maximumFitResidual'])
         print('    Euro class: {}'.format(euroClass))
         if first:
-          newSavedFile2, defaultProportions2, k = runAndExtract(excel, fileName2T, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit2, details, versionForOutPut, checkEuroClasses=True, DoMCycles=False)
-          newSavedFile3, defaultProportions3, k = runAndExtract(excel, fileName3T, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, checkEuroClasses=True, DoMCycles=False)
+          excel, newSavedFile2, defaultProportions2, k = runAndExtract(excel, fileName2T, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit2, details, versionForOutPut, checkEuroClasses=True, DoMCycles=False)
+          excel, newSavedFile3, defaultProportions3, k = runAndExtract(excel, fileName3T, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, checkEuroClasses=True, DoMCycles=False)
         else:
-          newSavedFile2, defaultProportions2, k = runAndExtract(excel, fileName2T, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit2, details, versionForOutPut, DoMCycles=False)
-          newSavedFile3, defaultProportions3, k = runAndExtract(excel, fileName3T, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, DoMCycles=False)
+          excel, newSavedFile2, defaultProportions2, k = runAndExtract(excel, fileName2T, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit2, details, versionForOutPut, DoMCycles=False)
+          excel, newSavedFile3, defaultProportions3, k = runAndExtract(excel, fileName3T, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, DoMCycles=False)
         tempFilesCreated.extend([newSavedFile2, newSavedFile3])
         print('      Done, reading output values.')
 
@@ -670,9 +693,9 @@ def processEFT(fileName, locations, splitBusCoach=False, keepTempFiles=False):
         ticeuro = time.clock()
         print('    Euro class: {}'.format(euroClass))
         if first:
-          newSavedFile, defaultProportions, k = runAndExtract(excel, fileNameT, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, checkEuroClasses=True)
+          excel, newSavedFile, defaultProportions, k = runAndExtract(excel, fileNameT, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, checkEuroClasses=True)
         else:
-          newSavedFile, defaultProportions, k = runAndExtract(excel, fileNameT, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut)
+          excel, newSavedFile, defaultProportions, k = runAndExtract(excel, fileNameT, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut)
         tempFilesCreated.append(newSavedFile)
         # Now get the output values as a dataframe.
         print('      Done, reading output values.')
@@ -680,8 +703,8 @@ def processEFT(fileName, locations, splitBusCoach=False, keepTempFiles=False):
         if splitBusCoach:
           if euroClass == euroClasses[-1]:
             print('      Done, splitting buses from coaches.')
-            newSavedFileBus, k, busCoachRatio = runAndExtract(excel, fileNameT, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, DoMCycles=False, DoBusCoach=True, busCoach='bus')
-            newSavedFileCoa, k, busCoachRatio = runAndExtract(excel, fileNameT, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, DoMCycles=False, DoBusCoach=True, busCoach='coach')
+            excel, newSavedFileBus, k, busCoachRatio = runAndExtract(excel, fileNameT, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, DoMCycles=False, DoBusCoach=True, busCoach='bus')
+            excel, newSavedFileCoa, k, busCoachRatio = runAndExtract(excel, fileNameT, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, DoMCycles=False, DoBusCoach=True, busCoach='coach')
             tempFilesCreated.append(newSavedFileBus)
             tempFilesCreated.append(newSavedFileCoa)
             outputBus = extractOutput(newSavedFileBus, versionForOutPut, year, location, euroClass, details)
@@ -741,6 +764,7 @@ def processEFT(fileName, locations, splitBusCoach=False, keepTempFiles=False):
     for tf in tempFilesCreated:
       os.remove(tf)
   toc = time.clock()
+  excel.Quit()
   print('Process complete in {}.'.format(secondsToString(toc-tic, form='long')))
 
 if __name__ == '__main__':
@@ -748,7 +772,7 @@ if __name__ == '__main__':
   args = args[1:]
   Mode = 'ExtractAll'
   areas = ['England (not London)', 'Northern Ireland', 'Scotland', 'Wales']
-  years = range(2013, 2031)
+  years = range(2008, 2031)
   euroClasses = range(7)
   keepTempFiles = False
   if '--years' in args:
