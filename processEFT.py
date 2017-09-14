@@ -701,24 +701,23 @@ def processEFT(fileName, locations, splitBusCoach=False, keepTempFiles=False):
         print('      Done, reading output values.')
         output = extractOutput(newSavedFile, versionForOutPut, year, location, euroClass, details)
         if splitBusCoach:
-          if euroClass == euroClasses[-1]:
-            print('      Done, splitting buses from coaches.')
-            excel, newSavedFileBus, k, busCoachRatio = runAndExtract(excel, fileNameT, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, DoMCycles=False, DoBusCoach=True, busCoach='bus')
-            excel, newSavedFileCoa, k, busCoachRatio = runAndExtract(excel, fileNameT, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, DoMCycles=False, DoBusCoach=True, busCoach='coach')
-            tempFilesCreated.append(newSavedFileBus)
-            tempFilesCreated.append(newSavedFileCoa)
-            outputBus = extractOutput(newSavedFileBus, versionForOutPut, year, location, euroClass, details)
-            outputCoa = extractOutput(newSavedFileCoa, versionForOutPut, year, location, euroClass, details)
-            outputBus = outputBus[outputBus['vehicle'] == '5. Buses and Coaches']
-            outputCoa = outputCoa[outputCoa['vehicle'] == '5. Buses and Coaches']
-            outputBus['vehicle'] = '5a. Buses'
-            outputCoa['vehicle'] = '5b. Coaches'
-
-            # Remove the bus and Coach rows from the output.
-            output= output[output['vehicle'] != '5. Buses and Coaches']
-            # And append the 'Bus' and 'Coach' only rows.
-            output = output.append(outputBus)
-            output = output.append(outputCoa)
+          #if euroClass == euroClasses[-1]:
+          print('      Done, splitting buses from coaches.')
+          excel, newSavedFileBus, k, busCoachRatio = runAndExtract(excel, fileNameT, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, DoMCycles=False, DoBusCoach=True, busCoach='bus')
+          excel, newSavedFileCoa, k, busCoachRatio = runAndExtract(excel, fileNameT, location, year, euroClass, ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, DoMCycles=False, DoBusCoach=True, busCoach='coach')
+          tempFilesCreated.append(newSavedFileBus)
+          tempFilesCreated.append(newSavedFileCoa)
+          outputBus = extractOutput(newSavedFileBus, versionForOutPut, year, location, euroClass, details)
+          outputCoa = extractOutput(newSavedFileCoa, versionForOutPut, year, location, euroClass, details)
+          outputBus = outputBus[outputBus['vehicle'] == '5. Buses and Coaches']
+          outputCoa = outputCoa[outputCoa['vehicle'] == '5. Buses and Coaches']
+          outputBus['vehicle'] = '5a. Buses'
+          outputCoa['vehicle'] = '5b. Coaches'
+          # Remove the bus and Coach rows from the output.
+          output= output[output['vehicle'] != '5. Buses and Coaches']
+          # And append the 'Bus' and 'Coach' only rows.
+          output = output.append(outputBus)
+          output = output.append(outputCoa)
         output = output.sort_values(['year', 'area', 'type', 'euro', 'speed', 'vehicle'])
         print('      Writing to file')
         if first:
@@ -813,6 +812,7 @@ if __name__ == '__main__':
     keepTempFiles = True
   if len(args) > 0:
     fNames = args
+
 
   if Mode == 'ExtractAll':
     for fName in fNames:

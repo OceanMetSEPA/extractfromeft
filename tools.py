@@ -37,6 +37,42 @@ def secondsToString(seconds, form='short'):
     raise ValueError("Format '{}' is not understood.".format(form))
 
 
+def numToLetter(N, ABC=u'ABCDEFGHIJKLMNOPQRSTUVWXYZ' ):
+  """
+  Converts a number in to a letter, or set of letters, based on the contents of
+  ABC. If ABC contains the alphabet (which is the default behaviour) then for a
+  number n this will result in the same string as the name of the nth column in
+  a normal spreadsheet.
+
+  INPUTS
+  N    - integer - any number.
+  OPTIONAL INPUTS
+  ABC  - string  - any string of characters (or any other symbols I believe).
+  OUTPUTS
+  L    - string  - the number converted to a string.
+
+  EXAMPLES
+  numToLetter(1)
+  u'A'
+  numToLetter(26)
+  u'Z'
+  numToLetter(27)
+  u'AA'
+  numToLetter(345)
+  u'MG'
+  numToLetter(345, ABC='1234567890')
+  u'345'
+  """
+  L = ''
+  sA = len(ABC)
+  div = int(N)
+  while div > 0:
+    R = int((div-1)%sA)
+    L = ABC[R] + L
+    div = int((div-R)/sA)
+  return L
+
+
 if __name__ == '__main__':
   # For testing.
   ss = secondsToString(4321)
