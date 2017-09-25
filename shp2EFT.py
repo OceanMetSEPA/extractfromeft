@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Sep 06 10:17:33 2017
-
-@author: edward.barratt
-
 Functions that allow the traffic counts within a shape file to be fed into the
 EFT. In particular it is designed to work with the Noise traffic count shape
 files.
@@ -22,6 +18,15 @@ import win32com.client as win32
 # Set some defaults.
 ahk_exepath = 'C:\Program Files\AutoHotkey\AutoHotkey.exe'
 ahk_ahkpath = 'closeWarning.ahk'
+ahk_exist = True
+for ahk_ in [ahk_exepath, ahk_ahkpath]:
+  if not os.path.isfile(ahk_):
+    ahk_exist = False
+if not ahk_exist:
+  print(["Either Autohotkey is not installed, or it is not installed in the ",
+         "usual place, or the required AutoHotKey script 'closeWarning.ahk' ",
+         "cannot be found. the function will work but you will have to watch ",
+         "and close the EFT warning dialogue manually."])
 
 MotorwayNames = ['Motorway', 'M8', 'M74', 'M73', 'M77', 'M80', 'M876', 'M898', 'M9', 'M90']
 
@@ -42,7 +47,6 @@ VehSubTypes = {'Cars': [u'Petrol cars', u'Diesel cars', u'ElectricCars'],
                'HGV': [u'Rigid HGVs', u'Artic HGVs'],
                'Bus': [u'Buses and coaches']}
 
-NO2FactorFile = 'input/NO2Extracted.csv'
 
 def readNO2Factors(FactorFile):
   """
@@ -142,7 +146,8 @@ def doEFT(data, fName, uniqueID='UID', excel='Create'):
   # Start off the autohotkey script as a (parallel) subprocess. This will
   # continually check until the compatibility warning appears, and then
   # close the warning.
-  subprocess.Popen([ahk_exepath, ahk_ahkpath])
+  if ahk_exist:
+    subprocess.Popen([ahk_exepath, ahk_ahkpath])
 
 
   # Open the document.
@@ -226,7 +231,7 @@ def doEFT(data, fName, uniqueID='UID', excel='Create'):
     del(excelObj) # Make sure it's gone. Apparently some people have found this neccesary.
   return data
 
-def processNetwork(InputShapefile, EmptyEFT, OutputShapefile='default', uniqueID='UID', Head=False, MaxRows=10000, area='NotSet'):
+def processNetwork(InputShapefile, EmptyEFT, NO2FactorFile, OutputShapefile='default', uniqueID='UID', Head=False, MaxRows=10000, area='NotSet'):
   """
   A function that will run the road counts within an input shape file through
   the EFT, and then extract the emission rates from the EFT and add them to a
@@ -267,6 +272,7 @@ def processNetwork(InputShapefile, EmptyEFT, OutputShapefile='default', uniqueID
                             (g/km/s)' should be selected under 'Select Outputs'
                             and 'Breakdown by Vehicle' should be selected under
                             'Additional Outputs'.
+  NO2FactorFile  - String - The path to the NOx to NO2 conversion factor file.
 
   """
   # See if we can parse the area.
@@ -434,9 +440,22 @@ def processNetwork(InputShapefile, EmptyEFT, OutputShapefile='default', uniqueID
 
 if __name__ == '__main__':
   EmptyEFT = 'input\EFT2017_v7.4_NoiseEmpty.xlsb'
+  NO2FactorFile = 'input/NO2Extracted.csv'
   args = sys.argv
   args = args[1:]
+
+  if '--EFT' in args:
+    ei = args.index('--EFT') + 1
+    EmptyEFT = args[ei]
+    del args[ei]
+    args.remove('--EFT')
+  if '--NO2' in args:
+    ei = args.index('--NO2') + 1
+    NO2FactorFile = args[ei]
+    del args[ei]
+    args.remove('--NO2')
+
   for inputfile in args:
-    processNetwork(inputfile, EmptyEFT)
+    processNetwork(inputfile, EmptyEFT, NO2FactorFile)
 
 
