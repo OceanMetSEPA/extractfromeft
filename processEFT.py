@@ -23,7 +23,7 @@ import pandas as pd
 import win32com.client as win32
 import pywintypes
 
-from tools import secondsToString
+from tools import secondsToString, extractVersion
 
 # Define some global variables. These may need to be augmented if a new EFT
 # version is released.
@@ -327,47 +327,6 @@ def getInputFile(mode, version, directory='input'):
   else:
     return [path.abspath(f) for f in fname]
 
-
-
-def extractVersion(fileName):
-  """
-  Extract the version number from the filename.
-  """
-  # See what version we're looking at.
-  version = False
-  for versiono in availableVersions:
-    if fileName.find('v{:.1f}'.format(versiono)) >= 0:
-      version = versiono
-      version_for_output = versiono
-      break
-  if version:
-    print('{} is EFT of version {}.'.format(fileName, version))
-  else:
-    # Not one that is predefined, see if we can get the version number.
-    fv = fileName.find('v')
-    fp = fileName.find('_prefilled')
-    if (fv >= 0) and (fp >= 0):
-      fl = fileName.find('.', fv, fp)
-      if fl >= 0:
-        verTry = fileName[fv+1:fl+2]
-        try:
-          version = float(verTry)
-        except:
-          pass
-    if version:
-      # Get closest version number
-      versioncloseI = np.argmin(abs(np.array(availableVersions) - version))
-      version_for_output = version
-      versionp = availableVersions[versioncloseI]
-      print('{} looks like EFT of unknown version {}, will process as version {}.'.format(fileName, version, versionp))
-      version = versionp
-    else:
-      maxAvailableVersions = max(availableVersions)
-      print('Cannot parse version number from "{}", will attempt to process as version {}.'.format(fileName, maxAvailableVersions))
-      version = maxAvailableVersions
-      version_for_output = 'Unknown Version as {}'.format(maxAvailableVersions)
-    print('You may wish to edit the versionDetails global variables to account for the new version.')
-  return version, version_for_output
 
 def prepareToExtract(fileNames, locations):
   """
