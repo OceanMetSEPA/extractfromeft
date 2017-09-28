@@ -810,9 +810,9 @@ if __name__ == '__main__':
   else:
     inputfile = getInputFile(mode, version)
   if version == 6.0:
-    allowedYears = range(2008, 2031)
+    availableYears = range(2008, 2031)
   else:
-    allowedYears = range(2013, 2031)
+    availableYears = range(2013, 2031)
   area = args.area
   if area == 'all':
     area = availableAreas
@@ -821,10 +821,10 @@ if __name__ == '__main__':
     euroClasses = range(7)
   years = args.years
   if years == -9999:
-    years = allowedYears
+    years = availableYears
   keepTempFiles = args.keeptemp
 
-  if not all(y in allowedYears for y in years):
+  if not all(y in availableYears for y in years):
     raise ValueError('One or more years are not allowed for the specified EFT version.')
 
   if mode == 'ExtractAll':
