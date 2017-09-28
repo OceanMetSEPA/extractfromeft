@@ -10,8 +10,8 @@ rates for vehicle classes against year and euro class.
 from __future__ import print_function
 
 import os
-import sys
 from os import path
+import argparse
 import subprocess
 import time
 from datetime import datetime
@@ -98,7 +98,8 @@ for ei in range(1,7):
   euroClassNameVariationsAll.extend(euroClassNameVariations[ei])
 euroClassNameVariationsAll = list(set(euroClassNameVariationsAll))
 
-availableVersions = versionDetails.keys()
+
+
 
 EuroClassNameColumns = ["A", "H"]
 DefaultEuroColumns = ["B", "I"]
@@ -109,6 +110,11 @@ UserDefinedBusColumn = ["D"]
 UserDefinedBusMWColumn = ["E"]
 DefaultBusColumn = ["B"]
 DefaultBusMWColumn = ["C"]
+
+availableVersions = versionDetails.keys()
+availableAreas = ['England (not London)', 'Northern Ireland', 'Scotland', 'Wales']
+availableModes = ['ExtractAll', 'ExtractCarRatio', 'ExtractBus']
+availableEuros = [0,1,2,3,4,5,6]
 
 def randomString(N = 10):
   return ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for x in range(N))
@@ -278,6 +284,50 @@ def splitSourceNameT(row, SourceName='Source Name'):
   s = row[SourceName]
   s, v, t = s.split(' - ')
   return t
+
+def getInputFile(mode, version, directory='input'):
+  """
+  Return the absolute path to the appropriate file for the selected mode and
+  version. Will return an error if no file is available.
+  """
+
+  # First check that the directory exists.
+  if not path.isdir(directory):
+    raise ValueError('Cannot find directory {}.'.format(directory))
+
+  # Now figure out the file name.
+  if version == 6.0:
+    vPart = 'EFT2014_v6.0.2'
+    ext = '.xls'
+  elif version == 7.0:
+    vPart = 'EFT2016_v7.0'
+    ext = '.xlsb'
+  elif version == 7.4:
+    vPart = 'EFT2017_v7.4'
+    ext = '.xlsb'
+  else:
+    raise ValueError('Version {} is not recognised.'.format(version))
+
+  if mode in ['ExtractAll', 'ExtractBus']:
+    fname = ['{}/{}_prefilledValues{}'.format(directory, vPart, ext)]
+  elif mode == 'ExtractCarRatio':
+    fname = ['{}/{}_prefilled_CarsDetailed2{}'.format(directory, vPart, ext),
+             '{}/{}_prefilled_CarsDetailed3{}'.format(directory, vPart, ext)]
+  else:
+    raise ValueError('Mode {} is not recognised.'.format(mode))
+
+  # Check that file(s) exists.
+  for f in fname:
+    if not path.exists(f):
+      raise ValueError('Cannot find file {}.'.format(f))
+
+  # return the absolute paths.
+  if mode in ['ExtractAll', 'ExtractBus']:
+    return path.abspath(fname[0])
+  else:
+    return [path.abspath(f) for f in fname]
+
+
 
 def extractVersion(fileName):
   """
@@ -680,8 +730,6 @@ def processEFT(fileName, locations, splitBusCoach=False, keepTempFiles=False):
   # And now start the processing!
   first = True
   tempFilesCreated = [fileNameT]
-
-  #defaultProportions = pd.DataFrame(columns=['year', 'area', 'vehicle', 'euroClass', 'proportion'])
   for location in locations:
     ticloc = time.clock()
     print('Location: {}'.format(location))
@@ -767,60 +815,62 @@ def processEFT(fileName, locations, splitBusCoach=False, keepTempFiles=False):
   print('Process complete in {}.'.format(secondsToString(toc-tic, form='long')))
 
 if __name__ == '__main__':
-  args = sys.argv
-  args = args[1:]
-  Mode = 'ExtractAll'
-  areas = ['England (not London)', 'Northern Ireland', 'Scotland', 'Wales']
-  years = range(2008, 2031)
-  euroClasses = range(7)
-  keepTempFiles = False
-  if '--years' in args:
-    yi = args.index('--years') + 1
-    years_ = args[yi]
-    years = []
-    years_ = years_.split(',')
-    for year_ in years_:
-      years.append(int(year_))
-    del args[yi]
-    args.remove('--years')
-  if '--areas' in args:
-    ai = args.index('--areas') + 1
-    areas_ = args[ai]
-    areas = []
-    areas_ = areas_.split(',')
-    for area_ in areas_:
-      areas.append(area_)
-    del args[ai]
-    args.remove('--areas')
-  if '--euros' in args:
-    ei = args.index('--euros') + 1
-    euros_ = args[ei]
-    euroClasses = []
-    euros_ = euros_.split(',')
-    for euro_ in euros_:
-      euroClasses.append(int(euro_))
-    del args[ei]
-    args.remove('--euros')
-  if '--ExtractCarRatio' in args:
-    args.remove('--ExtractCarRatio')
-    Mode = 'ExtractCarRatio'
-  if '--ExtractBus' in args:
-    args.remove('--ExtractBus')
-    Mode = 'ExtractBus'
-  if '--KeepTempFiles' in args:
-    args.remove('--KeepTempFiles')
-    keepTempFiles = True
-  if len(args) > 0:
-    fNames = args
+  parser = argparse.ArgumentParser(description='Extract emission values from the EFT')
+  parser.add_argument('--version', '-v', metavar='version number',
+                      type=float, nargs='?', default=7.0,
+                      choices=availableVersions,
+                      help="The EFT version number. One of {}. Default 7.0.".format(", ".join(str(v) for v in availableVersions)))
+  parser.add_argument('--area', '-a', metavar='areas',
+                      type=str, nargs='*', default='all',
+                      help="The areas to be processed. One or more of '{}'. Default 'all'.".format("', '".join(availableAreas)))
+  parser.add_argument('--years', '-y', metavar='year',
+                      type=int, nargs='*', default=-9999,
+                      choices=range(2008, 2031),
+                      help="The year or years to be processed. Default 'all'")
+  parser.add_argument('--euros', '-e', metavar='euro classes',
+                      type=int, nargs='*', default=-9999,
+                      choices = availableEuros,
+                      help="The euro class or classes to be processed. One of more number between 0 and 6. Default 0 1 2 3 4 5 6.")
+  parser.add_argument('--mode', '-m', metavar='mode',
+                      type=str, nargs='?', default=availableModes[0],
+                      choices=availableModes,
+                      help="The mode. One of '{}'. Default '{}'.".format("', '".join(availableModes), availableModes[0]))
+  parser.add_argument('--keeptemp', metavar='keeptemp',
+                      type=bool,  nargs='?', default=False,
+                      help="Whether to keep or delete temporary files. Boolean. Default False (delete).")
+  parser.add_argument('--inputfile', '-i', metavar='input file',
+                      type=str,   nargs='?', default=None,
+                      help="The file to process. If set then version will be ignored.")
+  args = parser.parse_args()
 
+  version = args.version
+  mode = args.mode
+  inputfile = args.inputfile
+  if inputfile is not None:
+    version = extractVersion(inputfile)
+  else:
+    inputfile = getInputFile(mode, version)
+  if version == 6.0:
+    allowedYears = range(2008, 2031)
+  else:
+    allowedYears = range(2013, 2031)
+  area = args.area
+  if area == 'all':
+    area = availableAreas
+  euroClasses = args.euros
+  if euroClasses == -9999:
+    euroClasses = range(7)
+  years = args.years
+  if years == -9999:
+    years = allowedYears
+  keepTempFiles = args.keeptemp
 
-  if Mode == 'ExtractAll':
-    for fName in fNames:
-      processEFT(fName, areas, keepTempFiles=keepTempFiles)
-  elif Mode == 'ExtractCarRatio':
-    if len(fNames) != 2:
-      raise ValueError('Two files are required for ExtractCarRatio mode.')
-    extractPetrolDieselCarProportions(fNames[0], fNames[1], areas, keepTempFiles=keepTempFiles)
-  elif Mode == 'ExtractBus':
-    for fName in fNames:
-      processEFT(fName, areas, splitBusCoach=True, keepTempFiles=keepTempFiles)
+  if not all(y in allowedYears for y in years):
+    raise ValueError('One or more years are not allowed for the specified EFT version.')
+
+  if mode == 'ExtractAll':
+    processEFT(inputfile, area, keepTempFiles=keepTempFiles)
+  elif mode == 'ExtractCarRatio':
+    extractPetrolDieselCarProportions(inputfile[0], inputfile[1], area, keepTempFiles=keepTempFiles)
+  elif mode == 'ExtractBus':
+    processEFT(inputfile, area, splitBusCoach=True, keepTempFiles=keepTempFiles)
