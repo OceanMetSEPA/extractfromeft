@@ -4,14 +4,19 @@ Functions that allow the traffic counts within a shape file to be fed into the
 EFT. In particular it is designed to work with the Noise traffic count shape
 files.
 """
+from __future__ import print_function
 
 import sys
 import os
 import shutil
 import subprocess
 import datetime
+#import numpy as np
 import pandas as pd
 import geopandas as gpd
+import time
+#import shapely
+#from shapely.geometry import LineString
 
 import win32com.client as win32
 
@@ -45,7 +50,8 @@ VehSubTypesNO2 = {u'Petrol cars': [u'Petrol Cars (g/km/s)', u'Full Hybrid Petrol
 VehSubTypes = {'Cars': [u'Petrol cars', u'Diesel cars', u'ElectricCars'],
                'LGV': [u'Petrol LGVs', u'Diesel LGVs', u'ElectricLGVs' ],
                'HGV': [u'Rigid HGVs', u'Artic HGVs'],
-               'Bus': [u'Buses and coaches']}
+               'Bus': [u'Buses and coaches'],
+               'Ignore': [u'Motorcycles']}
 
 
 def readNO2Factors(FactorFile):
@@ -108,7 +114,7 @@ def getNO2Factor(Factors, Vehicle, Year):
 
   return Factors[Vehicle][Year]
 
-def doEFT(data, fName, uniqueID='UID', excel='Create'):
+def doEFT(data, fName, uniqueID='UID', excel='Create', AA='AADT'):
   """
   Function that adds data to the EFT, runs the EFT, and then extracts the data.
 
@@ -136,11 +142,17 @@ def doEFT(data, fName, uniqueID='UID', excel='Create'):
   TempEFT = os.path.abspath(TempEFT)        # Neccesary because win32 seems to
   TempEFTm = os.path.abspath(TempEFTm)      # struggle with relative paths.
 
+  if AA == 'AADT':
+    AAA = 'D'
+  elif AA == 'AAWT':
+    AAA = 'W'
+
   # We need to order the appropriate columns so that they can be copied into the
   # EFT input page.
-  outData = data[[uniqueID, 'RoadType', 'AADT', 'AADT_Cars', 'AADT_Taxi', 'AADT_LGV',
-                'AADT_HGV', 'AADT_Bus', 'AADT_MC', 'SPEED', 'Duration',
-                'Length']]
+  outData = data[[uniqueID, 'RoadType', AA, '{}_Cars'.format(AA),
+                  '{}_Taxi'.format(AA), '{}_LGV'.format(AA), '{}_HGV'.format(AA),
+                  '{}_Bus'.format(AA), '{}_MC'.format(AA), '{}SPD'.format(AA),
+                  'Duration', 'Length']]
 
   numRows_ = len(outData.index)
   # Start off the autohotkey script as a (parallel) subprocess. This will
@@ -198,29 +210,27 @@ def doEFT(data, fName, uniqueID='UID', excel='Create'):
     if list(data[uniqueID]) != list(output_m['Source Name']):
       raise ValueError('SourceName and {} are not identical.'.format(uniqueID))
     for pol in pollutants:
-      colName = '{}_{}'.format(m, pol)
+      colName = '{}_{}{}'.format(m, pol, AAA)
       colName = colName.replace('.', '')
       data = data.assign(colName = list(output_m[pol]))
       data = data.rename(columns={'colName': colName}) # What!!!! Shouldn't be neccesary, but it is.
     # Create an NO2 column.
-    colNameNO2 = '{}_NO2'.format(m)
-    colNameNOx = '{}_NOx'.format(m)
+    colNameNO2 = '{}_NO2{}'.format(m, AAA)
+    colNameNOx = '{}_NOx{}'.format(m, AAA)
     data[colNameNO2] = data[colNameNOx] * getNO2Factor(NO2Factors, m, year)
-
   pollutants.append('NO2')
   # Consolidate the columns into the 4 vehicle split.
   for veh4, vehp in VehSubTypes.items():
-
     for pol in pollutants:
-      colName = '{}_{}'.format(veh4, pol)
+      colName = '{}_{}{}'.format(veh4, pol, AAA)
       colName = colName.replace('.', '')
       data[colName] = [0]*len(data.index)
       for veh in vehp:
-        colNamep = '{}_{}'.format(veh, pol)
+        colNamep = '{}_{}{}'.format(veh, pol, AAA)
         colNamep = colNamep.replace('.', '')
         data[colName] += data[colNamep]
         data = data.drop(colNamep, 1)
-      if veh4 == 'Motorcycles':
+      if veh4 == 'Ignore':
         data = data.drop(colName, 1)
 
   # remove the temporary files.
@@ -291,6 +301,9 @@ def processNetwork(InputShapefile, EmptyEFT, NO2FactorFile, OutputShapefile='def
   numRows = len(Data.index)
   columnNames = list(Data)
   print('  Done. Imported {} features.'.format(numRows))
+  # Get the crs well known text, so that it can be assigned to the file to save.
+  prj_file = InputShapefile.replace('.shp', '.prj')
+  crs_wkt = [l.strip() for l in open(prj_file,'r')][0]
   print('Organising data.')
 
   # Make sure that the specified unique identifier is actually a unique identifier.
@@ -312,31 +325,115 @@ def processNetwork(InputShapefile, EmptyEFT, NO2FactorFile, OutputShapefile='def
     raise ValueError('{} is not a unique identifier'.format(uniqueID))
 
   # Check that other required fields exist.
-  Required = ['SPEED', 'Urban', 'Class']  # Need each of these.
-  RequiredVehs = ['AADT', 'AAWT']         # Need at least one of these, and for
+  Required = ['Urban']                    # Need each of these.
+  CountDayTypes = ['AADT', 'AAWT']        # Need at least one of these, and for
   VehTypes = ['Cars', 'Bus', 'LGV', 'HGV']# each of these we also require
-                                          # 'AAXX_Cars', 'AAXX_Bus', 'AAXX_HGV'
-                                          # and 'AAXX_LGV'.
+                                          # 'AAXT_Cars', 'AAXT_Bus', 'AAXT_HGV'
+                                          # and 'AAXT_LGV'. Plus we also need
+                                          # 'AAXTSPD', the speed for that period.
   for Req in Required:
     if Req not in columnNames:
       raise ValueError('The required field "{}" is missing.'.format(Req))
   gotAtleastOne = False
-  for Req in RequiredVehs:
+  for Req in CountDayTypes:
     if Req in columnNames:
       gotAtleastOne = True
+      AAveh = '{}SPD'.format(Req)
+      if AAveh not in columnNames:
+        raise ValueError('The required field "{}" is missing.'.format(AAveh))
       for veh in VehTypes:
         AAveh = '{}_{}'.format(Req, veh)
         if AAveh not in columnNames:
           raise ValueError('The required field "{}" is missing.'.format(AAveh))
   if not gotAtleastOne:
     raise ValueError('Neither "AADT" nor "AAWT" fields are available.')
+  # And Class, if it does not exist then mark everything as 'other'.
+  if 'Class' not in columnNames:
+    Data['Class'] = ['other']*numRows
 
-  # Deal with rows that do not have a sensible vehicle class breakdown. First
-  # create a column that just has a flag to say what class it is.
-  # If the vehicle class breakdown sums to more than 0.95 (it should be 1) then the flag will be 1.
-  # If the vehicle class breakdown sums to less than 0.05 then the flag will be 0.
-  # If the vehicle class breakdown sums to between 0.05 and 0.05 then the flag will be -1.
-  for AA in ['AADT', 'AAWT']:
+  # Find and remove streets that are either spatially identical or the exact
+  # reverse of other streets. This is neccesary
+  # because the original noise data had two roads for every two way street;
+  # one in each direction.
+  # To find the duplicated roads based on their geometry is incredibly slow, so
+  # instead we use the UID, which if it was generated using the ArcGIS model
+  # should be a set format. Unfortunately this makes the code less adaptable.
+
+  print('Combining and removing duplicate streets.')
+  DataUIDs = Data.ix[:, [uniqueID, 'SegmentID']]
+  DataUIDs['AB_U'] = DataUIDs['SegmentID'].astype(str).str[:-2] + DataUIDs[uniqueID].astype(str).str[-2:]
+  # Find duplicates
+  DataUIDs = DataUIDs.ix[:, ['AB_U']]
+  DataUIDs = DataUIDs.sort_values('AB_U')
+  Duplicates1 = pd.DataFrame(DataUIDs.duplicated(keep='first'), columns=['Dup'])
+  Duplicates1 = Duplicates1[Duplicates1['Dup'] == True]
+  DupIndex1 = list(Duplicates1.index)
+  Duplicates2 = pd.DataFrame(DataUIDs.duplicated(keep='last'), columns=['Dup'])
+  Duplicates2 = Duplicates2[Duplicates2['Dup'] == True]
+  DupIndex2 = list(Duplicates2.index)
+
+  for DupI in xrange(len(DupIndex1)):
+    Dup1 = DupIndex1[DupI]
+    Dup2 = DupIndex2[DupI]
+    row1 = Data.loc[Dup1]
+    row2 = Data.loc[Dup2]
+    for AA in CountDayTypes:
+      AA1 = row1[AA]
+      AA2 = row2[AA]
+      if AA1+AA2 < 1e-8:   # If both are basically 0.
+        Scaling1, Scaling2 = 0.5, 0.5
+      else:
+        Scaling1 = AA1/(AA1+AA2)
+        Scaling2 = AA2/(AA1+AA2)
+      ColsToDo = ['_'+q for q in VehTypes]
+      ColsToDo.append('SPD')
+      for Col in ColsToDo:
+        ColName = AA+Col
+        Col1 = row1[ColName]
+        Col2 = row2[ColName]
+        Value = Scaling1*Col1 + Scaling2*Col2
+        Data = Data.set_value(Dup1, ColName, Value)
+      Col1 = row1[AA]
+      Col2 = row2[AA]
+      Value = Col1 + Col2
+      Data = Data.set_value(Dup1, AA, Value)
+    Data = Data.drop([Dup2])
+
+  numRowsOld = numRows
+  numRows = len(Data.index)
+  print('Done, removed {} features, {} remaining.'.format(numRowsOld - numRows, numRows))
+
+  # Class is currently 'Motorway' or 'Other'.
+  # LEGEND is currently 'Small Urban Area polygon' or 'Large Urban Area polygon',
+  # or None.
+  # We want to define all motorways as 'Motorway (not London)', all 'Large Urban
+  # Area polygon' as 'Urban (not London)', and all other roads as 'Rural (not London)'.
+  Data['RoadType'] = ['Rural (not London)'] * numRows
+  Data.loc[Data.Urban == 1, 'RoadType'] = 'Urban (not London)'
+  print('The following "other" road classes are defined. If any look like they should be considered motorways then you may need to edit the MotorwayNames variable in the script.')
+  for cl in set(Data.Class):
+    if cl not in MotorwayNames:
+      print('  {}'.format(cl))
+  for mway in MotorwayNames:
+    Data.loc[Data.Class == mway, 'RoadType'] = 'Motorway (not London)'
+
+  # And add a row for Duration (24 hours) and for link length.
+  # Note that the link length is approximate because the roads are not all
+  # georectified, but that doesn't matter because we're getting emission rate
+  # per km anyway.
+  Data['Duration'] = 24
+  Data['Length'] = Data.length/1000
+
+  # Now open the copied version of the EFT, and fill in the data.
+  # Create the Excel Application object.
+  excelObj = win32.gencache.EnsureDispatch('Excel.Application')
+
+  for AA in CountDayTypes:
+    # Deal with rows that do not have a sensible vehicle class breakdown. First
+    # create a column that just has a flag to say what class it is.
+    # If the vehicle class breakdown sums to more than 0.95 (it should be 1) then the flag will be 1.
+    # If the vehicle class breakdown sums to less than 0.05 then the flag will be 0.
+    # If the vehicle class breakdown sums to between 0.05 and 0.05 then the flag will be -1.
     Flag = '{}_FLAG'.format(AA)
     Car = '{}_Cars'.format(AA)
     Bus = '{}_Bus'.format(AA)
@@ -345,7 +442,6 @@ def processNetwork(InputShapefile, EmptyEFT, NO2FactorFile, OutputShapefile='def
     Data[Flag] = 1
     Data.loc[Data[Car]+Data[Bus]+Data[HGV]+Data[LGV] < 0.95, Flag] = -1
     Data.loc[Data[Car]+Data[Bus]+Data[HGV]+Data[LGV] < 0.05, Flag] = 0
-
     # For rows flagged 0 above, say that all vehicles are cars.
     Data.loc[Data[Flag] == 0, Car] = 1.0
     Data.loc[Data[Flag] == 0, Bus] = 0.0
@@ -357,72 +453,51 @@ def processNetwork(InputShapefile, EmptyEFT, NO2FactorFile, OutputShapefile='def
     for colName in [Car, Bus, HGV, LGV]:
       Data[colName] = 100.0 * Data[colName]/Tot
 
-  # Class is currently 'Motorway' or 'Other'.
-  # LEGEND is currently 'Small Urban Area polygon' or 'Large Urban Area polygon',
-  # or None.
-  # We want to define all motorways as 'Motorway (not London)', all 'Large Urban
-  # Area polygon' as 'Urban (not London)', and all other roads as 'Rural (not London)'.
-  Data['RoadType'] = ['Rural (not London)'] * numRows
-  Data.loc[Data.Urban == 1, 'RoadType'] = 'Urban (not London)'
-  print('  The following "other" road classes are defined. If any look like they should be considered motorways then you may need to edit the MotorwayNames variable in the script.')
-  for cl in set(Data.Class):
-    if cl not in MotorwayNames:
-      print('    {}'.format(cl))
-  for mway in MotorwayNames:
-    Data.loc[Data.Class == mway, 'RoadType'] = 'Motorway (not London)'
+    # Get the road speed, etc.
+    SPD = '{}SPD'.format(AA)
+    Data['{}_Taxi'.format(AA)] = [0] * numRows
+    Data['{}_MC'.format(AA)] = [0] * numRows
+    Data.loc[Data[SPD] < 5, SPD] = 5
+    Data.loc[Data[SPD] > 140, SPD] = 140
 
-  # Add a row each for Taxi and motorcycle, which will both be zero.
-  # And add a row for Duration (24 hours) and for link length.
-  # Note that the link length is approximate because the roads are not all
-  # georectified, but that doesn't matter because we're getting emission rate
-  # per km anyway.
-  Data['AADT_Taxi'] = [0] * numRows
-  Data['AADT_MC'] = [0] * numRows
-  Data['Duration'] = 24
-  Data['Length'] = Data.length/1000
-
-  Data.loc[Data['SPEED'] < 5, 'SPEED'] = 5
-  Data.loc[Data['SPEED'] > 140, 'SPEED'] = 140
-
-  print('Adding data to the EFT.')
-  # Now open the copied version of the EFT, and fill in the data.
-  # Create the Excel Application object.
-  excelObj = win32.gencache.EnsureDispatch('Excel.Application')
-
-  # Divide the data into sections, incase there are too many features for the
-  # EFT to deal with.
-  Start = 0
-  End = MaxRows-1
-  count = 0
-  First = True
-  while End < numRows:
-    print('Processing row {} to {}.'.format(Start, End))
+    # And start adding the data to the EFT, block by block.
+    Start = 0
+    End = MaxRows
+    count = 0
+    First = True
+    while End < numRows:
+      DataSlice = Data.iloc[Start:End]
+      count += len(DataSlice.index)
+      outData = doEFT(DataSlice, EmptyEFT, excel=excelObj, uniqueID=uniqueID, AA=AA)
+      if First:
+        outDataAll = outData
+        First = False
+      else:
+        outDataAll = outDataAll.append(outData)
+      Start = End
+      End = Start + MaxRows
+    # get the last few lines.
+    End = numRows
+    print('Processing row {} to {} for {}.'.format(Start, End, AA))
     DataSlice = Data.iloc[Start:End]
     count += len(DataSlice.index)
-    outData = doEFT(DataSlice, EmptyEFT, excel=excelObj, uniqueID=uniqueID)
+    outData = doEFT(DataSlice, EmptyEFT,  excel=excelObj, uniqueID=uniqueID, AA=AA)
     if First:
       outDataAll = outData
-      First = False
     else:
       outDataAll = outDataAll.append(outData)
-    Start = End + 1
-    End = Start + MaxRows - 1
-  # get the last few lines.
-  End = numRows
-  print('Processing row {} to {}.'.format(Start, End))
-  DataSlice = Data.iloc[Start:End]
-  count += len(DataSlice.index)
-  outData = doEFT(DataSlice, EmptyEFT,  excel=excelObj, uniqueID=uniqueID)
-  if First:
-    outDataAll = outData
-  else:
-    outDataAll = outDataAll.append(outData)
+
+    Data = outDataAll
+
+    Data.drop('{}_Taxi'.format(AA), 1)
+    Data.drop('{}_MC'.format(AA), 1)
+
   excelObj.Quit()
   del(excelObj) # Make sure it's gone. Apparently some people have found this neccesary.
   print('Processing complete.')
 
   # Add the area to the data.
-  outDataAll['Area'] = area
+  Data['Area'] = area
 
   # Prepare the save location.
   if OutputShapefile == 'default':
@@ -435,7 +510,7 @@ def processNetwork(InputShapefile, EmptyEFT, NO2FactorFile, OutputShapefile='def
       OutputShapefile = '{}_wEmissions({}){}'.format(FN, t, FE)
   print('Saving output shape file to {}.'.format(OutputShapefile))
   # Save the updated data file as a shapefile again.
-  outDataAll.to_file(OutputShapefile)
+  Data.to_file(OutputShapefile, driver='ESRI Shapefile', crs_wkt=crs_wkt)
   print('Processing complete.')
 
 if __name__ == '__main__':
