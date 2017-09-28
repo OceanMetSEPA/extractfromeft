@@ -466,6 +466,7 @@ def processNetwork(InputShapefile, EmptyEFT, NO2FactorFile, OutputShapefile='def
     count = 0
     First = True
     while End < numRows:
+      print('Processing row {} to {} for {}.'.format(Start, End, AA))
       DataSlice = Data.iloc[Start:End]
       count += len(DataSlice.index)
       outData = doEFT(DataSlice, EmptyEFT, excel=excelObj, uniqueID=uniqueID, AA=AA)
@@ -532,5 +533,3 @@ if __name__ == '__main__':
 
   for inputfile in args:
     processNetwork(inputfile, EmptyEFT, NO2FactorFile)
-
-
