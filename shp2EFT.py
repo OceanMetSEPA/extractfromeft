@@ -6,19 +6,17 @@ files.
 """
 from __future__ import print_function
 
-import sys
 import os
+import argparse
 import shutil
 import subprocess
-import datetime
-#import numpy as np
+from datetime import datetime as datetime
 import pandas as pd
 import geopandas as gpd
-import time
-#import shapely
-#from shapely.geometry import LineString
 
 import win32com.client as win32
+
+from tools import extractVersion
 
 # Set some defaults.
 ahk_exepath = 'C:\Program Files\AutoHotkey\AutoHotkey.exe'
@@ -32,6 +30,9 @@ if not ahk_exist:
          "usual place, or the required AutoHotKey script 'closeWarning.ahk' ",
          "cannot be found. the function will work but you will have to watch ",
          "and close the EFT warning dialogue manually."])
+
+availableVersions = [6.0, 7.0, 7.4]
+availableAreas = ['England (not London)', 'Northern Ireland', 'Scotland', 'Wales']
 
 MotorwayNames = ['Motorway', 'M8', 'M74', 'M73', 'M77', 'M80', 'M876', 'M898', 'M9', 'M90']
 
@@ -53,6 +54,34 @@ VehSubTypes = {'Cars': [u'Petrol cars', u'Diesel cars', u'ElectricCars'],
                'Bus': [u'Buses and coaches'],
                'Ignore': [u'Motorcycles']}
 
+
+def getEFTFile(version, directory='input'):
+  """
+  Return the absolute path to the appropriate file for the selected version.
+  Will return an error if no file is available.
+  """
+  # First check that the directory exists.
+  if not os.path.isdir(directory):
+    raise ValueError('Cannot find directory {}.'.format(directory))
+
+  # Now figure out the file name.
+  if version == 6.0:
+    fName = 'EFT2014_v6.0.2_NoiseEmpty.xls'
+  elif version == 7.0:
+    fName = 'EFT2016_v7.0_NoiseEmpty.xlsb'
+  elif version == 7.4:
+    fName = 'EFT2017_v7.4_NoiseEmpty.xlsb'
+  else:
+    raise ValueError('Version {} is not recognised.'.format(version))
+
+  fname = '{}/{}'.format(directory, fName)
+
+  # Check that file exists.
+  if not os.path.exists(fname):
+    raise ValueError('Cannot find file {}.'.format(fname))
+
+  # return the absolute paths.
+  return os.path.abspath(fname)
 
 def readNO2Factors(FactorFile):
   """
@@ -114,7 +143,7 @@ def getNO2Factor(Factors, Vehicle, Year):
 
   return Factors[Vehicle][Year]
 
-def doEFT(data, fName, uniqueID='UID', excel='Create', AA='AADT'):
+def doEFT(data, fName, area, year, no2file, uniqueID='UID', excel='Create', AA='AADT'):
   """
   Function that adds data to the EFT, runs the EFT, and then extracts the data.
 
@@ -136,8 +165,8 @@ def doEFT(data, fName, uniqueID='UID', excel='Create', AA='AADT'):
 
   # Make a copy of the empty EFT file.
   [FN, FE] =  os.path.splitext(fName)
-  TempEFT = '{}_TEMP{:%Y%m%d%H%M%S}{}'.format(FN, datetime.datetime.now(), FE)
-  TempEFTm = '{}_TEMP{:%Y%m%d%H%M%S}{}'.format(FN, datetime.datetime.now(), '.xlsm')
+  TempEFT = '{}_TEMP{:%Y%m%d%H%M%S}{}'.format(FN, datetime.now(), FE)
+  TempEFTm = '{}_TEMP{:%Y%m%d%H%M%S}{}'.format(FN, datetime.now(), '.xlsm')
   shutil.copyfile(fName, TempEFT)
   TempEFT = os.path.abspath(TempEFT)        # Neccesary because win32 seems to
   TempEFTm = os.path.abspath(TempEFTm)      # struggle with relative paths.
@@ -169,6 +198,8 @@ def doEFT(data, fName, uniqueID='UID', excel='Create', AA='AADT'):
   year = ws_input.Range("B5").Value
 
   # Copy the values to the spreadsheet.
+  ws_input.Range("B4").Value = area
+  ws_input.Range("B5").Value = year
   ws_input.Range("A10:L{}".format(numRows_+9)).Value = outData.values.tolist()
 
   # Run the macro.
@@ -198,7 +229,7 @@ def doEFT(data, fName, uniqueID='UID', excel='Create', AA='AADT'):
     output = output.drop(fn, 1)
 
   # Open the NO2 factor file.
-  NO2Factors = readNO2Factors(NO2FactorFile)
+  NO2Factors = readNO2Factors(no2file)
 
   # Pivot the table so that each vehicle class has a column for each pollutant.
   for m in VehSubTypesNO2.keys():
@@ -241,7 +272,9 @@ def doEFT(data, fName, uniqueID='UID', excel='Create', AA='AADT'):
     del(excelObj) # Make sure it's gone. Apparently some people have found this neccesary.
   return data
 
-def processNetwork(InputShapefile, EmptyEFT, NO2FactorFile, OutputShapefile='default', uniqueID='UID', Head=False, MaxRows=10000, area='NotSet'):
+def processNetwork(InputShapefile, EmptyEFT, NO2FactorFile, OutputShapefile,
+                   year=datetime.now().year, area='Scotland', uniqueID='UID',
+                   Head=False, MaxRows=10000, city='NotSet', combine='no'):
   """
   A function that will run the road counts within an input shape file through
   the EFT, and then extract the emission rates from the EFT and add them to a
@@ -274,9 +307,7 @@ def processNetwork(InputShapefile, EmptyEFT, NO2FactorFile, OutputShapefile='def
                    AAXT_HGV    AADT_Cars is the proportion of vehicles in AADT
                                that are Cars.
   EmptyEFT       - String - The path to an empty EFT file that has been set up
-                            with the correct year and area (note that these
-                            functions will only work for the 'Non-London'
-                            areas). Traffic format must be set to 'Detailed
+                            correctly. Traffic format must be set to 'Detailed
                             Option 1', NOx, PM10, and PM2.5 should be selected
                             under 'Select Pollutants'. 'Air Quality Modelling
                             (g/km/s)' should be selected under 'Select Outputs'
@@ -286,11 +317,11 @@ def processNetwork(InputShapefile, EmptyEFT, NO2FactorFile, OutputShapefile='def
 
   """
   # See if we can parse the area.
-  if area == 'NotSet':
+  if city == 'NotSet':
     posAreas = ['Dundee', 'Aberdeen', 'Glasgow', 'Edinburgh']
     for ar in posAreas:
       if InputShapefile.find(ar) >= 0:
-        area = ar
+        city = ar
         break
 
   # Import the data from the shapefile.
@@ -351,57 +382,59 @@ def processNetwork(InputShapefile, EmptyEFT, NO2FactorFile, OutputShapefile='def
   if 'Class' not in columnNames:
     Data['Class'] = ['other']*numRows
 
-  # Find and remove streets that are either spatially identical or the exact
-  # reverse of other streets. This is neccesary
-  # because the original noise data had two roads for every two way street;
-  # one in each direction.
-  # To find the duplicated roads based on their geometry is incredibly slow, so
-  # instead we use the UID, which if it was generated using the ArcGIS model
-  # should be a set format. Unfortunately this makes the code less adaptable.
 
-  print('Combining and removing duplicate streets.')
-  DataUIDs = Data.ix[:, [uniqueID, 'SegmentID']]
-  DataUIDs['AB_U'] = DataUIDs['SegmentID'].astype(str).str[:-2] + DataUIDs[uniqueID].astype(str).str[-2:]
-  # Find duplicates
-  DataUIDs = DataUIDs.ix[:, ['AB_U']]
-  DataUIDs = DataUIDs.sort_values('AB_U')
-  Duplicates1 = pd.DataFrame(DataUIDs.duplicated(keep='first'), columns=['Dup'])
-  Duplicates1 = Duplicates1[Duplicates1['Dup'] == True]
-  DupIndex1 = list(Duplicates1.index)
-  Duplicates2 = pd.DataFrame(DataUIDs.duplicated(keep='last'), columns=['Dup'])
-  Duplicates2 = Duplicates2[Duplicates2['Dup'] == True]
-  DupIndex2 = list(Duplicates2.index)
+  if combine == 'traffic':
+    # Find and remove streets that are either spatially identical or the exact
+    # reverse of other streets. This is neccesary
+    # because the original noise data had two roads for every two way street;
+    # one in each direction.
+    # To find the duplicated roads based on their geometry is incredibly slow, so
+    # instead we use the UID, which if it was generated using the ArcGIS model
+    # should be a set format. Unfortunately this makes the code less adaptable.
 
-  for DupI in xrange(len(DupIndex1)):
-    Dup1 = DupIndex1[DupI]
-    Dup2 = DupIndex2[DupI]
-    row1 = Data.loc[Dup1]
-    row2 = Data.loc[Dup2]
-    for AA in CountDayTypes:
-      AA1 = row1[AA]
-      AA2 = row2[AA]
-      if AA1+AA2 < 1e-8:   # If both are basically 0.
-        Scaling1, Scaling2 = 0.5, 0.5
-      else:
-        Scaling1 = AA1/(AA1+AA2)
-        Scaling2 = AA2/(AA1+AA2)
-      ColsToDo = ['_'+q for q in VehTypes]
-      ColsToDo.append('SPD')
-      for Col in ColsToDo:
-        ColName = AA+Col
-        Col1 = row1[ColName]
-        Col2 = row2[ColName]
-        Value = Scaling1*Col1 + Scaling2*Col2
-        Data = Data.set_value(Dup1, ColName, Value)
-      Col1 = row1[AA]
-      Col2 = row2[AA]
-      Value = Col1 + Col2
-      Data = Data.set_value(Dup1, AA, Value)
-    Data = Data.drop([Dup2])
+    print('Combining and removing duplicate streets.')
+    DataUIDs = Data.ix[:, [uniqueID, 'SegmentID']]
+    DataUIDs['AB_U'] = DataUIDs['SegmentID'].astype(str).str[:-2] + DataUIDs[uniqueID].astype(str).str[-2:]
+    # Find duplicates
+    DataUIDs = DataUIDs.ix[:, ['AB_U']]
+    DataUIDs = DataUIDs.sort_values('AB_U')
+    Duplicates1 = pd.DataFrame(DataUIDs.duplicated(keep='first'), columns=['Dup'])
+    Duplicates1 = Duplicates1[Duplicates1['Dup'] == True]
+    DupIndex1 = list(Duplicates1.index)
+    Duplicates2 = pd.DataFrame(DataUIDs.duplicated(keep='last'), columns=['Dup'])
+    Duplicates2 = Duplicates2[Duplicates2['Dup'] == True]
+    DupIndex2 = list(Duplicates2.index)
 
-  numRowsOld = numRows
-  numRows = len(Data.index)
-  print('Done, removed {} features, {} remaining.'.format(numRowsOld - numRows, numRows))
+    for DupI in xrange(len(DupIndex1)):
+      Dup1 = DupIndex1[DupI]
+      Dup2 = DupIndex2[DupI]
+      row1 = Data.loc[Dup1]
+      row2 = Data.loc[Dup2]
+      for AA in CountDayTypes:
+        AA1 = row1[AA]
+        AA2 = row2[AA]
+        if AA1+AA2 < 1e-8:   # If both are basically 0.
+          Scaling1, Scaling2 = 0.5, 0.5
+        else:
+          Scaling1 = AA1/(AA1+AA2)
+          Scaling2 = AA2/(AA1+AA2)
+        ColsToDo = ['_'+q for q in VehTypes]
+        ColsToDo.append('SPD')
+        for Col in ColsToDo:
+          ColName = AA+Col
+          Col1 = row1[ColName]
+          Col2 = row2[ColName]
+          Value = Scaling1*Col1 + Scaling2*Col2
+          Data = Data.set_value(Dup1, ColName, Value)
+        Col1 = row1[AA]
+        Col2 = row2[AA]
+        Value = Col1 + Col2
+        Data = Data.set_value(Dup1, AA, Value)
+      Data = Data.drop([Dup2])
+
+    numRowsOld = numRows
+    numRows = len(Data.index)
+    print('Done, removed {} features, {} remaining.'.format(numRowsOld - numRows, numRows))
 
   # Class is currently 'Motorway' or 'Other'.
   # LEGEND is currently 'Small Urban Area polygon' or 'Large Urban Area polygon',
@@ -469,7 +502,7 @@ def processNetwork(InputShapefile, EmptyEFT, NO2FactorFile, OutputShapefile='def
       print('Processing row {} to {} for {}.'.format(Start, End, AA))
       DataSlice = Data.iloc[Start:End]
       count += len(DataSlice.index)
-      outData = doEFT(DataSlice, EmptyEFT, excel=excelObj, uniqueID=uniqueID, AA=AA)
+      outData = doEFT(DataSlice, EmptyEFT, area, year, no2file, excel=excelObj, uniqueID=uniqueID, AA=AA)
       if First:
         outDataAll = outData
         First = False
@@ -482,7 +515,7 @@ def processNetwork(InputShapefile, EmptyEFT, NO2FactorFile, OutputShapefile='def
     print('Processing row {} to {} for {}.'.format(Start, End, AA))
     DataSlice = Data.iloc[Start:End]
     count += len(DataSlice.index)
-    outData = doEFT(DataSlice, EmptyEFT,  excel=excelObj, uniqueID=uniqueID, AA=AA)
+    outData = doEFT(DataSlice, EmptyEFT, area, year, no2file, excel=excelObj, uniqueID=uniqueID, AA=AA)
     if First:
       outDataAll = outData
     else:
@@ -497,39 +530,98 @@ def processNetwork(InputShapefile, EmptyEFT, NO2FactorFile, OutputShapefile='def
   del(excelObj) # Make sure it's gone. Apparently some people have found this neccesary.
   print('Processing complete.')
 
-  # Add the area to the data.
-  Data['Area'] = area
+  # Add the city to the data.
+  Data['City'] = city
 
-  # Prepare the save location.
-  if OutputShapefile == 'default':
-    # Create a save location.
-    [FN, FE] =  os.path.splitext(InputShapefile)
-    OutputShapefile = '{}_wEmissions{}'.format(FN, FE)
-    t = 1
-    while os.path.isfile(OutputShapefile):
-      t += 1
-      OutputShapefile = '{}_wEmissions({}){}'.format(FN, t, FE)
   print('Saving output shape file to {}.'.format(OutputShapefile))
   # Save the updated data file as a shapefile again.
   Data.to_file(OutputShapefile, driver='ESRI Shapefile', crs_wkt=crs_wkt)
   print('Processing complete.')
 
 if __name__ == '__main__':
-  EmptyEFT = 'input\EFT2017_v7.4_NoiseEmpty.xlsb'
-  NO2FactorFile = 'input/NO2Extracted.csv'
-  args = sys.argv
-  args = args[1:]
+  ShapefileDescription = ("This programme is designed to work with shape files "
+                          "produced for the traffic noise modelling project. "
+                          "See details below.")
 
-  if '--EFT' in args:
-    ei = args.index('--EFT') + 1
-    EmptyEFT = args[ei]
-    del args[ei]
-    args.remove('--EFT')
-  if '--NO2' in args:
-    ei = args.index('--NO2') + 1
-    NO2FactorFile = args[ei]
-    del args[ei]
-    args.remove('--NO2')
+  parser = argparse.ArgumentParser(description="Processes the contents of a "
+                                   "shape file through the Emission Factor "
+                                   "Toolkit (EFT).")
+  parser.add_argument('shapefile', type=str,
+                      help="The shapefile to be processed. "+ShapefileDescription)
+  parser.add_argument('--version', '-v', metavar='version number',
+                      type=float, nargs='?', default=7.0,
+                      choices=availableVersions,
+                      help="The EFT version number. One of {}. Default 7.0.".format(", ".join(str(v) for v in availableVersions)))
+  parser.add_argument('--area', '-a', metavar='areas',
+                      type=str, nargs='?', default='Scotland',
+                      help="The areas to be processed. One of '{}'. Default 'Scotland'.".format("', '".join(availableAreas)))
+  parser.add_argument('--year', '-y', metavar='year',
+                      type=int, nargs='?', default=datetime.now().year,
+                      choices=range(2008, 2031),
+                      help="The year to be processed. Default present year.")
+  parser.add_argument('--output', '-o', metavar='output shape file',
+                      type=str,   nargs='?', default=None,
+                      help="Location to save the output shape file.")
+  parser.add_argument('--eftfile', metavar='input EFT file',
+                      type=str,   nargs='?', default=None,
+                      help="The EFT file to use. If set then version will be ignored.")
+  parser.add_argument('--no2file', metavar='no2 factor file',
+                      type=str,   nargs='?', default='input/NO2Extracted.csv',
+                      help="The NOx to NO2 conversion factor file to use. Default input/NO2Extracted.csv")
+  parser.add_argument('--combine_coalligned', '-c', metavar='combine coalligned',
+                      type=str,   nargs='?', default='traffic',
+                      choices=['no', 'traffic', 'emission'],
+                      help=("How to deal with coalligned streets. These are "
+                            "common in the noise data where every two way street "
+                            "is defined as two roads, one in each direction. If "
+                            "'no' then the roads will be processed without any "
+                            "attempt to combine them. If 'traffic' then the "
+                            "road will be combined by adding together the "
+                            "traffic counts from each street before the emissions "
+                            "are calculated. If 'emission' then the emissions "
+                            "will be calculated for each street seperatly, and "
+                            "then the emissions for coalligned streets will be "
+                            "summed. This third option will allow different road "
+                            "speeds in each direction to be considered (rather "
+                            "than by averaging, as 'traffic' does). Default 'no'."))
+  parser.add_argument('--keeptemp', metavar='keeptemp',
+                      type=bool,  nargs='?', default=False,
+                      help="Whether to keep or delete temporary files. Boolean. Default False (delete).")
+  args = parser.parse_args()
 
-  for inputfile in args:
-    processNetwork(inputfile, EmptyEFT, NO2FactorFile)
+  shapefile = args.shapefile
+  version = args.version
+  eftfile = args.eftfile
+  no2file = args.no2file
+  saveloc = args.output
+  combine = args.combine_coalligned
+  year = args.year
+  if eftfile is not None:
+    version = extractVersion(eftfile)
+  else:
+    eftfile = getEFTFile(version)
+  if not os.path.exists(shapefile):
+    raise ValueError('Shape file cannot be found at {}.'.format(shapefile))
+  if not os.path.exists(no2file):
+    raise ValueError('NO2 conversion file cannot be found at {}.'.format(no2file))
+  if saveloc is None:
+    # Create a save location.
+    [FN, FE] =  os.path.splitext(shapefile)
+    OutputShapefile = '{}_wEmissions{}{}'.format(FN, year, FE)
+    t = 1
+    while os.path.isfile(OutputShapefile):
+      t += 1
+      OutputShapefile = '{}_wEmissions{}({}){}'.format(FN, year, t, FE)
+    saveloc = OutputShapefile
+  if version == 6.0:
+    availableYears = range(2008, 2031)
+  else:
+    availableYears = range(2013, 2031)
+  if year not in availableYears:
+    raise ValueError('Year {} is not allowed for the specified EFT version.'.format(year))
+
+  if combine == 'emission':
+    raise ValueError('combine by emissions is not possible yet.')
+
+  raise Exception('aaa')
+  processNetwork(shapefile, eftfile, no2file, saveloc, year=year, combine=combine)
