@@ -16,13 +16,11 @@ import geopandas as gpd
 
 import win32com.client as win32
 
-from tools import extractVersion
+import EFT_Tools as tools
 
 # Set some defaults.
-ahk_exepath = 'C:\Program Files\AutoHotkey\AutoHotkey.exe'
-ahk_ahkpath = 'closeWarning.ahk'
 ahk_exist = True
-for ahk_ in [ahk_exepath, ahk_ahkpath]:
+for ahk_ in [tools.ahk_exepath, tools.ahk_ahkpath]:
   if not os.path.isfile(ahk_):
     ahk_exist = False
 if not ahk_exist:
@@ -30,9 +28,6 @@ if not ahk_exist:
          "usual place, or the required AutoHotKey script 'closeWarning.ahk' ",
          "cannot be found. the function will work but you will have to watch ",
          "and close the EFT warning dialogue manually."])
-
-availableVersions = [6.0, 7.0, 7.4]
-availableAreas = ['England (not London)', 'Northern Ireland', 'Scotland', 'Wales']
 
 MotorwayNames = ['Motorway', 'M8', 'M74', 'M73', 'M77', 'M80', 'M876', 'M898', 'M9', 'M90']
 
@@ -83,10 +78,6 @@ def getEFTFile(version, directory='input'):
   # return the absolute paths.
   return os.path.abspath(fname)
 
-
-
-
-
 def doEFT(data, fName, area, year, no2file, uniqueID='UID', excel='Create', AA='AADT', keeptemp=False):
   """
   Function that adds data to the EFT, runs the EFT, and then extracts the data.
@@ -132,7 +123,7 @@ def doEFT(data, fName, area, year, no2file, uniqueID='UID', excel='Create', AA='
   # continually check until the compatibility warning appears, and then
   # close the warning.
   if ahk_exist:
-    subprocess.Popen([ahk_exepath, ahk_ahkpath])
+    subprocess.Popen([tools.ahk_exepath, tools.ahk_ahkpath])
 
 
   # Open the document.
@@ -173,7 +164,7 @@ def doEFT(data, fName, area, year, no2file, uniqueID='UID', excel='Create', AA='
     output = output.drop(fn, 1)
 
   # Open the NO2 factor file.
-  NO2Factors = readNO2Factors(no2file)
+  NO2Factors = tools.readNO2Factors(no2file, mode='ByFuel')
 
   # Pivot the table so that each vehicle class has a column for each pollutant.
   for m in VehSubTypesNO2.keys():
@@ -192,7 +183,33 @@ def doEFT(data, fName, area, year, no2file, uniqueID='UID', excel='Create', AA='
     # Create an NO2 column.
     colNameNO2 = '{}_NO2{}'.format(m, AAA)
     colNameNOx = '{}_NOx{}'.format(m, AAA)
-    data[colNameNO2] = data[colNameNOx] * getNO2Factor(NO2Factors, m, year)
+    if m.find('Petrol') >= 0:
+      fuel = 'Petrol'
+    if m.find('Motorcycle') >= 0:
+      fuel = 'Petrol'
+    elif m.find('Electric') >= 0:
+      fuel = 'Electric'
+    else:
+      fuel = 'Diesel'
+    if m.find('Bus') >= 0:
+      mv = 'Bus and Coach'
+    elif m.find('Rigid') >= 0:
+      mv = 'Rigid HGV'
+    elif m.find('Artic') >= 0:
+      mv = 'Artic HGV'
+    elif m.find('LGV') >= 0:
+      mv = 'LGV'
+    elif m.find('Motorcycle') >= 0:
+      mv = 'Motorcycle'
+    elif m.upper().find('CAR') >= 0:
+      mv = 'Car'
+    else:
+      print(m)
+      mv = None # Will raise an error, unless fuel is electric.
+    if fuel == 'Electric':
+      data[colNameNO2] = data[colNameNOx]
+    else:
+      data[colNameNO2] = data[colNameNOx] * NO2Factors[fuel][mv][year] #tools.getNO2Factor(NO2Factors, m, year)
   pollutants.append('NO2')
   # Consolidate the columns into the 4 vehicle split.
   for veh4, vehp in VehSubTypes.items():
@@ -499,11 +516,11 @@ if __name__ == '__main__':
                       help="The shapefile to be processed. "+ShapefileDescription)
   parser.add_argument('--version', '-v', metavar='version number',
                       type=float, nargs='?', default=7.0,
-                      choices=availableVersions,
-                      help="The EFT version number. One of {}. Default 7.0.".format(", ".join(str(v) for v in availableVersions)))
+                      choices=tools.availableVersions,
+                      help="The EFT version number. One of {}. Default 7.0.".format(", ".join(str(v) for v in tools.availableVersions)))
   parser.add_argument('--area', '-a', metavar='areas',
                       type=str, nargs='?', default='Scotland',
-                      help="The areas to be processed. One of '{}'. Default 'Scotland'.".format("', '".join(availableAreas)))
+                      help="The areas to be processed. One of '{}'. Default 'Scotland'.".format("', '".join(tools.availableAreas)))
   parser.add_argument('--year', '-y', metavar='year',
                       type=int, nargs='?', default=datetime.now().year,
                       choices=range(2008, 2031),
@@ -515,8 +532,8 @@ if __name__ == '__main__':
                       type=str,   nargs='?', default=None,
                       help="The EFT file to use. If set then version will be ignored.")
   parser.add_argument('--no2file', metavar='no2 factor file',
-                      type=str,   nargs='?', default='input/NO2Extracted.csv',
-                      help="The NOx to NO2 conversion factor file to use. Default input/NO2Extracted.csv")
+                      type=str,   nargs='?', default='input/NO2Extracted.xlsx',
+                      help="The NOx to NO2 conversion factor file to use. Default input/NO2Extracted.xlsx")
   parser.add_argument('--combine_coalligned', '-c', metavar='combine coalligned',
                       type=str,   nargs='?', default='traffic',
                       choices=['no', 'traffic', 'emission'],
@@ -547,7 +564,7 @@ if __name__ == '__main__':
   year = args.year
   keeptemp = args.keeptemp
   if eftfile is not None:
-    version = extractVersion(eftfile)
+    version = tools.extractVersion(eftfile)
   else:
     eftfile = getEFTFile(version)
   if not os.path.exists(shapefile):
