@@ -83,67 +83,11 @@ def getEFTFile(version, directory='input'):
   # return the absolute paths.
   return os.path.abspath(fname)
 
-def readNO2Factors(FactorFile):
-  """
-  Function that reads the contents of the NOxFactorFile.
 
-  The NOxFactorFile is the contents of the "Fleet-avg by_vehicle_fuel_type'
-  sheet from the PrimaryNO2_factors_NAEIBase_2016_v1.xlsx spreadsheet which is
-  downloaded from http://naei.beis.gov.uk/data/ef-transport. This sheet is
-  appropriate because we begin with only 4 vehicle classes.
 
-  INPUTS
-  FactorFile - string - the path to the NOxFactorFile.
 
-  OUTPUTS
-  Factors - the NOx to NO2 conversion factors, as a dictionary.
-  """
-  FactorsDF = pd.read_csv(FactorFile)
-  years = list(FactorsDF)
-  years.remove('f-NO2')
-  Factors = {}
-  #years = [int(y) for y in years]
-  vehs = list(FactorsDF['f-NO2'])
-  for veh in vehs:
-    Factors[veh] = {}
-    row = FactorsDF[FactorsDF['f-NO2'] == veh]
-    for y in years:
-      Factors[veh][int(y)] = float(row[y])
-  return Factors
 
-def getNO2Factor(Factors, Vehicle, Year):
-  """
-  Function to extract the NOx to NO2 conversion factor from the NOxFactorFile.
-
-  This is neccesary because EFT does not offer NO2 emission rates. NAEI does,
-  but all it does is apply a particular factor to the NAEI NOx emission rates,
-  which are sourced from EFT anyway. So this method should be identical.
-
-  The NOxFactorFile is the contents of the "Fleet-avg by_vehicle_fuel_type'
-  sheet from the PrimaryNO2_factors_NAEIBase_2016_v1.xlsx spreadsheet which is
-  downloaded from http://naei.beis.gov.uk/data/ef-transport. This sheet is
-  appropriate because we begin with only 4 vehicle classes.
-
-  INPUTS
-  Factors - string - the path to the NOxFactorFile,
-            or a dictionary - the contents of that file.
-  Vehicle - string - One of Petrol cars, Diesel cars, Petrol LGVs, Diesel LGVs,
-            Rigid HGVs, Artic HGVs, Buses and coaches or Motorcycles
-  Year    - integer - a value between 2005 and 2035
-
-  OUTPUTS
-  Factor  - the NOx to NO2 conversion factor for the specified vehicle and year.
-  """
-  if Vehicle in ['ElectricCars', 'ElectricLGVs']:
-    return 1 # Well it was either that or nothing. NOx emission rates are basically 0 anyway.
-
-  # Is Factors a string?
-  if isinstance(Factors, str):
-    Factors = readNO2Factors(Factors)
-
-  return Factors[Vehicle][Year]
-
-def doEFT(data, fName, area, year, no2file, uniqueID='UID', excel='Create', AA='AADT'):
+def doEFT(data, fName, area, year, no2file, uniqueID='UID', excel='Create', AA='AADT', keeptemp=False):
   """
   Function that adds data to the EFT, runs the EFT, and then extracts the data.
 
@@ -265,8 +209,13 @@ def doEFT(data, fName, area, year, no2file, uniqueID='UID', excel='Create', AA='
         data = data.drop(colName, 1)
 
   # remove the temporary files.
-  os.remove(TempEFT)
-  os.remove(TempEFTm)
+  if keeptemp:
+    os.remove(TempEFT)
+    os.remove(TempEFTm)
+  else:
+    print('The following temporary files have not been removed.')
+    print(TempEFT)
+    print(TempEFTm)
   if excelCreated:
     excel.Quit()
     del(excelObj) # Make sure it's gone. Apparently some people have found this neccesary.
@@ -274,7 +223,7 @@ def doEFT(data, fName, area, year, no2file, uniqueID='UID', excel='Create', AA='
 
 def processNetwork(InputShapefile, EmptyEFT, NO2FactorFile, OutputShapefile,
                    year=datetime.now().year, area='Scotland', uniqueID='UID',
-                   Head=False, MaxRows=10000, city='NotSet', combine='no'):
+                   Head=False, MaxRows=10000, city='NotSet', combine='no', keeptemp=False):
   """
   A function that will run the road counts within an input shape file through
   the EFT, and then extract the emission rates from the EFT and add them to a
@@ -502,7 +451,7 @@ def processNetwork(InputShapefile, EmptyEFT, NO2FactorFile, OutputShapefile,
       print('Processing row {} to {} for {}.'.format(Start, End, AA))
       DataSlice = Data.iloc[Start:End]
       count += len(DataSlice.index)
-      outData = doEFT(DataSlice, EmptyEFT, area, year, no2file, excel=excelObj, uniqueID=uniqueID, AA=AA)
+      outData = doEFT(DataSlice, EmptyEFT, area, year, no2file, excel=excelObj, uniqueID=uniqueID, AA=AA, keeptemp=keeptemp)
       if First:
         outDataAll = outData
         First = False
@@ -596,6 +545,7 @@ if __name__ == '__main__':
   saveloc = args.output
   combine = args.combine_coalligned
   year = args.year
+  keeptemp = args.keeptemp
   if eftfile is not None:
     version = extractVersion(eftfile)
   else:
@@ -623,5 +573,4 @@ if __name__ == '__main__':
   if combine == 'emission':
     raise ValueError('combine by emissions is not possible yet.')
 
-  raise Exception('aaa')
   processNetwork(shapefile, eftfile, no2file, saveloc, year=year, combine=combine)
