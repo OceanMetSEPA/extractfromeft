@@ -71,22 +71,22 @@ def extractPetrolDieselCarProportions(fileName, locations, keepTempFiles=False):
         carRatios = pd.DataFrame(columns=['year', 'area', 'euro', 'roadType', 'petrol', 'diesel', 'maximumFitResidual'])
         print('    Euro class: {}'.format(euroClass))
         if first:
-          excel, newSavedFile2, defaultProportions2, k = tools.runAndExtract(
+          excel, newSavedFile2, defaultProportions2, k, w = tools.runAndExtract(
                       fileName2T, location, year, euroClass, tools.ahk_exepath,
                       ahk_ahkpathG, vehSplit2, details, versionForOutPut,
                       checkEuroClasses=True, DoMCycles=False, inputData=inputData2,
                       excel=excel)
-          excel, newSavedFile3, defaultProportions3, k = tools.runAndExtract(
+          excel, newSavedFile3, defaultProportions3, k, w = tools.runAndExtract(
                       fileName3T, location, year, euroClass, tools.ahk_exepath,
                       ahk_ahkpathG, vehSplit3, details, versionForOutPut,
                       checkEuroClasses=True, DoMCycles=False, inputData=inputData3,
                       excel=excel)
         else:
-          excel, newSavedFile2, defaultProportions2, k = tools.runAndExtract(
+          excel, newSavedFile2, defaultProportions2, k, w = tools.runAndExtract(
                       fileName2T, location, year, euroClass, tools.ahk_exepath,
                       ahk_ahkpathG, vehSplit2, details, versionForOutPut,
                       DoMCycles=False, inputData=inputData2, excel=excel)
-          excel, newSavedFile3, defaultProportions3, k = tools.runAndExtract(
+          excel, newSavedFile3, defaultProportions3, k, w = tools.runAndExtract(
                       fileName3T, location, year, euroClass, tools.ahk_exepath,
                       ahk_ahkpathG, vehSplit3, details, versionForOutPut,
                       DoMCycles=False, inputData=inputData3, excel=excel)
@@ -164,7 +164,7 @@ def extractPetrolDieselCarProportions(fileName, locations, keepTempFiles=False):
   print('Process complete in {}.'.format(tools.secondsToString(toc-tic,  form='long')))
 
 
-def processEFT(fileName, locations, splitBusCoach=False, keepTempFiles=False):
+def processEFT(fileName, locations, years, euroClasses=[0,1,2,3,4,5,6], splitBusCoach=False, keepTempFiles=False):
   tic = time.clock()
 
   # Get the files are ready for processing.
@@ -214,12 +214,12 @@ def processEFT(fileName, locations, splitBusCoach=False, keepTempFiles=False):
         ticeuro = time.clock()
         print('    Euro class: {}'.format(euroClass))
         if first:
-          excel, newSavedFile, defaultProportions, k = tools.runAndExtract(
+          excel, newSavedFile, defaultProportions, k, w = tools.runAndExtract(
                   fileNameT, location, year, euroClass, tools.ahk_exepath,
                   ahk_ahkpathG, vehSplit3, details, versionForOutPut,
                   checkEuroClasses=True, inputData=inputData3, excel=excel)
         else:
-          excel, newSavedFile, defaultProportions, k = tools.runAndExtract(
+          excel, newSavedFile, defaultProportions, k, w = tools.runAndExtract(
                   fileNameT, location, year, euroClass, tools.ahk_exepath,
                   ahk_ahkpathG, vehSplit3, details, versionForOutPut,
                   inputData=inputData3, excel=excel)
@@ -230,8 +230,8 @@ def processEFT(fileName, locations, splitBusCoach=False, keepTempFiles=False):
         if splitBusCoach:
           #if euroClass == euroClasses[-1]:
           print('      Done, splitting buses from coaches.')
-          excel, newSavedFileBus, k, busCoachRatio = tools.runAndExtract(excel, fileNameT, location, year, euroClass, tools.ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, DoMCycles=False, DoBusCoach=True, busCoach='bus')
-          excel, newSavedFileCoa, k, busCoachRatio = tools.runAndExtract(excel, fileNameT, location, year, euroClass, tools.ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, DoMCycles=False, DoBusCoach=True, busCoach='coach')
+          excel, newSavedFileBus, k, busCoachRatio, w = tools.runAndExtract(excel, fileNameT, location, year, euroClass, tools.ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, DoMCycles=False, DoBusCoach=True, busCoach='bus')
+          excel, newSavedFileCoa, k, busCoachRatio, w = tools.runAndExtract(excel, fileNameT, location, year, euroClass, tools.ahk_exepath, ahk_ahkpathG, vehSplit3, details, versionForOutPut, DoMCycles=False, DoBusCoach=True, busCoach='coach')
           tempFilesCreated.append(newSavedFileBus)
           tempFilesCreated.append(newSavedFileCoa)
           outputBus = tools.extractOutput(newSavedFileBus, versionForOutPut, year, location, euroClass, details)
@@ -350,8 +350,8 @@ if __name__ == '__main__':
     raise ValueError('One or more years are not allowed for the specified EFT version.')
 
   if mode == 'ExtractAll':
-    processEFT(inputfile, area, keepTempFiles=keepTempFiles)
+    processEFT(inputfile, area, years, euroClasses=euroClasses, keepTempFiles=keepTempFiles)
   elif mode == 'ExtractCarRatio':
     extractPetrolDieselCarProportions(inputfile, area, keepTempFiles=keepTempFiles)
   elif mode == 'ExtractBus':
-    processEFT(inputfile, area, splitBusCoach=True, keepTempFiles=keepTempFiles)
+    processEFT(inputfile, area, years, euroClasses=euroClasses, splitBusCoach=True, keepTempFiles=keepTempFiles)

@@ -532,8 +532,8 @@ if __name__ == '__main__':
                       type=str,   nargs='?', default=None,
                       help="The EFT file to use. If set then version will be ignored.")
   parser.add_argument('--no2file', metavar='no2 factor file',
-                      type=str,   nargs='?', default='input/NO2Extracted.xlsx',
-                      help="The NOx to NO2 conversion factor file to use. Default input/NO2Extracted.xlsx")
+                      type=str,   nargs='?', default='input/NAEI_NO2Extracted.xlsx',
+                      help="The NOx to NO2 conversion factor file to use. Default input/NAEI_NO2Extracted.xlsx")
   parser.add_argument('--combine_coalligned', '-c', metavar='combine coalligned',
                       type=str,   nargs='?', default='traffic',
                       choices=['no', 'traffic', 'emission'],

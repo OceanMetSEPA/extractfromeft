@@ -1,6 +1,7 @@
-#from os import path
+ for#from os import path
 import os
 from os import path
+import re
 import datetime, time
 import numpy as np
 import pandas as pd
@@ -21,11 +22,17 @@ ahk_ahkpath = 'closeWarning.ahk'
 
 versionDetails = {}
 versionDetails[7.4] = {}
-versionDetails[7.4]['vehRowStarts'] = [69, 79, 91, 101, 114, 130, 146, 161]
-versionDetails[7.4]['vehRowEnds']   = [76, 87, 98, 109, 125, 141, 157, 172]
-versionDetails[7.4]['vehRowStartsMC'] = [177, 183, 189, 195, 201, 207]
-versionDetails[7.4]['vehRowEndsMC']   = [182, 188, 194, 200, 206, 212]
+versionDetails[7.4]['vehRowStarts'] = [ 69, 79, 91,101,114,130,146,161,218,226,
+                                       231,242,252,261,267,278,288,296,310,353,
+                                       367]
+versionDetails[7.4]['vehRowEnds'] =   [ 76, 87, 98,110,125,141,157,172,223,229,
+                                       234,249,257,264,270,285,293,305,319,364,
+                                       378]
+versionDetails[7.4]['vehRowStartsMC'] = [177,183,189,195,201,207,324,328,332]  # Also deals with hybrid buses.
+versionDetails[7.4]['vehRowEndsMC']   = [182,188,194,200,206,212,327,331,335]
 versionDetails[7.4]['busCoachRow']   = [429, 430]
+versionDetails[7.4]['sizeRowStarts'] = {'Rigid HGV': 402, 'Artic HGV': 412}
+versionDetails[7.4]['sizeRowEnds'] = {'Rigid HGV': 409, 'Artic HGV': 416}
 versionDetails[7.4]['SourceNameName'] = 'Source Name'
 versionDetails[7.4]['AllLDVName'] = 'All LDVs (g/km/s)'
 versionDetails[7.4]['AllHDVName'] = 'All HDVs (g/km/s)'
@@ -44,7 +51,7 @@ versionDetails[7.0]['AllVehName'] = 'All Vehicles (g/km/s)'
 versionDetails[7.0]['PolName'] = 'Pollutant Name'
 versionDetails[6.0] = {}
 versionDetails[6.0]['vehRowStarts'] = [69, 79, 100, 110, 123, 139, 155, 170]
-versionDetails[6.0]['vehRowEnds']   = [75, 87, 106, 119, 134, 150, 166, 181]
+versionDetails[6.0]['vehRowEnds'] = [75, 87, 106, 119, 134, 150, 166, 181]
 versionDetails[6.0]['vehRowStartsMC'] = [186, 192, 198, 204, 210, 216]
 versionDetails[6.0]['vehRowEndsMC']   = [191, 197, 203, 209, 215, 221]
 versionDetails[6.0]['busCoachRow']   = [482, 483]
@@ -53,14 +60,13 @@ versionDetails[6.0]['AllLDVName'] = 'All LDV (g/km/s)'
 versionDetails[6.0]['AllHDVName'] = 'All HDV (g/km/s)'
 versionDetails[6.0]['AllVehName'] = 'All Vehicle (g/km/s)'
 versionDetails[6.0]['PolName'] = 'Pollutant_Name'
-
 availableVersions = versionDetails.keys()
 availableAreas = ['England (not London)', 'Northern Ireland', 'Scotland', 'Wales']
 availableRoadTypes = ['Urban (not London)', 'Rural (not London)', 'Motorway (not London)']
 availableModes = ['ExtractAll', 'ExtractCarRatio', 'ExtractBus']
 availableEuros = [0,1,2,3,4,5,6]
 
-euroClassNameVariations = dict()
+euroClassNameVariations = {}
 euroClassNameVariations[0] = ['1Pre-Euro 1', '1Pre-Euro I', '1_Pre-Euro 1', '2Pre-Euro 1',
           '4Pre-Euro 1', '5Pre-Euro 1', '6Pre-Euro 1', '7Pre-Euro 1',
           '1_Pre-Euro 1']
@@ -83,7 +89,20 @@ euroClassNameVariations[6] = ['7Euro 6', '6Euro VI', '1Euro 6', '2Euro 6', '2Eur
           '4Euro 6', '5Euro 6', '6Euro 6', '7Euro 6', '8Euro VI',
           '7Euro 6c', '7Euro 6d']
 
+# Sub classes of Euro 6, for cars and vans only.
+euroSixOptions = {}
+euroSixOptions['Default'] = ['7Euro 6', '7Euro 6c', '7Euro 6d']
+euroSixOptions['Original'] = ['7Euro 6']
+euroSixOptions['c'] = ['7Euro 6c']
+euroSixOptions['d'] = ['7Euro 6d']
+
+# Engine Technologies
+EngineTechs = ['EGR + SCRRF', 'SCRRF', 'SCR', 'EGR']
+
+euroClassNameVariationsIgnore = ['B100 Rigid HGV', 'Biodiesel Buses', 'Biodiesel Coaches', 'Hybrid Buses'] # Ignore these.
+
 euroClassNameVariationsAll = euroClassNameVariations[0][:]
+
 for ei in range(1,7):
   euroClassNameVariationsAll.extend(euroClassNameVariations[ei])
 euroClassNameVariationsAll = list(set(euroClassNameVariationsAll))
@@ -97,6 +116,39 @@ UserDefinedBusColumn = ["D"]
 UserDefinedBusMWColumn = ["E"]
 DefaultBusColumn = ["B"]
 DefaultBusMWColumn = ["C"]
+
+VehDetails = {'Petrol Car': {'Fuel': 'Petrol', 'Veh': 'Car', 'Tech': 'Internal Combustion', 'NOxVeh': 'Petrol Car'},
+              'Diesel Car': {'Fuel': 'Diesel', 'Veh': 'Car', 'Tech': 'Internal Combustion', 'NOxVeh': 'Diesel Car'},
+              'Taxi (black cab)': {'Fuel': 'Diesel', 'Veh': 'Car', 'Tech': 'Internal Combustion', 'NOxVeh': 'Diesel Car'},
+              'LGV': {'Fuel': 'Diesel', 'Veh': 'LGV', 'Tech': 'Internal Combustion', 'NOxVeh': 'Diesel LGV'}, # LGV cannot be split between Petrol and diesel (or I haven't figured out a way yet), but the vast majority are Diesel, so use that.
+              'Rigid HGV': {'Fuel': 'Diesel', 'Veh': 'Rigid HGV', 'Tech': 'Internal Combustion', 'NOxVeh': 'Rigid HGV'},
+              'Artic HGV': {'Fuel': 'Diesel', 'Veh': 'Artic HGV', 'Tech': 'Internal Combustion', 'NOxVeh': 'Artic HGV'},
+              'Bus and Coach': {'Fuel': 'Diesel', 'Veh': 'Bus and Coach', 'Tech': 'Internal Combustion', 'NOxVeh': 'Bus and Coach'},
+              'Bus': {'Fuel': 'Diesel', 'Veh': 'Bus and Coach', 'Tech': 'Internal Combustion', 'NOxVeh': 'Bus and Coach'},
+              'Coach': {'Fuel': 'Diesel', 'Veh': 'Bus and Coach', 'Tech': 'Internal Combustion', 'NOxVeh': 'Bus and Coach'},
+              'Motorcycle': {'Fuel': 'Petrol', 'Veh': 'Motorcycle', 'Tech': 'Internal Combustion', 'NOxVeh': 'Motorcycle'},
+              'Full Hybrid Petrol Cars': {'Fuel': 'Petrol', 'Veh': 'Car', 'Tech': 'Full Hybrid', 'NOxVeh': 'Petrol Car'},
+              'Plug-In Hybrid Petrol Cars': {'Fuel': 'Petrol', 'Veh': 'Car', 'Tech': 'Plug In Hybrid', 'NOxVeh': 'Petrol Car'},
+              'Full Hybrid Diesel Cars': {'Fuel': 'Diesel', 'Veh': 'Car', 'Tech': 'Full Hybrid', 'NOxVeh': 'Diesel Car'},
+              'Battery EV Cars': {'Fuel': 'Electric', 'Veh': 'Car', 'Tech': 'Battery', 'NOxVeh': 'Petrol Car'},  # Well, it probably doesn't matter.
+              'FCEV Cars': {'Fuel': 'Electric', 'Veh': 'Car', 'Tech': 'Fuel Cell', 'NOxVeh': 'Petrol Car'},
+              'E85 Bioethanol Cars': {'Fuel': 'Bioethanol', 'Veh': 'Car', 'Tech': 'Internal Combustion', 'NOxVeh': 'Diesel Car'},
+              'LPG Cars': {'Fuel': 'LPG', 'Veh': 'Car', 'Tech': 'Internal Combustion', 'NOxVeh': 'Petrol Car'},
+              'Full Hybrid Petrol LGV': {'Fuel': 'Petrol', 'Veh': 'LGV', 'Tech': 'Full Hybrid', 'NOxVeh': 'Petrol LGV'},
+              'Plug-In Hybrid Petrol LGV': {'Fuel': 'Petrol', 'Veh': 'LGV', 'Tech': 'Plug In Hybrid', 'NOxVeh': 'Petrol LGV'},
+              'Battery EV LGV': {'Fuel': 'Electric', 'Veh': 'LGV', 'Tech': 'Battery', 'NOxVeh': 'Petrol LGV'},
+              'FCEV LGV': {'Fuel': 'Electric', 'Veh': 'LGV', 'Tech': 'Fuel Cell', 'NOxVeh': 'Petrol LGV'},
+              'E85 Bioethanol LGV': {'Fuel': 'Bioethanol', 'Veh': 'LGV', 'Tech': 'Internal Combustion', 'NOxVeh': 'Diesel LGV'},
+              'LPG LGV': {'Fuel': 'LPG', 'Veh': 'LGV', 'Tech': 'Internal Combustion', 'NOxVeh': 'Petrol LGV'},
+              'B100 Rigid HGV': {'Fuel': 'Biodiesel', 'Veh': 'Rigid HGV', 'Tech': 'Internal Combustion', 'NOxVeh': 'Rigid HGV'},
+              'B100 Artic HGV': {'Fuel': 'Biodiesel', 'Veh': 'Artic HGV', 'Tech': 'Internal Combustion', 'NOxVeh': 'Artic HGV'},
+              'B100 Bus': {'Fuel': 'Biodiesel', 'Veh': 'Bus and Coach', 'Tech': 'Internal Combustion', 'NOxVeh': 'Bus and Coach'},
+              'CNG Bus': {'Fuel': 'Compressed Natural Gas', 'Veh': 'Bus and Coach', 'Tech': 'Internal Combustion', 'NOxVeh': 'Bus and Coach'},
+              'Biomethane Bus': {'Fuel': 'Biomethane', 'Veh': 'Bus and Coach', 'Tech': 'Internal Combustion', 'NOxVeh': 'Bus and Coach'},
+              'Biogas Bus': {'Fuel': 'Biogas', 'Veh': 'Bus and Coach', 'Tech': 'Internal Combustion', 'NOxVeh': 'Bus and Coach'},
+              'Hybrid Bus': {'Fuel': 'Diesel', 'Veh': 'Bus and Coach', 'Tech': 'Full Hybrid', 'NOxVeh': 'Bus and Coach'},
+              'FCEV Bus': {'Fuel': 'Electric', 'Veh': 'Bus and Coach', 'Tech': 'Fuel Cell', 'NOxVeh': 'Bus and Coach'},
+              'B100 Coach': {'Fuel': 'Biodiesel', 'Veh': 'Bus and Coach', 'Tech': 'Internal Combustion', 'NOxVeh': 'Bus and Coach'}}
 
 def splitSourceNameS(row, SourceName='Source Name'):
   s = row[SourceName]
@@ -114,7 +166,29 @@ def splitSourceNameT(row, SourceName='Source Name'):
   s, v, t = s.split(' - ')
   return t
 
-def readNO2Factors(FactorFile='input/NO2Extracted.xlsx', mode='Average'):
+def readLGVFuelSplit(File='input\NAEI_FuelSplitExtracted.xlsx'):
+  """
+  Function that reads the
+
+  """
+  FactorsDF = pd.read_excel(File, sheetname='LGV')
+  Factors = {}
+  Years = list(FactorsDF)
+  Years.remove('Road type')
+  Years.remove('Fuel')
+  RoadTypes = FactorsDF['Road type'].unique()
+  Fuels = FactorsDF['Fuel'].unique()
+  for rt in RoadTypes:
+    Factors[rt] = {}
+    FFs = FactorsDF[FactorsDF['Road type'] == rt]
+    for Fuel in Fuels:
+      for Y in Years:
+        Factors[rt][Y] = {}
+        Factors[rt][Y]['Petrol'] = float(FFs[FFs['Fuel'] == 'Petrol'][Y])
+        Factors[rt][Y]['Diesel'] = float(FFs[FFs['Fuel'] == 'Diesel'][Y])
+  return Factors
+
+def readNO2Factors(FactorFile='input/NAEI_NO2Extracted.xlsx', mode='Average'):
   """
   Function that reads the contents of the NOxFactorFile.
 
@@ -144,8 +218,6 @@ def readNO2Factors(FactorFile='input/NO2Extracted.xlsx', mode='Average'):
   * 8 split is Petrol cars, Diesel cars, Petrol LGVs, Diesel LGV, Rigid HGV,
       Artic HGVs, Buses and coaches, Motorcycles.
     6 split is Cars, LGVs, Rigid HGV, Artic HGV, Buses and coaches, Motorcycles.
-
-
 
   OUTPUTS
   Factors - the NOx to NO2 conversion factors, as a dictionary.
@@ -225,51 +297,7 @@ def readNO2Factors(FactorFile='input/NO2Extracted.xlsx', mode='Average'):
   return Factors
   #def readNO2Factors
 
-"""
-PERHAPS NOT NECESSARY, MORE COMPLICATED NOW THAT READno2fACTORS HAS MULTIPLE MODES.
-def getNO2Factor(Factors, Vehicle, Year):
-  #
-  Function to extract the NOx to NO2 conversion factor from the NOxFactorFile.
-
-  This is neccesary because EFT does not offer NO2 emission rates. NAEI does,
-  but all it does is apply a particular factor to the NAEI NOx emission rates,
-  which are sourced from EFT anyway. So this method should be identical.
-
-  The NOxFactorFile contains the values within the the
-  PrimaryNO2_factors_NAEIBase_2016_v1.xlsx spreadsheet which is downloaded from
-  http://naei.beis.gov.uk/data/ef-transport. It has been neccesary to
-  reorganise the structure of that file.
-
-  INPUTS
-  Factors - string - the path to the NOxFactorFile,
-            or a dictionary - the contents of that file (faster).
-  Vehicle - string - One of Petrol cars, Diesel cars, Petrol LGVs, Diesel LGVs,
-            Rigid HGVs, Artic HGVs, Buses and coaches or Motorcycles. If a
-            different string is supplied then fuzzy matching will attempt to
-            find the closest match.
-  Year    - integer - a value between 2005 and 2035
-
-  OUTPUTS
-  Factor  - the NOx to NO2 conversion factor for the specified vehicle and year.
-  #
-  if Vehicle in ['ElectricCars', 'ElectricLGVs']:
-    return 1 # Well it was either that or nothing. NOx emission rates are basically 0 anyway.
-
-  # Is Factors a string?
-  if isinstance(Factors, str):
-    Factors = readNO2Factors(Factors)
-
-  if Vehicle not in Factors.keys():
-    VVV = fuzzyprocess.extractOne(Vehicle, Factors.keys())
-    if VVV[1] < 95:
-      print("No exact match for Vehicle '{}'. Using '{}'.".format(Vehicle, VVV[0]))
-    Vehicle = VVV[0]
-
-  return Factors[Vehicle][Year]
-"""
-
-
-def addNO2(dataframe, Factors='input/NO2Extracted.xlsx', mode='Average'):
+def addNO2(dataframe, Factors='input/NAEI_NO2Extracted.xlsx', mode='Average'):
   """
   Function that adds NO2 emission factors to a data frame that already has NOx
   emission factors.
@@ -398,7 +426,7 @@ def extractVersion(fileName, availableVersions=[6.0, 7.0, 7.4]):
     print('You may wish to edit the versionDetails global variables to account for the new version.')
   return version, version_for_output
 
-def randomString(N = 10):
+def randomString(N = 6):
   return ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for x in range(N))
 
 def numToLetter(N, ABC=u'ABCDEFGHIJKLMNOPQRSTUVWXYZ' ):
@@ -440,18 +468,40 @@ def numToLetter(N, ABC=u'ABCDEFGHIJKLMNOPQRSTUVWXYZ' ):
 def createEFTInput(vBreakdown='Detailed Option 2',
                    speeds=[5,6,7,8,9,10,12,14,16,18,20,25,30,35,40,
                            45,50,60,70,80,90,100,110,120,130,140],
-                   roadTypes=availableRoadTypes):
-
+                   roadTypes=availableRoadTypes,
+                   vehiclesToSkip=['Taxi (black cab)'],
+                   vehiclesToInclude=None):
+  """
+  vehiclesToInclude trumps (and overwrites) vehiclesToSkip
+  """
   VehSplits = {'Basic Split': ['HDV'],
                'Detailed Option 1': ['Car', 'Taxi (black cab)', 'LGV', 'HGV',
                                      'Bus and Coach', 'Motorcycle'],
                'Detailed Option 2': ['Car', 'Taxi (black cab)', 'LGV', 'Rigid HGV',
                                      'Artic HGV', 'Bus and Coach', 'Motorcycle'],
-               'Detailed Option 3': ['Petrol Car', 'Diesel Car', 'Taxi (black cab)',
-                                     'LGV', 'Rigid HGV', 'Artic HGV',
-                                     'Bus and Coach', 'Motorcycle']}
+               'Detailed Option 3': ['Petrol Car', 'Diesel Car',
+                                     'Taxi (black cab)', 'LGV', 'Rigid HGV',
+                                     'Artic HGV', 'Bus and Coach', 'Motorcycle'],
+               'Alternative Technologies': ['Petrol Car', 'Diesel Car',
+                                     'Taxi (black cab)', 'LGV', 'Rigid HGV',
+                                     'Artic HGV', 'Bus and Coach', 'Motorcycle',
+                                     'Full Hybrid Petrol Cars', 'Plug-In Hybrid Petrol Cars',
+                                     'Full Hybrid Diesel Cars', 'Battery EV Cars',
+                                     'FCEV Cars', 'E85 Bioethanol Cars', 'LPG Cars',
+                                     'Full Hybrid Petrol LGV', 'Plug-In Hybrid Petrol LGV',
+                                     'Battery EV LGV', 'FCEV LGV', 'E85 Bioethanol LGV',
+                                     'LPG LGV', 'B100 Rigid HGV', 'B100 Artic HGV',
+                                     'B100 Bus', 'CNG Bus', 'Biomethane Bus',
+                                     'Biogas Bus', 'Hybrid Bus', 'FCEV Bus', 'B100 Coach']}
 
   VehSplit = VehSplits[vBreakdown]
+
+  if vehiclesToInclude is not None:
+    # Populate vehiclesToSkip with those vehicles that are not included.
+    vehiclesToSkip = []
+    for veh in VehSplit:
+      if veh not in vehiclesToInclude:
+        vehiclesToSkip.append(veh)
   #RoadTypes = ['Urban (not London)', 'Rural (not London)', 'Motorway (not London)']
 
   if type(roadTypes) is str:
@@ -463,7 +513,7 @@ def createEFTInput(vBreakdown='Detailed Option 2',
   if vBreakdown == 'Basic Split':
     numRows = 2*len(roadTypes)*len(speeds)
   else:
-    numRows = len(roadTypes)*len(speeds)*(len(VehSplit)-1)
+    numRows = len(roadTypes)*len(speeds)*(len(VehSplit)-len(vehiclesToSkip))
   numCols = 6 + len(VehSplit)
   inputDF = pd.DataFrame(index=range(numRows), columns=range(numCols))
   ri = -1
@@ -487,7 +537,7 @@ def createEFTInput(vBreakdown='Detailed Option 2',
           inputDF.set_value(ri, 5, 1)
           inputDF.set_value(ri, 6, 1)
         else:
-          if veh == 'Taxi (black cab)':
+          if veh in vehiclesToSkip:
             pass
           else:
             ri += 1
@@ -521,18 +571,30 @@ def checkEuroClassesValid(workBook, vehRowStarts, vehRowEnds, EuroClassNameColum
     for [ci, euroNameCol] in enumerate(EuroClassNameColumns):
       euroClassRange = "{col}{rstart}:{col}{rend}".format(col=euroNameCol, rstart=vehRowStart, rend=vehRowEnd)
       euroClassesAvailable = ws_euro.Range(euroClassRange).Value
-
       for ecn in euroClassesAvailable:
         ecn = ecn[0]
         if ecn is None:
           continue
         if ecn not in euroClassNameVariationsAll:
-          raise ValueError('Unrecognized Euro Class Name: "{}".'.format(ecn))
+          if ecn not in euroClassNameVariationsIgnore:
+            raise ValueError('Unrecognized Euro Class Name: "{}".'.format(ecn))
   print("        All understood.")
 
 def euroSearchTerms(N):
   ES = euroClassNameVariations[N]
   return ES
+
+def SpecifyWeight(workBook, start, end, do):
+  ws_euro = workBook.Worksheets("UserEuro")
+  ws_euro.Range("D{}:D{}".format(start, end)).Value = 0
+  ws_euro.Range("D{}".format(do)).Value = 1
+
+  wn = ws_euro.Range("A{}".format(do)).Value
+  p = re.compile('\d_*')
+  m = p.match(wn)
+  if m is not None:
+    wn = wn[m.end():]
+  return wn
 
 def specifyEuroProportions(euroClass, workBook, vehRowStarts, vehRowEnds,
                  EuroClassNameColumns, DefaultEuroColumns, UserDefinedEuroColumns, MC=False):
@@ -541,7 +603,7 @@ def specifyEuroProportions(euroClass, workBook, vehRowStarts, vehRowEnds,
   Will return the defualt proportions.
   """
   defaultProps = {}
-  #print("    Setting euro ratios to 100% for euro {}.".format(euroClass))
+  #print("    Setting euro ratios to 100% for euro {}.".format(euroClass)) Wally
   ws_euro = workBook.Worksheets("UserEuro")
   for [vi, vehRowStart] in enumerate(vehRowStarts):
     if MC:
@@ -558,7 +620,15 @@ def specifyEuroProportions(euroClass, workBook, vehRowStarts, vehRowEnds,
     for [ci, euroNameCol] in enumerate(EuroClassNameColumns):
       userDefinedCol = UserDefinedEuroColumns[ci]
       defaultEuroCol = DefaultEuroColumns[ci]
+
+      # A quick fix to the problem hybrid bus problem! Grrrr!
+      if ci == 1:
+        if vehRowStart in [324, 328, 332]:
+          vehRowStart = vehRowStart+1
+          vehRowEnd = vehRowEnd+1
+
       euroClassRange = "{col}{rstart}:{col}{rend}".format(col=euroNameCol, rstart=vehRowStart, rend=vehRowEnd)
+
       euroClassesAvailable = ws_euro.Range(euroClassRange).Value
       # Make sure we don't include trailing 'None' rows.
       euroClassesAvailableR = list(reversed(euroClassesAvailable))
@@ -571,6 +641,7 @@ def specifyEuroProportions(euroClass, workBook, vehRowStarts, vehRowEnds,
       # See which columns contain a line that specifies the required euro class.
       rowsToDo = []
       euroClass_ = euroClass
+      euroClassp = euroClass
       while len(rowsToDo) == 0:
         got = False
         euroSearchTerms_ = euroSearchTerms(euroClass_)
@@ -580,8 +651,12 @@ def specifyEuroProportions(euroClass, workBook, vehRowStarts, vehRowEnds,
             rowsToDo.append(vehRowStart + ei)
             got = True
         if not got:
-          # print('      No values available for euro {}, trying euro {}.'.format(euroClass_, euroClass_-1))
           euroClass_ -= 1
+          if euroClass_ < 0:
+            euroClassp += 1
+            euroClass_ = euroClassp
+          #print('      No values available for euro {}, trying euro {}.'.format(euroClass_o, euroClass_))
+      #print('    found the following {}.'.format(', '.join([str(x) for x in rowsToDo])))
       ignoreForPropRecord = False
       if euroClass_ != euroClass:
         ignoreForPropRecord = True
@@ -608,7 +683,16 @@ def specifyEuroProportions(euroClass, workBook, vehRowStarts, vehRowEnds,
       # And set the values in the sheet.
       # Set all to zero first.
       userRange = "{col}{rstart}:{col}{rend}".format(col=userDefinedCol, rstart=vehRowStart, rend=vehRowEnd)
-      ws_euro.Range(userRange).Value = 0
+      try:
+        ws_euro.Range(userRange).Value = 0
+      except:
+        for rn in range(vehRowStart, vehRowEnd+1):
+          userRange = "{}{}".format(userDefinedCol, rn)
+          try:
+            ws_euro.Range(userRange).Value = 0
+          except:
+            pass
+
       # Then set the specific values.
       #print(rowsToDo)
       for [ri, row] in enumerate(rowsToDo):
@@ -730,7 +814,7 @@ def extractOutput(fileName, versionForOutPut, year, location, euroClass, details
 def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
                   ahk_ahkpathG, vehSplit, details, versionForOutPut, excel=None,
                   checkEuroClasses=False, DoMCycles=True, DoBusCoach=False,
-                  inputData='prepare', busCoach='default'):
+                  inputData='prepare', busCoach='default', sizeRow=None):
   """
   Prepare the file for running the macro.
   euroClass of -9 will retain default euro breakdown.
@@ -824,6 +908,16 @@ def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
                                             UserDefinedBusColumn, UserDefinedBusMWColumn,
                                             DefaultBusColumn, DefaultBusMWColumn)
 
+    weightname = 'd'
+    wno = 'd'
+    if sizeRow is not None:
+      # Set the designated size row.
+      weightname = SpecifyWeight(wb, sizeRow['start'], sizeRow['end'], sizeRow['do'])
+      wno = '{}_{}'.format(sizeRow['name'], weightname)
+      wno = wno.replace(' ', '')
+      wno = wno.replace('>', 'p')
+      wno = wno.replace('<', 'n')
+
   # Now run the EFT tool.
   ws_input.Select() # Select the appropriate sheet, we can't run the macro
                     # from another sheet.
@@ -839,9 +933,9 @@ def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
     # can be opened by pandas.
     (FN, FE) =  path.splitext(fileName)
     if DoBusCoach:
-      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}).xlsm'.format(location, year, euroClass, busCoach))
+      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}_{}).xlsm'.format(location, year, euroClass, busCoach, wno))
     else:
-      tempSaveName = fileName.replace(FE, '({}_{}_E{}).xlsm'.format(location, year, euroClass))
+      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}).xlsm'.format(location, year, euroClass, wno))
     wb.SaveAs(tempSaveName, win32.constants.xlOpenXMLWorkbookMacroEnabled)
     wb.Close()
     excel.Quit()
@@ -850,15 +944,14 @@ def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
     raw_input('Press enter to resume.')
     print('Resumed at {}.'.format(datetime.strftime(datetime.now(), '%H:%M:%S on %d-%m-%Y')))
     excel = win32.gencache.EnsureDispatch('Excel.Application')
-
   if not alreadySaved:
     # Save and Close. Saving as an xlsm, rather than a xlsb, file, so that it
     # can be opened by pandas.
     (FN, FE) =  path.splitext(fileName)
     if DoBusCoach:
-      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}).xlsm'.format(location, year, euroClass, busCoach))
+      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}_{}).xlsm'.format(location, year, euroClass, busCoach, wno))
     else:
-      tempSaveName = fileName.replace(FE, '({}_{}_E{}).xlsm'.format(location, year, euroClass))
+      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}).xlsm'.format(location, year, euroClass, wno))
     wb.SaveAs(tempSaveName, win32.constants.xlOpenXMLWorkbookMacroEnabled)
     wb.Close()
 
@@ -866,9 +959,7 @@ def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
   if closeExcel:
     excel.Quit()
     del(excelObj) # Make sure it's gone. Apparently some people have found this neccesary.
-  return excel, tempSaveName, defaultProportions, busCoachProportions
-
-
+  return excel, tempSaveName, defaultProportions, busCoachProportions, weightname
 
 if __name__ == '__main__':
   # For testing.
