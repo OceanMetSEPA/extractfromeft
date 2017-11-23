@@ -1,4 +1,4 @@
- for#from os import path
+from os import path
 import os
 from os import path
 import re
@@ -28,8 +28,10 @@ versionDetails[7.4]['vehRowStarts'] = [ 69, 79, 91,101,114,130,146,161,218,226,
 versionDetails[7.4]['vehRowEnds'] =   [ 76, 87, 98,110,125,141,157,172,223,229,
                                        234,249,257,264,270,285,293,305,319,364,
                                        378]
-versionDetails[7.4]['vehRowStartsMC'] = [177,183,189,195,201,207,324,328,332]  # Also deals with hybrid buses.
-versionDetails[7.4]['vehRowEndsMC']   = [182,188,194,200,206,212,327,331,335]
+versionDetails[7.4]['vehRowStartsMC'] = [177,183,189,195,201,207]
+versionDetails[7.4]['vehRowEndsMC']   = [182,188,194,200,206,212]
+versionDetails[7.4]['vehRowStartsHB'] = [324,328,332] # Hybrid buses
+versionDetails[7.4]['vehRowEndsHB']   = [327,331,335]
 versionDetails[7.4]['busCoachRow']   = [429, 430]
 versionDetails[7.4]['sizeRowStarts'] = {'Rigid HGV': 402, 'Artic HGV': 412}
 versionDetails[7.4]['sizeRowEnds'] = {'Rigid HGV': 409, 'Artic HGV': 416}
@@ -38,6 +40,7 @@ versionDetails[7.4]['AllLDVName'] = 'All LDVs (g/km/s)'
 versionDetails[7.4]['AllHDVName'] = 'All HDVs (g/km/s)'
 versionDetails[7.4]['AllVehName'] = 'All Vehicles (g/km/s)'
 versionDetails[7.4]['PolName'] = 'Pollutant Name'
+versionDetails[8.0] = versionDetails[7.4]
 versionDetails[7.0] = {}
 versionDetails[7.0]['vehRowStarts'] = [69, 79, 100, 110, 123, 139, 155, 170]
 versionDetails[7.0]['vehRowEnds']   = [75, 87, 106, 119, 134, 150, 166, 181]
@@ -67,51 +70,170 @@ availableModes = ['ExtractAll', 'ExtractCarRatio', 'ExtractBus']
 availableEuros = [0,1,2,3,4,5,6]
 
 euroClassNameVariations = {}
-euroClassNameVariations[0] = ['1Pre-Euro 1', '1Pre-Euro I', '1_Pre-Euro 1', '2Pre-Euro 1',
-          '4Pre-Euro 1', '5Pre-Euro 1', '6Pre-Euro 1', '7Pre-Euro 1',
-          '1_Pre-Euro 1']
-euroClassNameVariations[1] = ['2Euro 1', '2Euro I', '1Euro 1', '2Euro 1', '2Euro 1',
-          '4Euro 1', '5Euro 1', '6Euro 1', '7Euro 1', '9 Euro I DPFRF',
-          '8Euro 1 DPFRF', '9Euro I DPFRF']
-euroClassNameVariations[2] = ['3Euro 2', '3Euro II', '1Euro 2', '2Euro 2', '2Euro 2',
-          '4Euro 2', '5Euro 2', '6Euro 2', '7Euro 2', '10 Euro II DPFRF',
-          '9Euro II SCRRF', '9Euro 2 DPFRF']
-euroClassNameVariations[3] = ['4Euro 3', '4Euro III', '1Euro 3', '2Euro 3', '2Euro 3',
-          '4Euro 3', '5Euro 3', '6Euro 3', '7Euro 3', '11 Euro III DPFRF',
-          '10Euro III SCRRF', '8Euro 3 DPF', '10Euro 3 DPFRF']
-euroClassNameVariations[4] = ['5Euro 4', '5Euro IV', '1Euro 4', '2Euro 4', '2Euro 4',
-          '4Euro 4', '5Euro 4', '6Euro 4', '7Euro 4', '12 Euro IV DPFRF',
-          '11Euro IV SCRRF', '9Euro 4 DPF']
-euroClassNameVariations[5] = ['6Euro 5', '6Euro V', '1Euro 5', '2Euro 5', '2Euro 5',
-          '4Euro 5', '5Euro 5', '6Euro 5', '7Euro 5', '7Euro V_SCR',
-          '6Euro V_EGR', '12Euro V EGR + SCRRF']
-euroClassNameVariations[6] = ['7Euro 6', '6Euro VI', '1Euro 6', '2Euro 6', '2Euro 6',
-          '4Euro 6', '5Euro 6', '6Euro 6', '7Euro 6', '8Euro VI',
-          '7Euro 6c', '7Euro 6d']
+euroClassNameVariations[0] = {'All': ['1Pre-Euro 1', '1Pre-Euro I', '1_Pre-Euro 1',
+                                      '2Pre-Euro 1', '4Pre-Euro 1', '5Pre-Euro 1',
+                                      '6Pre-Euro 1', '7Pre-Euro 1', '1_Pre-Euro 1'],
+                              'Standard': ['1Pre-Euro 1', '1Pre-Euro I', '1_Pre-Euro 1',
+                                      '2Pre-Euro 1', '4Pre-Euro 1', '5Pre-Euro 1',
+                                      '6Pre-Euro 1', '7Pre-Euro 1', '1_Pre-Euro 1']}
+euroClassNameVariations[1] = {'All': ['2Euro 1', '2Euro I', '1Euro 1', '2Euro 1',
+                                      '2Euro 1', '4Euro 1', '5Euro 1', '6Euro 1',
+                                      '7Euro 1', '9 Euro I DPFRF', '8Euro 1 DPFRF',
+                                      '9Euro I DPFRF'],
+                              'DPF': ['9 Euro I DPFRF', '8Euro 1 DPFRF', '9Euro I DPFRF'],
+                              'Standard': ['2Euro 1', '2Euro I', '1Euro 1', '2Euro 1',
+                                      '2Euro 1', '4Euro 1', '5Euro 1', '6Euro 1',
+                                      '7Euro 1']}
+euroClassNameVariations[2] = {'All': ['3Euro 2', '3Euro II', '1Euro 2', '2Euro 2',
+                                      '2Euro 2', '4Euro 2', '5Euro 2', '6Euro 2',
+                                      '7Euro 2', '10 Euro II DPFRF', '9Euro II SCRRF',
+                                      '9Euro 2 DPFRF'],
+                              'DPF': ['10 Euro II DPFRF', '9Euro 2 DPFRF'],
+                              'SCR': ['9Euro II SCRRF'],
+                              'Standard': ['3Euro 2', '3Euro II', '1Euro 2', '2Euro 2',
+                                      '2Euro 2', '4Euro 2', '5Euro 2', '6Euro 2',
+                                      '7Euro 2']}
+euroClassNameVariations[3] = {'All': ['4Euro 3', '4Euro III', '1Euro 3', '2Euro 3',
+                                      '2Euro 3', '4Euro 3', '5Euro 3', '6Euro 3',
+                                      '7Euro 3', '11 Euro III DPFRF', '10Euro III SCRRF',
+                                      '8Euro 3 DPF', '10Euro 3 DPFRF'],
+                              'DPF': ['11 Euro III DPFRF', '8Euro 3 DPF', '10Euro 3 DPFRF'],
+                              'SCR': ['10Euro III SCRRF'],
+                              'Standard': ['4Euro 3', '4Euro III', '1Euro 3', '2Euro 3',
+                                      '2Euro 3', '4Euro 3', '5Euro 3', '6Euro 3',
+                                      '7Euro 3']}
+euroClassNameVariations[4] = {'All': ['5Euro 4', '5Euro IV', '1Euro 4', '2Euro 4',
+                                      '2Euro 4', '4Euro 4', '5Euro 4', '6Euro 4',
+                                      '7Euro 4', '12 Euro IV DPFRF', '11Euro IV SCRRF',
+                                      '9Euro 4 DPF'],
+                              'DPF': ['12 Euro IV DPFRF', '9Euro 4 DPF'],
+                              'SCR': ['11Euro IV SCRRF'],
+                              'Standard': ['5Euro 4', '5Euro IV', '1Euro 4', '2Euro 4',
+                                      '2Euro 4', '4Euro 4', '5Euro 4', '6Euro 4',
+                                      '7Euro 4']}
+euroClassNameVariations[5] = {'All': ['6Euro 5', '6Euro V', '1Euro 5', '2Euro 5',
+                                      '2Euro 5', '4Euro 5', '5Euro 5', '6Euro 5',
+                                      '7Euro 5', '7Euro V_SCR', '6Euro V_EGR',
+                                      '12Euro V EGR + SCRRF'],
+                              'EGR': ['6Euro V_EGR'],
+                              'SCR': ['7Euro V_SCR'],
+                              'EGR + SCRRF': ['12Euro V EGR + SCRRF'],
+                              'Standard': ['6Euro 5', '6Euro V', '1Euro 5', '2Euro 5',
+                                      '2Euro 5', '4Euro 5', '5Euro 5', '6Euro 5',
+                                      '7Euro 5']}
+euroClassNameVariations[6] = {'All': ['7Euro 6', '6Euro VI', '1Euro 6', '2Euro 6',
+                                      '2Euro 6', '4Euro 6', '5Euro 6', '6Euro 6',
+                                      '7Euro 6', '8Euro VI', '7Euro 6c', '7Euro 6d'],
+                              'Standard': ['7Euro 6', '6Euro VI', '1Euro 6', '2Euro 6',
+                                      '2Euro 6', '4Euro 6', '5Euro 6', '6Euro 6',
+                                      '7Euro 6', '8Euro VI'],
+                              'c': ['7Euro 6c'],
+                              'd': ['7Euro 6d']}
 
-# Sub classes of Euro 6, for cars and vans only.
-euroSixOptions = {}
-euroSixOptions['Default'] = ['7Euro 6', '7Euro 6c', '7Euro 6d']
-euroSixOptions['Original'] = ['7Euro 6']
-euroSixOptions['c'] = ['7Euro 6c']
-euroSixOptions['d'] = ['7Euro 6d']
+euroClassNameVariationsIgnore = ['B100 Rigid HGV', 'Biodiesel Buses',
+                                 'Biodiesel Coaches', 'Hybrid Buses',
+                                 'Biodiesel Buses', 'Biodiesel Coaches'] # Ignore these.
 
-# Engine Technologies
-EngineTechs = ['EGR + SCRRF', 'SCRRF', 'SCR', 'EGR']
+VehSplits = {'Basic Split': ['HDV'],
+             'Detailed Option 1': ['Car', 'Taxi (black cab)', 'LGV', 'HGV',
+                                   'Bus and Coach', 'Motorcycle'],
+             'Detailed Option 2': ['Car', 'Taxi (black cab)', 'LGV', 'Rigid HGV',
+                                   'Artic HGV', 'Bus and Coach', 'Motorcycle'],
+             'Detailed Option 3': ['Petrol Car', 'Diesel Car',
+                                   'Taxi (black cab)', 'LGV', 'Rigid HGV',
+                                   'Artic HGV', 'Bus and Coach', 'Motorcycle'],
+             'Alternative Technologies': ['Petrol Car', 'Diesel Car',
+                                   'Taxi (black cab)', 'LGV', 'Rigid HGV',
+                                   'Artic HGV', 'Bus and Coach', 'Motorcycle',
+                                   'Full Hybrid Petrol Cars', 'Plug-In Hybrid Petrol Cars',
+                                   'Full Hybrid Diesel Cars', 'Battery EV Cars',
+                                   'FCEV Cars', 'E85 Bioethanol Cars', 'LPG Cars',
+                                   'Full Hybrid Petrol LGV', 'Plug-In Hybrid Petrol LGV',
+                                   'Battery EV LGV', 'FCEV LGV', 'E85 Bioethanol LGV',
+                                   'LPG LGV', 'B100 Rigid HGV', 'B100 Artic HGV',
+                                   'B100 Bus', 'CNG Bus', 'Biomethane Bus',
+                                   'Biogas Bus', 'Hybrid Bus', 'FCEV Bus', 'B100 Coach']}
+AllVehs = []
+for val in VehSplits.values():
+  AllVehs.extend(val)
+AllVehs = list(set(AllVehs))
+#AllVehs = ['Car', 'Petrol Car', 'Diesel Car', 'Taxi (black cab)', 'LGV', 'HGV', 'Rigid HGV',
+#           'Artic HGV', 'Bus and Coach', 'Motorcycle', 'Full Hybrid Petrol Cars',
+#           'Plug-In Hybrid Petrol Cars', 'Full Hybrid Diesel Cars', 'Battery EV Cars',
+#           'FCEV Cars', 'E85 Bioethanol Cars', 'LPG Cars', 'Full Hybrid Petrol LGV',
+#           'Plug-In Hybrid Petrol LGV', 'Battery EV LGV', 'FCEV LGV', 'E85 Bioethanol LGV',
+#           'LPG LGV', 'B100 Rigid HGV', 'B100 Artic HGV', 'B100 Bus', 'CNG Bus',
+#           'Biomethane Bus', 'Biogas Bus	', 'Hybrid Bus', 'FCEV Bus', 'B100 Coach']
 
-euroClassNameVariationsIgnore = ['B100 Rigid HGV', 'Biodiesel Buses', 'Biodiesel Coaches', 'Hybrid Buses'] # Ignore these.
+techVehs = {'DPF': ['Car', 'Diesel Car', 'Taxi (black cab)', 'LGV', 'HGV',
+                    'Rigid HGV', 'Artic HGV', 'Bus and Coach', 'B100 Rigid HGV',
+                    'B100 Artic HGV', 'B100 Bus' 'B100 Coach'],
+            'SCR': ['HGV', 'Rigid HGV', 'Artic HGV', 'Bus and Coach', 'B100 Rigid HGV',
+                    'B100 Artic HGV', 'B100 Bus', 'Hybrid Bus', 'B100 Coach'],
+            'EGR': ['HGV', 'Rigid HGV', 'Artic HGV', 'Bus and Coach', 'B100 Rigid HGV',
+                    'B100 Artic HGV', 'B100 Bus', 'Hybrid Bus', 'B100 Coach'],
+            'EGR + SCRRF': ['HGV', 'Rigid HGV', 'Artic HGV', 'Bus and Coach', 'B100 Rigid HGV',
+                    'B100 Artic HGV', 'B100 Bus', 'B100 Coach'],
+            'c': ['Car', 'Petrol Car', 'Diesel Car', 'Taxi (black cab)', 'LGV',
+                  'Full Hybrid Petrol Cars', 'Plug-In Hybrid Petrol Cars',
+                  'Full Hybrid Diesel Cars', 'E85 Bioethanol Cars', 'Full Hybrid Petrol LGV',
+                  'Plug-In Hybrid Petrol LGV', 'E85 Bioethanol LGV'],
+            'd': ['Car', 'Diesel Car', 'Taxi (black cab)', 'LGV',
+                  'Full Hybrid Diesel Cars'],
+            'Standard': AllVehs,
+            'All': AllVehs}
 
-euroClassNameVariationsAll = euroClassNameVariations[0][:]
 
+in2outVeh = {'Car': ['Petrol Car', 'Diesel Car', 'Full Hybrid Petrol Car',
+                     'Plugin Hybrid Petrol Car', 'Full Diesel Hybrid Car',
+                     'E85 Bioethanol Car', 'LPG Car'],
+             'Petrol Car': ['Petrol Car'],
+             'Diesel Car': ['Diesel Car'],
+             'LGV': ['Petrol LGV', 'Diesel LGV', 'Full Hybrid Petrol LGV',
+                     'Plug-In Hybrid Petrol LGV', 'E85 Bioethanol LGV', 'LPG LGV'],
+             'HGV': ['Rigid HGV', 'B100 Rigid HGV', 'Artic HGV', 'B100 Artic HGV'],
+             'Rigid HGV': ['Rigid HGV', 'B100 Rigid HGV'],
+             'Artic HGV': ['Artic HGV', 'B100 Artic HGV'],
+             'Bus and Coach': ['Buses (Not London Buses)', 'Coaches', 'Biodiesel Buses',
+                               'Biodiesel Coaches', 'Hybrid Bus - Single Decker',
+                               'Hybrid Bus - Double Decker', 'Hybrid Bus - Articulated'],
+             'Motorcycle': ['Motorcycle - 0-50cc', 'Motorcycle - 2-stroke - 50-100cc',
+                            'Motorcycle - 4-stroke - 50-150cc', 'Motorcycle - 4-stroke - 150-250cc',
+                            'Motorcycle - 4-stroke - 250-750cc', 'Motorcycle - 4-stroke - >750-cc'],
+             'Full Hybrid Petrol Cars': ['Full Hybrid Petrol Car'],
+             'Plug-In Hybrid Petrol Cars': ['Plugin Hybrid Petrol Car'],
+             'Full Hybrid Diesel Cars': ['Full Diesel Hybrid Car'],
+             'E85 Bioethanol Cars': ['E85 Bioethanol Car'],
+             'LPG Cars': ['LPG Car'],
+             'Full Hybrid Petrol LGV': ['Full Hybrid Petrol LGV'],
+             'Plug-In Hybrid Petrol LGV': ['Plug-In Hybrid Petrol LGV'],
+             'E85 Bioethanol LGV': ['E85 Bioethanol LGV'],
+             'LPG LGV': ['LPG LGV'],
+             'B100 Rigid HGV': ['B100 Rigid HGV'],
+             'B100 Artic HGV': ['B100 Artic HGV'],
+             'B100 Bus': ['Biodiesel Buses'],
+             'B100 Coach': ['Biodiesel Coaches'],
+             'Hybrid Bus': ['Hybrid Bus - Single Decker', 'Hybrid Bus - Double Decker', 'Hybrid Bus - Articulated']}
+
+
+euroClassNameVariationsAll = euroClassNameVariations[0]['All'][:]
+euroClassTechnologies = list(euroClassNameVariations[0].keys())
 for ei in range(1,7):
-  euroClassNameVariationsAll.extend(euroClassNameVariations[ei])
+  euroClassNameVariationsAll.extend(euroClassNameVariations[ei]['All'])
+  euroClassTechnologies.extend(euroClassNameVariations[ei].keys())
 euroClassNameVariationsAll = list(set(euroClassNameVariationsAll))
+euroClassTechnologies = list(set(euroClassTechnologies))
+euroClassTechnologies.remove('All')
+euroClassTechnologies.sort()
+#print(euroClassTechnologies)
 
 EuroClassNameColumns = ["A", "H"]
 DefaultEuroColumns = ["B", "I"]
 UserDefinedEuroColumns = ["D", "K"]
 EuroClassNameColumnsMC = ["B", "H"]
+EuroClassNameColumnsHB = EuroClassNameColumnsMC
 DefaultEuroColumnsMC = ["C", "I"]
+DefaultEuroColumnsHB = DefaultEuroColumnsMC
 UserDefinedBusColumn = ["D"]
 UserDefinedBusMWColumn = ["E"]
 DefaultBusColumn = ["B"]
@@ -166,7 +288,7 @@ def splitSourceNameT(row, SourceName='Source Name'):
   s, v, t = s.split(' - ')
   return t
 
-def readLGVFuelSplit(File='input\NAEI_FuelSplitExtracted.xlsx'):
+def readLGVFuelSplit(File='input/NAEI_FuelSplitExtracted.xlsx'):
   """
   Function that reads the
 
@@ -348,6 +470,9 @@ def getInputFile(version, directory='input'):
   elif version == 7.4:
     vPart = 'EFT2017_v7.4'
     ext = '.xlsb'
+  elif version == 8.0:
+    vPart = 'EFT2017_v8.0'
+    ext = '.xlsb'
   else:
     raise ValueError('Version {} is not recognised.'.format(version))
 
@@ -386,7 +511,7 @@ def romanNumeral(N):
   RNs = [0, 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
   return RNs[N]
 
-def extractVersion(fileName, availableVersions=[6.0, 7.0, 7.4]):
+def extractVersion(fileName, availableVersions=[6.0, 7.0, 7.4, 8.0]):
   """
   Extract the version number from the filename.
   """
@@ -470,31 +595,14 @@ def createEFTInput(vBreakdown='Detailed Option 2',
                            45,50,60,70,80,90,100,110,120,130,140],
                    roadTypes=availableRoadTypes,
                    vehiclesToSkip=['Taxi (black cab)'],
-                   vehiclesToInclude=None):
+                   vehiclesToInclude=None,
+                   tech='All'):
   """
   vehiclesToInclude trumps (and overwrites) vehiclesToSkip
   """
-  VehSplits = {'Basic Split': ['HDV'],
-               'Detailed Option 1': ['Car', 'Taxi (black cab)', 'LGV', 'HGV',
-                                     'Bus and Coach', 'Motorcycle'],
-               'Detailed Option 2': ['Car', 'Taxi (black cab)', 'LGV', 'Rigid HGV',
-                                     'Artic HGV', 'Bus and Coach', 'Motorcycle'],
-               'Detailed Option 3': ['Petrol Car', 'Diesel Car',
-                                     'Taxi (black cab)', 'LGV', 'Rigid HGV',
-                                     'Artic HGV', 'Bus and Coach', 'Motorcycle'],
-               'Alternative Technologies': ['Petrol Car', 'Diesel Car',
-                                     'Taxi (black cab)', 'LGV', 'Rigid HGV',
-                                     'Artic HGV', 'Bus and Coach', 'Motorcycle',
-                                     'Full Hybrid Petrol Cars', 'Plug-In Hybrid Petrol Cars',
-                                     'Full Hybrid Diesel Cars', 'Battery EV Cars',
-                                     'FCEV Cars', 'E85 Bioethanol Cars', 'LPG Cars',
-                                     'Full Hybrid Petrol LGV', 'Plug-In Hybrid Petrol LGV',
-                                     'Battery EV LGV', 'FCEV LGV', 'E85 Bioethanol LGV',
-                                     'LPG LGV', 'B100 Rigid HGV', 'B100 Artic HGV',
-                                     'B100 Bus', 'CNG Bus', 'Biomethane Bus',
-                                     'Biogas Bus', 'Hybrid Bus', 'FCEV Bus', 'B100 Coach']}
-
   VehSplit = VehSplits[vBreakdown]
+
+  #techVehs
 
   if vehiclesToInclude is not None:
     # Populate vehiclesToSkip with those vehicles that are not included.
@@ -503,6 +611,12 @@ def createEFTInput(vBreakdown='Detailed Option 2',
       if veh not in vehiclesToInclude:
         vehiclesToSkip.append(veh)
   #RoadTypes = ['Urban (not London)', 'Rural (not London)', 'Motorway (not London)']
+
+  if tech != 'All':
+    # Add vehicles to vehiclesToSkip that are irrelevant for the chosen technology.
+    for veh in VehSplit:
+      if veh not in techVehs[tech]:
+        vehiclesToSkip.append(veh)
 
   if type(roadTypes) is str:
     if roadTypes in ['all', 'All', 'ALL']:
@@ -552,19 +666,22 @@ def createEFTInput(vBreakdown='Detailed Option 2',
             inputDF.set_value(ri, len(VehSplit)+3, sp)
             inputDF.set_value(ri, len(VehSplit)+4, 1)
             inputDF.set_value(ri, len(VehSplit)+5, 1)
+  inputData = inputDF.as_matrix()
+  #inputData = np.ascontiguousarray(inputData)
+  return inputData
 
-  return inputDF
-
-def checkEuroClassesValid(workBook, vehRowStarts, vehRowEnds, EuroClassNameColumns, MC=0):
+def checkEuroClassesValid(workBook, vehRowStarts, vehRowEnds, EuroClassNameColumns, Type=-9):
   """
   Check that all of the available euro classes are specified.
   """
-  if MC == 1:
-    print("      Checking all motorcycle euro class names are understood.")
-  elif MC == -1:
-    print("      Checking all non-motorcycle euro class names are understood.")
+  if Type == 1:
+    print("          Checking all motorcycle euro class names are understood.")
+  elif Type == 2:
+    print("          Checking all hybrid bus euro class names are understood.")
+  elif Type == 0:
+    print("          Checking all other euro class names are understood.")
   else:
-    print("      Checking all euro class names are understood.")
+    print("          Checking all euro class names are understood.")
   ws_euro = workBook.Worksheets("UserEuro")
   for [vi, vehRowStart] in enumerate(vehRowStarts):
     vehRowEnd = vehRowEnds[vi]
@@ -578,10 +695,12 @@ def checkEuroClassesValid(workBook, vehRowStarts, vehRowEnds, EuroClassNameColum
         if ecn not in euroClassNameVariationsAll:
           if ecn not in euroClassNameVariationsIgnore:
             raise ValueError('Unrecognized Euro Class Name: "{}".'.format(ecn))
-  print("        All understood.")
 
-def euroSearchTerms(N):
-  ES = euroClassNameVariations[N]
+def euroTechs(N):
+  return euroClassNameVariations[N].keys()
+
+def euroSearchTerms(N, tech='All'):
+  ES = euroClassNameVariations[N][tech]
   return ES
 
 def SpecifyWeight(workBook, start, end, do):
@@ -597,31 +716,45 @@ def SpecifyWeight(workBook, start, end, do):
   return wn
 
 def specifyEuroProportions(euroClass, workBook, vehRowStarts, vehRowEnds,
-                 EuroClassNameColumns, DefaultEuroColumns, UserDefinedEuroColumns, MC=False):
+                 EuroClassNameColumns, DefaultEuroColumns, UserDefinedEuroColumns,
+                 SubType=None, tech='All'):
   """
   Specify the euro class proportions.
   Will return the defualt proportions.
   """
+  firstGot = {}
   defaultProps = {}
-  #print("    Setting euro ratios to 100% for euro {}.".format(euroClass)) Wally
+  #print("    Setting euro ratios to 100% for euro {}.".format(euroClass))
   ws_euro = workBook.Worksheets("UserEuro")
   for [vi, vehRowStart] in enumerate(vehRowStarts):
-    if MC:
+    if SubType == 'MC':
       vehNameA = ws_euro.Range("A{row}".format(row=vehRowStart)).Value
       vehNameB = ws_euro.Range("A{row}".format(row=vehRowStart+1)).Value
       if vehNameB is None:
         vehName = 'Motorcycle - {}'.format(vehNameA)
       else:
         vehName = 'Motorcycle - {} - {}'.format(vehNameA, vehNameB)
+    elif SubType == 'HB':
+      vehNameA = ws_euro.Range("A{row}".format(row=vehRowStart)).Value
+      vehNameB = ws_euro.Range("A{row}".format(row=vehRowStart+1)).Value
+      if vehNameB is None:
+        vehName = 'Hybrid Bus - {}'.format(vehNameA)
+      else:
+        vehName = 'Hybrid Bus - {} - {}'.format(vehNameA, vehNameB)
     else:
       vehName = ws_euro.Range("A{row}".format(row=vehRowStart-1)).Value
+    if vehName is None:
+      vehName = ws_euro.Range("A{row}".format(row=vehRowStart)).Value
+    firstGot[vehName] = [False, False]
     #print("      Setting euro ratios for {}.".format(vehName))
     vehRowEnd = vehRowEnds[vi]
     for [ci, euroNameCol] in enumerate(EuroClassNameColumns):
+      first = True
+      # There are only two columns, one for NOx, one for particulates.
       userDefinedCol = UserDefinedEuroColumns[ci]
       defaultEuroCol = DefaultEuroColumns[ci]
 
-      # A quick fix to the problem hybrid bus problem! Grrrr!
+      # A quick fix to the hybrid bus problem! Grrrr!
       if ci == 1:
         if vehRowStart in [324, 328, 332]:
           vehRowStart = vehRowStart+1
@@ -629,8 +762,9 @@ def specifyEuroProportions(euroClass, workBook, vehRowStarts, vehRowEnds,
 
       euroClassRange = "{col}{rstart}:{col}{rend}".format(col=euroNameCol, rstart=vehRowStart, rend=vehRowEnd)
 
+      # Get all of the euro class names for this vehicle.
       euroClassesAvailable = ws_euro.Range(euroClassRange).Value
-      # Make sure we don't include trailing 'None' rows.
+      # Make sure we don't include trailing 'None' rows, by going backwards.
       euroClassesAvailableR = list(reversed(euroClassesAvailable))
       for eca in euroClassesAvailableR:
         #print(eca)
@@ -640,21 +774,41 @@ def specifyEuroProportions(euroClass, workBook, vehRowStarts, vehRowEnds,
           break
       # See which columns contain a line that specifies the required euro class.
       rowsToDo = []
+      rowsToDoOther = []
       euroClass_ = euroClass
       euroClassp = euroClass
       while len(rowsToDo) == 0:
-        got = False
-        euroSearchTerms_ = euroSearchTerms(euroClass_)
+        if tech == 'All':
+          euroSearchTerms_ = euroSearchTerms(euroClass_)
+          euroSearchTerms_Other = []
+        else:
+          if tech in euroTechs(euroClass_):
+            euroSearchTerms_ = euroSearchTerms(euroClass_, tech=tech)
+            euroSearchTerms_Other = euroSearchTerms(euroClass_)
+          else:
+            euroSearchTerms_ = euroSearchTerms(euroClass_)
+            euroSearchTerms_Other = []
+        got, gotOther = False, False
         for [ei, name] in enumerate(euroClassesAvailable):
           name = name[0]
           if name in euroSearchTerms_:
             rowsToDo.append(vehRowStart + ei)
             got = True
-        if not got:
+          if name in euroSearchTerms_Other:
+            rowsToDoOther.append(vehRowStart + ei)
+            gotOther = True
+        if got:
+          if first:
+            firstGot[vehName][ci] = True
+        elif gotOther:
+          rowsToDo = rowsToDoOther
+        else:
+          first = False
           euroClass_ -= 1
           if euroClass_ < 0:
             euroClassp += 1
             euroClass_ = euroClassp
+
           #print('      No values available for euro {}, trying euro {}.'.format(euroClass_o, euroClass_))
       #print('    found the following {}.'.format(', '.join([str(x) for x in rowsToDo])))
       ignoreForPropRecord = False
@@ -700,7 +854,7 @@ def specifyEuroProportions(euroClass, workBook, vehRowStarts, vehRowEnds,
         value = userProportions[ri]
         ws_euro.Range(userRange).Value = value
   #print('    All complete')
-  return defaultProps
+  return defaultProps, firstGot
 
 def specifyBusCoach(wb, busCoach, busCoachRow, UserDefinedBusColumn,
                     UserDefinedBusMWColumn, DefaultBusColumn, DefaultBusMWColumn):
@@ -746,11 +900,12 @@ def prepareToExtract(fileNames, locations):
 
   # Check that the auto hot key executable, and control file, are available.
   if not path.isfile(ahk_exepath):
-    raise ValueError('The Autohotkey executable file {} could not be found.'.format(ahk_exepath))
+    print('The Autohotkey executable file {} could not be found.'.format(ahk_exepath))
+    ahk_ahkpathGot = None
   if not path.isfile(ahk_ahkpath):
     ahk_ahkpath_ = workingDir + '\\' + ahk_ahkpath
     if not path.isfile(ahk_ahkpath_):
-      raise ValueError('The Autohotkey file {} could not be found.'.format(ahk_ahkpath))
+      print('The Autohotkey file {} could not be found.'.format(ahk_ahkpath))
     else:
       ahk_ahkpathGot = ahk_ahkpath_
   else:
@@ -773,7 +928,7 @@ def prepareToExtract(fileNames, locations):
 
   return ahk_ahkpathGot, fileNames, versionNos, versionForOutputs
 
-def extractOutput(fileName, versionForOutPut, year, location, euroClass, details):
+def extractOutput(fileName, versionForOutPut, year, location, euroClass, details, techDetails=[None, None]):
   ex = pd.ExcelFile(fileName)
   output = ex.parse("Output")
   # Add some other columns to the dataframe.
@@ -788,13 +943,44 @@ def extractOutput(fileName, versionForOutPut, year, location, euroClass, details
   output = output.drop(details['SourceNameName'], 1)
   output = output.drop(details['AllLDVName'], 1)
   output = output.drop(details['AllHDVName'], 1)
+
+  #
+  tech = 'Default Mix'
+  if techDetails[0] is not None:
+    # Drop rows with vehicles that are not relavent to the technology specified.
+    vehiclesPresent = list(output['vehicle'].unique())
+    vehGot = {}
+    for vP in vehiclesPresent:
+      vehGot[vP] = False
+
+    tech = techDetails[0]
+    gotTechs = techDetails[1]
+
+    for key, values in in2outVeh.items():
+      got = False
+      for veh in values:
+        if veh in gotTechs.keys():
+          if gotTechs[veh]:
+            got = True
+            break
+      if got:
+        if key in vehiclesPresent:
+          vehGot[key] = True
+
+    for veh, vehGot_ in vehGot.items():
+      if not vehGot_:
+        output = output[output['vehicle'] != veh]
+
+  # Change the name of the vehicles to recognise the specified technology.
+  output['mitigation tech'] = tech
+
   # Pivot the table so each pollutant has a column.
   pollutants = list(output[details['PolName']].unique())
   # Rename, because after the pivot the 'column' name will become the
   # index name.
   output = output.rename(columns={details['PolName']: 'RowIndex'})
   output = output.pivot_table(index=['year', 'area', 'euro', 'version',
-                                     'speed', 'vehicle', 'type'],
+                                     'speed', 'vehicle', 'type', 'mitigation tech'],
                                     columns='RowIndex',
                                     values=details['AllVehName'])
   output = output.reset_index()
@@ -813,8 +999,8 @@ def extractOutput(fileName, versionForOutPut, year, location, euroClass, details
 
 def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
                   ahk_ahkpathG, vehSplit, details, versionForOutPut, excel=None,
-                  checkEuroClasses=False, DoMCycles=True, DoBusCoach=False,
-                  inputData='prepare', busCoach='default', sizeRow=None):
+                  checkEuroClasses=False, DoMCycles=True, DoHybridBus=True, DoBusCoach=False,
+                  inputData='prepare', busCoach='default', sizeRow=None, tech='All'):
   """
   Prepare the file for running the macro.
   euroClass of -9 will retain default euro breakdown.
@@ -827,7 +1013,8 @@ def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
   # Start off the autohotkey script as a (parallel) subprocess. This will
   # continually check until the compatibility warning appears, and then
   # close the warning.
-  subprocess.Popen([ahk_exepath, ahk_ahkpathG])
+  if path.isfile(ahk_exepath):
+    subprocess.Popen([ahk_exepath, ahk_ahkpathG])
 
   # Open the document.
   wb = excel.Workbooks.Open(fileName)
@@ -839,30 +1026,35 @@ def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
     # and this will mean that the global variables at the start of the
     # code will need to be edited.
     if DoMCycles:
-      checkEuroClassesValid(wb, details['vehRowStartsMC'], details['vehRowEndsMC'], EuroClassNameColumnsMC, MC=1)
-    checkEuroClassesValid(wb, details['vehRowStarts'], details['vehRowEnds'], EuroClassNameColumns, MC=-1)
-
+      checkEuroClassesValid(wb, details['vehRowStartsMC'], details['vehRowEndsMC'], EuroClassNameColumnsMC, Type=1)
+    if DoHybridBus:
+      checkEuroClassesValid(wb, details['vehRowStartsHB'], details['vehRowEndsHB'], EuroClassNameColumnsMC, Type=2)
+    checkEuroClassesValid(wb, details['vehRowStarts'], details['vehRowEnds'], EuroClassNameColumns, Type=0)
   # Set the default values in the Input Data sheet.
   ws_input = wb.Worksheets("Input Data")
   ws_input.Range("B4").Value = location
   ws_input.Range("B5").Value = year
-  ws_input.Range("B6").Value = vehSplit
+  if ws_input.Range("B6").Value != vehSplit:
+    # Don't change unless you have to.
+    ws_input.Range("B6").Value = vehSplit
 
   if type(inputData) is str:
     if inputData == 'prepare':
       # Prepare the input data.
       inputData = createEFTInput(vBreakdown=vehSplit)
-      inputData = inputData.as_matrix()
+      #inputData = inputData.as_matrix()
     else:
       raise ValueError("inputData '{}' is not understood.".format(inputData))
-
   numRows, numCols = np.shape(inputData)
+
+  inputData = tuple(map(tuple, inputData))
   ws_input.Range("A10:{}{}".format(numToLetter(numCols), numRows+9)).Value = inputData
 
   # Now we need to populate the UserEuro table with the defaults. Probably
   # only need to do this once per year, per area, but will do it every time
   # just in case.
-  excel.Application.Run("PasteDefaultEuroProportions")
+  wb.Worksheets("UserEuro").Select()
+  #excel.Application.Run("PasteDefaultEuroProportions")
 
   # Now specify that we only want the specified euro class, by turning the
   # proportions for that class to 1, (or a weighted value if there are more
@@ -877,23 +1069,41 @@ def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
     defaultProportions = pd.DataFrame(columns=['year', 'area', 'vehicle', 'euro', 'proportion'])
     # Motorcycles first
     if DoMCycles:
-      print('      Assigning fleet euro proportions for motorcycles.')
-      defaultProportionsMC_ = specifyEuroProportions(euroClass, wb,
+      print('          Assigning fleet euro proportions for motorcycles.')
+      defaultProportionsMC_, gotTechsMC = specifyEuroProportions(euroClass, wb,
                                   details['vehRowStartsMC'], details['vehRowEndsMC'],
                                   EuroClassNameColumnsMC, DefaultEuroColumnsMC,
-                                  UserDefinedEuroColumns, MC=True)
+                                  UserDefinedEuroColumns, SubType='MC', tech=tech)
       for key, value in defaultProportionsMC_.items():
-        defaultProportionsRow = pd.DataFrame([[year, location, key, euroClass, value]],
+        defaultProportionsRow= pd.DataFrame([[year, location, key, euroClass, value]],
                                              columns=['year', 'area', 'vehicle', 'euro', 'proportion'])
-        defaultProportions = defaultProportions.append(defaultProportionsRow)
-      print('      Assigning fleet euro proportions for all other vehicle types.')
-    else:
-      print('      Assigning fleet euro proportions for all vehicle types except motorcycles.')
+        defaultProportions= defaultProportions.append(defaultProportionsRow)
+    else: gotTechsMC = {}
+    #else: gotTechsMC = {}
+    if DoHybridBus:
+      print('          Assigning fleet euro proportions for hybrid buses.')
+      defaultProportionsHB_, gotTechsHB = specifyEuroProportions(euroClass, wb,
+                                  details['vehRowStartsHB'], details['vehRowEndsHB'],
+                                  EuroClassNameColumnsHB, DefaultEuroColumnsHB,
+                                  UserDefinedEuroColumns, SubType='HB', tech=tech)
+      for key, value in defaultProportionsHB_.items():
+        defaultProportionsRow= pd.DataFrame([[year, location, key, euroClass, value]],
+                                             columns=['year', 'area', 'vehicle', 'euro', 'proportion'])
+        defaultProportions= defaultProportions.append(defaultProportionsRow)
+    else: gotTechsHB = {}
+    print('          Assigning fleet euro proportions for all vehicle types except motorcycles or hybrid buses.')
     # And all other vehicles
-    defaultProportions_ = specifyEuroProportions(euroClass, wb,
+    defaultProportions_, gotTechs = specifyEuroProportions(euroClass, wb,
                              details['vehRowStarts'], details['vehRowEnds'],
                              EuroClassNameColumns, DefaultEuroColumns,
-                             UserDefinedEuroColumns)
+                             UserDefinedEuroColumns, tech=tech)
+
+    gotTechs = {**gotTechs, **gotTechsMC, **gotTechsHB}
+    for key, value in gotTechs.items():
+      if any(value):
+        gotTechs[key] = True
+      else:
+        gotTechs[key] = False
     # Organise the default proportions.
     for key, value in defaultProportions_.items():
       defaultProportionsRow = pd.DataFrame([[year, location, key, euroClass, value]],
@@ -921,11 +1131,11 @@ def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
   # Now run the EFT tool.
   ws_input.Select() # Select the appropriate sheet, we can't run the macro
                     # from another sheet.
-  print('      Running EFT routine. Ctrl+C will pause processing at the end of the routine...')
+  print('          Running EFT routine. Ctrl+C will pause processing at the end of the routine...')
   alreadySaved = False
   try:
     excel.Application.Run("RunEfTRoutine")
-    print('        Complete. Ctrl+C will now halt entire programme as usual.')
+    print('            Complete. Ctrl+C will now halt entire programme as usual.')
     time.sleep(0.5)
   except KeyboardInterrupt:
     print('Process paused at {}.'.format(datetime.strftime(datetime.now(), '%H:%M:%S on %d-%m-%Y')))
@@ -933,9 +1143,15 @@ def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
     # can be opened by pandas.
     (FN, FE) =  path.splitext(fileName)
     if DoBusCoach:
-      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}_{}).xlsm'.format(location, year, euroClass, busCoach, wno))
+      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}_{})'.format(location, year, euroClass, busCoach, wno))
     else:
-      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}).xlsm'.format(location, year, euroClass, wno))
+      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{})'.format(location, year, euroClass, wno))
+    p = 1
+    tempSaveName_ = tempSaveName
+    while path.exists('{}.xlsm'.format(tempSaveName)):
+      p += 1
+      tempSaveName = '{}{}'.format(tempSaveName_, p)
+    tempSaveName = '{}.xlsm'.format(tempSaveName)
     wb.SaveAs(tempSaveName, win32.constants.xlOpenXMLWorkbookMacroEnabled)
     wb.Close()
     excel.Quit()
@@ -949,9 +1165,15 @@ def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
     # can be opened by pandas.
     (FN, FE) =  path.splitext(fileName)
     if DoBusCoach:
-      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}_{}).xlsm'.format(location, year, euroClass, busCoach, wno))
+      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}_{})'.format(location, year, euroClass, busCoach, wno))
     else:
-      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}).xlsm'.format(location, year, euroClass, wno))
+      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{})'.format(location, year, euroClass, wno))
+    p = 1
+    tempSaveName_ = tempSaveName
+    while path.exists('{}.xlsm'.format(tempSaveName)):
+      p += 1
+      tempSaveName = '{}{}'.format(tempSaveName_, p)
+    tempSaveName = '{}.xlsm'.format(tempSaveName)
     wb.SaveAs(tempSaveName, win32.constants.xlOpenXMLWorkbookMacroEnabled)
     wb.Close()
 
@@ -959,7 +1181,7 @@ def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
   if closeExcel:
     excel.Quit()
     del(excelObj) # Make sure it's gone. Apparently some people have found this neccesary.
-  return excel, tempSaveName, defaultProportions, busCoachProportions, weightname
+  return excel, tempSaveName, defaultProportions, busCoachProportions, weightname, gotTechs
 
 if __name__ == '__main__':
   # For testing.
