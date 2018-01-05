@@ -1,10 +1,11 @@
 from os import path
 import os
-from os import path
 import re
 import datetime, time
 import numpy as np
 import pandas as pd
+import logging
+import inspect
 import random
 import string
 import subprocess
@@ -13,6 +14,7 @@ import pywintypes
 #from fuzzywuzzy import process as fuzzyprocess
 
 #homeDir = path.expanduser("~")
+#logger = logging.getLogger(__name__)
 
 # Define some global variables. These may need to be augmented if a new EFT
 # version is released.
@@ -33,14 +35,27 @@ versionDetails[7.4]['vehRowEndsMC']   = [182,188,194,200,206,212]
 versionDetails[7.4]['vehRowStartsHB'] = [324,328,332] # Hybrid buses
 versionDetails[7.4]['vehRowEndsHB']   = [327,331,335]
 versionDetails[7.4]['busCoachRow']   = [429, 430]
-versionDetails[7.4]['sizeRowStarts'] = {'Rigid HGV': 402, 'Artic HGV': 412}
-versionDetails[7.4]['sizeRowEnds'] = {'Rigid HGV': 409, 'Artic HGV': 416}
+versionDetails[7.4]['sizeRowStarts'] = {'LGV': [392, 397], 'Rigid HGV': [402], 'Artic HGV': [412]}
+versionDetails[7.4]['sizeRowEnds'] = {'LGV': [394, 399], 'Rigid HGV': [409], 'Artic HGV': [416]}
 versionDetails[7.4]['SourceNameName'] = 'Source Name'
 versionDetails[7.4]['AllLDVName'] = 'All LDVs (g/km/s)'
 versionDetails[7.4]['AllHDVName'] = 'All HDVs (g/km/s)'
 versionDetails[7.4]['AllVehName'] = 'All Vehicles (g/km/s)'
 versionDetails[7.4]['PolName'] = 'Pollutant Name'
 versionDetails[8.0] = versionDetails[7.4]
+versionDetails[8.0]['weightRowStarts'] = [382, 387, 392, 397, 402, 412, 436,
+                                          441, 446, 457, 462, 467, 472, 483,
+                                          488, 493, 503]
+versionDetails[8.0]['weightRowEnds'] =   [384, 389, 394, 399, 409, 416, 438,
+                                          443, 448, 459, 464, 469, 474, 485,
+                                          490, 500, 507]
+versionDetails[8.0]['weightRowNames'] = ['Car', 'Car', 'LGV', 'LGV', 'Rigid HGV',
+                                         'Artic HGV',  'Car', 'Car', 'Car', 'Car',
+                                         'Car', 'LGV', 'LGV', 'LGV', 'LGV',
+                                         'Rigid HGV', 'Artic HGV']
+versionDetails[8.0]['weightRowStartsBus'] = [419, 425, 512, 532, 537]
+versionDetails[8.0]['weightRowEndsBus'] =   [421, 426, 514, 534, 538]
+versionDetails[8.0]['weightRowNamesBus'] = ['Bus', 'Coach', 'Bus', 'Bus', 'Coach']
 versionDetails[7.0] = {}
 versionDetails[7.0]['vehRowStarts'] = [69, 79, 100, 110, 123, 139, 155, 170]
 versionDetails[7.0]['vehRowEnds']   = [75, 87, 106, 119, 134, 150, 166, 181]
@@ -129,10 +144,17 @@ euroClassNameVariations[6] = {'All': ['7Euro 6', '6Euro VI', '1Euro 6', '2Euro 6
                                       '7Euro 6', '8Euro VI'],
                               'c': ['7Euro 6c'],
                               'd': ['7Euro 6d']}
+euroClassNameVariations[99] = {'All': ['7Euro 6', '6Euro VI', '1Euro 6', '2Euro 6',
+                                      '2Euro 6', '4Euro 6', '5Euro 6', '6Euro 6',
+                                      '7Euro 6', '8Euro VI', '7Euro 6c', '7Euro 6d']}
 
 euroClassNameVariationsIgnore = ['B100 Rigid HGV', 'Biodiesel Buses',
                                  'Biodiesel Coaches', 'Hybrid Buses',
                                  'Biodiesel Buses', 'Biodiesel Coaches'] # Ignore these.
+
+AllowedTechs = {'LGV': ['c', 'd', 'Standard', 'DPF'],
+                'Rigid HGV': ['Standard', 'DPF', 'EGR', 'SCR', 'EGR + SCRRF'],
+                'Artic HGV': ['Standard', 'DPF', 'EGR', 'SCR', 'EGR + SCRRF']}
 
 VehSplits = {'Basic Split': ['HDV'],
              'Detailed Option 1': ['Car', 'Taxi (black cab)', 'LGV', 'HGV',
@@ -157,23 +179,16 @@ AllVehs = []
 for val in VehSplits.values():
   AllVehs.extend(val)
 AllVehs = list(set(AllVehs))
-#AllVehs = ['Car', 'Petrol Car', 'Diesel Car', 'Taxi (black cab)', 'LGV', 'HGV', 'Rigid HGV',
-#           'Artic HGV', 'Bus and Coach', 'Motorcycle', 'Full Hybrid Petrol Cars',
-#           'Plug-In Hybrid Petrol Cars', 'Full Hybrid Diesel Cars', 'Battery EV Cars',
-#           'FCEV Cars', 'E85 Bioethanol Cars', 'LPG Cars', 'Full Hybrid Petrol LGV',
-#           'Plug-In Hybrid Petrol LGV', 'Battery EV LGV', 'FCEV LGV', 'E85 Bioethanol LGV',
-#           'LPG LGV', 'B100 Rigid HGV', 'B100 Artic HGV', 'B100 Bus', 'CNG Bus',
-#           'Biomethane Bus', 'Biogas Bus	', 'Hybrid Bus', 'FCEV Bus', 'B100 Coach']
 
 techVehs = {'DPF': ['Car', 'Diesel Car', 'Taxi (black cab)', 'LGV', 'HGV',
                     'Rigid HGV', 'Artic HGV', 'Bus and Coach', 'B100 Rigid HGV',
-                    'B100 Artic HGV', 'B100 Bus' 'B100 Coach'],
+                    'B100 Artic HGV', 'B100 Bus' 'B100 Coach', 'Bus', 'Coach'],
             'SCR': ['HGV', 'Rigid HGV', 'Artic HGV', 'Bus and Coach', 'B100 Rigid HGV',
-                    'B100 Artic HGV', 'B100 Bus', 'Hybrid Bus', 'B100 Coach'],
+                    'B100 Artic HGV', 'B100 Bus', 'Hybrid Bus', 'B100 Coach', 'Bus', 'Coach'],
             'EGR': ['HGV', 'Rigid HGV', 'Artic HGV', 'Bus and Coach', 'B100 Rigid HGV',
-                    'B100 Artic HGV', 'B100 Bus', 'Hybrid Bus', 'B100 Coach'],
+                    'B100 Artic HGV', 'B100 Bus', 'Hybrid Bus', 'B100 Coach', 'Bus', 'Coach'],
             'EGR + SCRRF': ['HGV', 'Rigid HGV', 'Artic HGV', 'Bus and Coach', 'B100 Rigid HGV',
-                    'B100 Artic HGV', 'B100 Bus', 'B100 Coach'],
+                    'B100 Artic HGV', 'B100 Bus', 'B100 Coach', 'Bus', 'Coach'],
             'c': ['Car', 'Petrol Car', 'Diesel Car', 'Taxi (black cab)', 'LGV',
                   'Full Hybrid Petrol Cars', 'Plug-In Hybrid Petrol Cars',
                   'Full Hybrid Diesel Cars', 'E85 Bioethanol Cars', 'Full Hybrid Petrol LGV',
@@ -182,7 +197,6 @@ techVehs = {'DPF': ['Car', 'Diesel Car', 'Taxi (black cab)', 'LGV', 'HGV',
                   'Full Hybrid Diesel Cars'],
             'Standard': AllVehs,
             'All': AllVehs}
-
 
 in2outVeh = {'Car': ['Petrol Car', 'Diesel Car', 'Full Hybrid Petrol Car',
                      'Plugin Hybrid Petrol Car', 'Full Diesel Hybrid Car',
@@ -195,8 +209,7 @@ in2outVeh = {'Car': ['Petrol Car', 'Diesel Car', 'Full Hybrid Petrol Car',
              'Rigid HGV': ['Rigid HGV', 'B100 Rigid HGV'],
              'Artic HGV': ['Artic HGV', 'B100 Artic HGV'],
              'Bus and Coach': ['Buses (Not London Buses)', 'Coaches', 'Biodiesel Buses',
-                               'Biodiesel Coaches', 'Hybrid Bus - Single Decker',
-                               'Hybrid Bus - Double Decker', 'Hybrid Bus - Articulated'],
+                               'Biodiesel Coaches'],
              'Motorcycle': ['Motorcycle - 0-50cc', 'Motorcycle - 2-stroke - 50-100cc',
                             'Motorcycle - 4-stroke - 50-150cc', 'Motorcycle - 4-stroke - 150-250cc',
                             'Motorcycle - 4-stroke - 250-750cc', 'Motorcycle - 4-stroke - >750-cc'],
@@ -213,7 +226,9 @@ in2outVeh = {'Car': ['Petrol Car', 'Diesel Car', 'Full Hybrid Petrol Car',
              'B100 Artic HGV': ['B100 Artic HGV'],
              'B100 Bus': ['Biodiesel Buses'],
              'B100 Coach': ['Biodiesel Coaches'],
-             'Hybrid Bus': ['Hybrid Bus - Single Decker', 'Hybrid Bus - Double Decker', 'Hybrid Bus - Articulated']}
+             'Bus': ['Buses (Not London Buses)', 'Biodiesel Buses'],
+             'Coach': ['Coaches', 'Biodiesel Coaches', 'Coach'],
+             'Hybrid Bus': ['Hybrid Bus', 'Hybrid Bus - Single Decker', 'Hybrid Bus - Double Decker', 'Hybrid Bus - Articulated']}
 
 
 euroClassNameVariationsAll = euroClassNameVariations[0]['All'][:]
@@ -288,27 +303,27 @@ def splitSourceNameT(row, SourceName='Source Name'):
   s, v, t = s.split(' - ')
   return t
 
-def readLGVFuelSplit(File='input/NAEI_FuelSplitExtracted.xlsx'):
-  """
-  Function that reads the
-
-  """
-  FactorsDF = pd.read_excel(File, sheetname='LGV')
-  Factors = {}
-  Years = list(FactorsDF)
-  Years.remove('Road type')
-  Years.remove('Fuel')
-  RoadTypes = FactorsDF['Road type'].unique()
-  Fuels = FactorsDF['Fuel'].unique()
-  for rt in RoadTypes:
-    Factors[rt] = {}
-    FFs = FactorsDF[FactorsDF['Road type'] == rt]
-    for Fuel in Fuels:
-      for Y in Years:
-        Factors[rt][Y] = {}
-        Factors[rt][Y]['Petrol'] = float(FFs[FFs['Fuel'] == 'Petrol'][Y])
-        Factors[rt][Y]['Diesel'] = float(FFs[FFs['Fuel'] == 'Diesel'][Y])
-  return Factors
+#def readLGVFuelSplit(File='input/NAEI_FuelSplitExtracted.xlsx'):
+#  """
+#  Function that reads the#
+#
+#  """
+#  FactorsDF = pd.read_excel(File, sheetname='LGV')
+#  Factors = {}
+#  Years = list(FactorsDF)
+#  Years.remove('Road type')
+#  Years.remove('Fuel')
+#  RoadTypes = FactorsDF['Road type'].unique()
+#  Fuels = FactorsDF['Fuel'].unique()
+#  for rt in RoadTypes:
+#    Factors[rt] = {}
+#    FFs = FactorsDF[FactorsDF['Road type'] == rt]
+#    for Fuel in Fuels:
+#      for Y in Years:
+#        Factors[rt][Y] = {}
+#        Factors[rt][Y]['Petrol'] = float(FFs[FFs['Fuel'] == 'Petrol'][Y])
+#        Factors[rt][Y]['Diesel'] = float(FFs[FFs['Fuel'] == 'Diesel'][Y])
+#  return Factors
 
 def readNO2Factors(FactorFile='input/NAEI_NO2Extracted.xlsx', mode='Average'):
   """
@@ -611,7 +626,6 @@ def createEFTInput(vBreakdown='Detailed Option 2',
       if veh not in vehiclesToInclude:
         vehiclesToSkip.append(veh)
   #RoadTypes = ['Urban (not London)', 'Rural (not London)', 'Motorway (not London)']
-
   if tech != 'All':
     # Add vehicles to vehiclesToSkip that are irrelevant for the chosen technology.
     for veh in VehSplit:
@@ -632,8 +646,11 @@ def createEFTInput(vBreakdown='Detailed Option 2',
   inputDF = pd.DataFrame(index=range(numRows), columns=range(numCols))
   ri = -1
   for rT in roadTypes:
+    #print('rT - {}'.format(rT))
     for sp in speeds:
+      #print('  sp - {}'.format(sp))
       for veh in VehSplit:
+        #print('    veh - {}'.format(veh))
         if vBreakdown == 'Basic Split':
           ri += 2
           inputDF.set_value(ri-1, 0, 'S{} - LDV - {}'.format(sp, rT))
@@ -652,8 +669,10 @@ def createEFTInput(vBreakdown='Detailed Option 2',
           inputDF.set_value(ri, 6, 1)
         else:
           if veh in vehiclesToSkip:
+            #print('      Skipped')
             pass
           else:
+            #print('      Included')
             ri += 1
             inputDF.set_value(ri, 0, 'S{} - {} - {}'.format(sp, veh, rT))
             inputDF.set_value(ri, 1, rT)
@@ -670,18 +689,32 @@ def createEFTInput(vBreakdown='Detailed Option 2',
   #inputData = np.ascontiguousarray(inputData)
   return inputData
 
-def checkEuroClassesValid(workBook, vehRowStarts, vehRowEnds, EuroClassNameColumns, Type=-9):
+def logprint(logger, string):
+  try:
+    logger.info(string)
+  except AttributeError:
+    print(string)
+
+def checkEuroClassesValid(workBook, vehRowStarts, vehRowEnds, EuroClassNameColumns, Type=99):
   """
   Check that all of the available euro classes are specified.
   """
-  if Type == 1:
-    print("          Checking all motorcycle euro class names are understood.")
-  elif Type == 2:
-    print("          Checking all hybrid bus euro class names are understood.")
-  elif Type == 0:
-    print("          Checking all other euro class names are understood.")
+  parentFrame = inspect.currentframe().f_back
+  (filename, xa, xb, xc, xd) = inspect.getframeinfo(parentFrame)
+  if filename == '.\extractEverything.py':
+    logger = logging.getLogger("extractEverything.EFT_Tools.checkEuroClassesValid")
   else:
-    print("          Checking all euro class names are understood.")
+    logger = None
+
+  if Type == 1:
+    logprint(logger, "Checking all motorcycle euro class names are understood.")
+  elif Type == 2:
+    logprint(logger, "Checking all hybrid bus euro class names are understood.")
+  elif Type == 0:
+    logprint(logger, "Checking all other euro class names are understood.")
+  else:
+    logprint(logger, "Checking all euro class names are understood.")
+
   ws_euro = workBook.Worksheets("UserEuro")
   for [vi, vehRowStart] in enumerate(vehRowStarts):
     vehRowEnd = vehRowEnds[vi]
@@ -709,6 +742,9 @@ def SpecifyWeight(workBook, start, end, do):
   ws_euro.Range("D{}".format(do)).Value = 1
 
   wn = ws_euro.Range("A{}".format(do)).Value
+  if wn in ['Single Decker', 'Double Decker', 'Articulated']:
+    # Hybrid buses have the weight names on the wrong line.
+    wn = ws_euro.Range("B{}".format(do)).Value
   p = re.compile('\d_*')
   m = p.match(wn)
   if m is not None:
@@ -943,10 +979,8 @@ def extractOutput(fileName, versionForOutPut, year, location, euroClass, details
   output = output.drop(details['SourceNameName'], 1)
   output = output.drop(details['AllLDVName'], 1)
   output = output.drop(details['AllHDVName'], 1)
-
-  #
   tech = 'Default Mix'
-  if techDetails[0] is not None:
+  if not any([v is None for v in techDetails]):
     # Drop rows with vehicles that are not relavent to the technology specified.
     vehiclesPresent = list(output['vehicle'].unique())
     vehGot = {}
@@ -955,7 +989,6 @@ def extractOutput(fileName, versionForOutPut, year, location, euroClass, details
 
     tech = techDetails[0]
     gotTechs = techDetails[1]
-
     for key, values in in2outVeh.items():
       got = False
       for veh in values:
@@ -970,7 +1003,6 @@ def extractOutput(fileName, versionForOutPut, year, location, euroClass, details
     for veh, vehGot_ in vehGot.items():
       if not vehGot_:
         output = output[output['vehicle'] != veh]
-
   # Change the name of the vehicles to recognise the specified technology.
   output['mitigation tech'] = tech
 
@@ -997,18 +1029,26 @@ def extractOutput(fileName, versionForOutPut, year, location, euroClass, details
   return output
 
 
-def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
-                  ahk_ahkpathG, vehSplit, details, versionForOutPut, excel=None,
+def runAndExtract(fileName, vehSplit, details, location, year, euroClass,
+                  ahk_exepath, ahk_ahkpathG, versionForOutPut, excel=None,
                   checkEuroClasses=False, DoMCycles=True, DoHybridBus=True, DoBusCoach=False,
-                  inputData='prepare', busCoach='default', sizeRow=None, tech='All'):
+                  inputData='prepare', busCoach='default', sizeRow=99, tech='All', vehiclesToSkip=[]):
   """
   Prepare the file for running the macro.
-  euroClass of -9 will retain default euro breakdown.
+  euroClass of 99 will retain default euro breakdown.
   """
   closeExcel = False
   if excel is None:
     excel = win32.gencache.EnsureDispatch('Excel.Application')
     closeExcel = True
+
+  # Get the logging details if called by extractEverything
+  parentFrame = inspect.currentframe().f_back
+  (filename, xa, xb, xc, xd) = inspect.getframeinfo(parentFrame)
+  if filename == '.\extractEverything.py':
+    logger = logging.getLogger("extractEverything.EFT_Tools.checkEuroClassesValid")
+  else:
+    logger = None
 
   # Start off the autohotkey script as a (parallel) subprocess. This will
   # continually check until the compatibility warning appears, and then
@@ -1030,6 +1070,7 @@ def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
     if DoHybridBus:
       checkEuroClassesValid(wb, details['vehRowStartsHB'], details['vehRowEndsHB'], EuroClassNameColumnsMC, Type=2)
     checkEuroClassesValid(wb, details['vehRowStarts'], details['vehRowEnds'], EuroClassNameColumns, Type=0)
+
   # Set the default values in the Input Data sheet.
   ws_input = wb.Worksheets("Input Data")
   ws_input.Range("B4").Value = location
@@ -1038,18 +1079,85 @@ def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
     # Don't change unless you have to.
     ws_input.Range("B6").Value = vehSplit
 
+
+  if DoBusCoach:
+    weightRowStarts = details['weightRowStartsBus']
+    weightRowEnds = details['weightRowEndsBus']
+    weightRowNames = details['weightRowNamesBus']
+  else:
+    weightRowStarts = details['weightRowStarts']
+    weightRowEnds = details['weightRowEnds']
+    weightRowNames = details['weightRowNames']
+
+  if sizeRow != 99:
+    # Set the designated size row.
+    weightclassnames = {}
+    for wri, wrs in enumerate(weightRowStarts):
+      wre = weightRowEnds[wri]
+      wrn = weightRowNames[wri]
+      wrd = wrs + sizeRow
+      if wrd > wre:
+        # No more weight classes for this particular vehicle class.
+        continue
+      #Wally
+      weightname = SpecifyWeight(wb, wrs, wre, wrd)
+      weightclassnames[wrn] = weightname
+  else:
+    weightclassnames = {'Car': 'DefaultMix',
+                        'LGV': 'DefaultMix',
+                        'Rigid HGV': 'DefaultMix',
+                        'Artic HGV': 'DefaultMix',
+                        'Bus and Coach': 'DefaultMix',
+                        'Bus': 'DefaultMix',
+                        'Coach': 'DefaultMix',
+                        'Motorcycle': 'DefaultMix'}
+
+  vehsToInclude = []
+  for veh, wn in weightclassnames.items():
+    if (veh in techVehs[tech]) and (veh not in vehiclesToSkip):
+      logprint(logger, '               Including weight "{}" for vehicles of class "{}."'.format(wn, veh))
+      vehsToInclude.extend(in2outVeh[veh])
+  for veh in vehiclesToSkip:
+    if veh in vehsToInclude:
+      vehsToInclude.remove(veh)
+
+  if DoBusCoach:
+    if busCoach == 'bus':
+      if sizeRow >= 3:
+        vehsToInclude = []
+      else:
+        vehsToInclude = ['Bus and Coach', 'B100 Bus', 'CNG Bus', 'Biomethane Bus',
+                       'Biogas Bus', 'Hybrid Bus', 'FCEV Bus', 'B100 Coach']
+    elif busCoach == 'coach':
+      if sizeRow >= 2:
+        vehsToInclude = []
+      else:
+        vehsToInclude = ['Bus and Coach', 'B100 Coach']
+
+  if len(vehsToInclude) == 0:
+    time.sleep(1) # To allow all systems to catch up.
+    wb.Close(False)
+    if closeExcel:
+      excel.Quit()
+      del(excelObj) # Make sure it's gone. Apparently some people have found this neccesary.
+    return excel, None, None, None, None, None
+
+
   if type(inputData) is str:
     if inputData == 'prepare':
       # Prepare the input data.
-      inputData = createEFTInput(vBreakdown=vehSplit)
+      inputData = createEFTInput(vBreakdown=vehSplit, vehiclesToInclude=vehsToInclude, tech=tech)
       #inputData = inputData.as_matrix()
     else:
       raise ValueError("inputData '{}' is not understood.".format(inputData))
-  numRows, numCols = np.shape(inputData)
+  if 'Motorcycle' not in vehsToInclude:
+    DoMCycles = False
+  if 'Hybrid Bus' not in vehsToInclude:
+    DoHybridBus = False
 
+  numRows, numCols = np.shape(inputData)
   inputData = tuple(map(tuple, inputData))
   ws_input.Range("A10:{}{}".format(numToLetter(numCols), numRows+9)).Value = inputData
-
   # Now we need to populate the UserEuro table with the defaults. Probably
   # only need to do this once per year, per area, but will do it every time
   # just in case.
@@ -1060,16 +1168,17 @@ def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
   # proportions for that class to 1, (or a weighted value if there are more
   # than one row for the particular euro class). This function also reads
   # the default proportions.
-  if euroClass == -9:
+  if euroClass == 99:
     # Just stick with default euroclass.
     defaultProportions = 'NotMined'
     busCoachProportions = 'NotMined'
+    gotTechs = None
     pass
   else:
     defaultProportions = pd.DataFrame(columns=['year', 'area', 'vehicle', 'euro', 'proportion'])
     # Motorcycles first
     if DoMCycles:
-      print('          Assigning fleet euro proportions for motorcycles.')
+      logprint(logger, '               Assigning fleet euro proportions for motorcycles.')
       defaultProportionsMC_, gotTechsMC = specifyEuroProportions(euroClass, wb,
                                   details['vehRowStartsMC'], details['vehRowEndsMC'],
                                   EuroClassNameColumnsMC, DefaultEuroColumnsMC,
@@ -1078,10 +1187,10 @@ def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
         defaultProportionsRow= pd.DataFrame([[year, location, key, euroClass, value]],
                                              columns=['year', 'area', 'vehicle', 'euro', 'proportion'])
         defaultProportions= defaultProportions.append(defaultProportionsRow)
-    else: gotTechsMC = {}
-    #else: gotTechsMC = {}
+    else:
+      gotTechsMC = {}
     if DoHybridBus:
-      print('          Assigning fleet euro proportions for hybrid buses.')
+      logprint(logger, '               Assigning fleet euro proportions for hybrid buses.')
       defaultProportionsHB_, gotTechsHB = specifyEuroProportions(euroClass, wb,
                                   details['vehRowStartsHB'], details['vehRowEndsHB'],
                                   EuroClassNameColumnsHB, DefaultEuroColumnsHB,
@@ -1090,8 +1199,9 @@ def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
         defaultProportionsRow= pd.DataFrame([[year, location, key, euroClass, value]],
                                              columns=['year', 'area', 'vehicle', 'euro', 'proportion'])
         defaultProportions= defaultProportions.append(defaultProportionsRow)
-    else: gotTechsHB = {}
-    print('          Assigning fleet euro proportions for all vehicle types except motorcycles or hybrid buses.')
+    else:
+      gotTechsHB = {}
+    logprint(logger, "               Assigning fleet euro proportions for all 'other' vehicle types.")
     # And all other vehicles
     defaultProportions_, gotTechs = specifyEuroProportions(euroClass, wb,
                              details['vehRowStarts'], details['vehRowEnds'],
@@ -1118,70 +1228,36 @@ def runAndExtract(fileName, location, year, euroClass, ahk_exepath,
                                             UserDefinedBusColumn, UserDefinedBusMWColumn,
                                             DefaultBusColumn, DefaultBusMWColumn)
 
-    weightname = 'd'
-    wno = 'd'
-    if sizeRow is not None:
-      # Set the designated size row.
-      weightname = SpecifyWeight(wb, sizeRow['start'], sizeRow['end'], sizeRow['do'])
-      wno = '{}_{}'.format(sizeRow['name'], weightname)
-      wno = wno.replace(' ', '')
-      wno = wno.replace('>', 'p')
-      wno = wno.replace('<', 'n')
-
   # Now run the EFT tool.
   ws_input.Select() # Select the appropriate sheet, we can't run the macro
                     # from another sheet.
-  print('          Running EFT routine. Ctrl+C will pause processing at the end of the routine...')
-  alreadySaved = False
-  try:
-    excel.Application.Run("RunEfTRoutine")
-    print('            Complete. Ctrl+C will now halt entire programme as usual.')
-    time.sleep(0.5)
-  except KeyboardInterrupt:
-    print('Process paused at {}.'.format(datetime.strftime(datetime.now(), '%H:%M:%S on %d-%m-%Y')))
-    # Save and Close. Saving as an xlsm, rather than a xlsb, file, so that it
-    # can be opened by pandas.
-    (FN, FE) =  path.splitext(fileName)
-    if DoBusCoach:
-      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}_{})'.format(location, year, euroClass, busCoach, wno))
-    else:
-      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{})'.format(location, year, euroClass, wno))
-    p = 1
-    tempSaveName_ = tempSaveName
-    while path.exists('{}.xlsm'.format(tempSaveName)):
-      p += 1
-      tempSaveName = '{}{}'.format(tempSaveName_, p)
-    tempSaveName = '{}.xlsm'.format(tempSaveName)
-    wb.SaveAs(tempSaveName, win32.constants.xlOpenXMLWorkbookMacroEnabled)
-    wb.Close()
-    excel.Quit()
-    alreadySaved = True
-    time.sleep(1)
-    raw_input('Press enter to resume.')
-    print('Resumed at {}.'.format(datetime.strftime(datetime.now(), '%H:%M:%S on %d-%m-%Y')))
-    excel = win32.gencache.EnsureDispatch('Excel.Application')
-  if not alreadySaved:
-    # Save and Close. Saving as an xlsm, rather than a xlsb, file, so that it
-    # can be opened by pandas.
-    (FN, FE) =  path.splitext(fileName)
-    if DoBusCoach:
-      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}_{})'.format(location, year, euroClass, busCoach, wno))
-    else:
-      tempSaveName = fileName.replace(FE, '({}_{}_E{}_{})'.format(location, year, euroClass, wno))
-    p = 1
-    tempSaveName_ = tempSaveName
-    while path.exists('{}.xlsm'.format(tempSaveName)):
-      p += 1
-      tempSaveName = '{}{}'.format(tempSaveName_, p)
-    tempSaveName = '{}.xlsm'.format(tempSaveName)
-    wb.SaveAs(tempSaveName, win32.constants.xlOpenXMLWorkbookMacroEnabled)
-    wb.Close()
+  logprint(logger, '               Running EFT routine.')
+
+  excel.Application.Run("RunEfTRoutine")
+  logprint(logger, '                 Complete.')
+  time.sleep(0.5)
+
+  # Save and Close. Saving as an xlsm, rather than a xlsb, file, so that it
+  # can be opened by pandas.
+  (FN, FE) =  path.splitext(fileName)
+  if DoBusCoach:
+    tempSaveName = fileName.replace(FE, '({}_{}_E{}_{}_{})'.format(location, year, euroClass, busCoach, sizeRow))
+  else:
+    tempSaveName = fileName.replace(FE, '({}_{}_E{}_{})'.format(location, year, euroClass, sizeRow))
+  p = 1
+  tempSaveName_ = tempSaveName
+  while path.exists('{}.xlsm'.format(tempSaveName)):
+    p += 1
+    tempSaveName = '{}{}'.format(tempSaveName_, p)
+  tempSaveName = '{}.xlsm'.format(tempSaveName)
+  wb.SaveAs(tempSaveName, win32.constants.xlOpenXMLWorkbookMacroEnabled)
+  wb.Close()
 
   time.sleep(1) # To allow all systems to catch up.
   if closeExcel:
     excel.Quit()
     del(excelObj) # Make sure it's gone. Apparently some people have found this neccesary.
-  return excel, tempSaveName, defaultProportions, busCoachProportions, weightname, gotTechs
+  return excel, tempSaveName, defaultProportions, busCoachProportions, weightclassnames, gotTechs
 
 if __name__ == '__main__':
   # For testing.
