@@ -1299,7 +1299,8 @@ def combineFiles(directory):
       else:
         df = pd.read_csv(fn)
         df.to_csv(fnew, mode='a', header=False, index=False)
-      print('Added file {} of {}: '.format(fni+1, len(filenames)))
+  return fnew
+
 
 def getCompletedFromLog(logfilename, mode='completed'):
   """

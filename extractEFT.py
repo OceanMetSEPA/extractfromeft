@@ -413,7 +413,7 @@ def parseArgs():
 
   return parser.parse_args()
 
-def inputArgsEqual(newargs, logfilename):
+def compareArgsEqual(newargs, logfilename):
   searchStr = 'Input arguments parsed as: '
   with open(logfilename, 'r') as f:
     for line in f:
@@ -451,7 +451,7 @@ def main():
   if not new:
     # See if the input arguments are identical to the last time this directory
     # was processed.
-    inputArgsEqual(pargs, logfilename)
+    compareArgsEqual(pargs, logfilename)
 
   # Create the log file.
   logger = logging.getLogger('extractEFT')
