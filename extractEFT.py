@@ -1,6 +1,7 @@
 
 import os
 import sys
+import ast
 from os import path
 import argparse
 import subprocess
@@ -21,8 +22,8 @@ vehsplit = "Alternative Technologies"
 ynow = datetime.now().year
 
 def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6],
-               splitBusCoach=False, splitSize=False, keepTempFiles=False,
-               saveFile=None, splitEuroTech=False, completed=None):
+               weights='all', techs='all', keepTempFiles=False,
+               saveFile=None,completed=None):
 
   if type(years) is not list:
     years = [years]
@@ -63,22 +64,16 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
   first = True
   tempFilesCreated = [fileNameT]
 
-  #vehiclesToSkip=['Taxi (black cab)']
+  BusesOptions = [True, False]
 
-  if splitBusCoach:
-    #vehiclesToSkip.append('Bus and Coach')
-    BusesOptions = [True, False]
-  else:
-    BusesOptions = [None]
-    #inputDataBusCoach = tools.createEFTInput(vBreakdown=vehsplit, roadTypes='all', vehiclesToInclude=['Bus and Coach'])
 
   #if splitSize:
     #sizeVehs = details['sizeRowEnds'].keys()
     #vehiclesToSkip.extend(sizeVehs)
   techOptions = ['All']
-  if splitEuroTech:
+  if techs =='all':
     techOptions.extend(tools.euroClassTechnologies)
-  if splitSize:
+  if weights == 'all':
     weights = list(range(max(np.array(details['weightRowEnds']) - np.array(details['weightRowStarts'])) + 1))
     weights.insert(0, 99)
   else:
@@ -116,6 +111,7 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
         else:
           techs = techOptions
         for techi, tech in enumerate(techs):
+
           logger.info('{:02d} {:02d} {:02d} {:02d}    Beginning processing for technology {} of {}: "{}".'.format(loci+1, yeari+1, euroi+1, techi+1, techi+1, len(techs), tech))
 
           # See if this is already completed.
@@ -250,14 +246,7 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
                 logger.info('{:02d} {:02d} {:02d} {:02d} {:02d} No output for this weight class. Skipping any higher weight classes.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
                 break
               # Now add fuel information, etc.
-              try:
-                output['fuel'] = output.apply(lambda row: tools.VehDetails[row['vehicle']]['Fuel'], axis=1)
-              except E:
-                print(output.head(5))
-                print(output.head(5))
-                print(output['vehicle'].unique())
-                print(tools.VehDetails)
-                raise E
+              output['fuel'] = output.apply(lambda row: tools.VehDetails[row['vehicle']]['Fuel'], axis=1)
               output['fuel'] = output.apply(lambda row: tools.VehDetails[row['vehicle']]['Fuel'], axis=1)
               output['vehicle type'] = output.apply(lambda row: tools.VehDetails[row['vehicle']]['Veh'], axis=1)
               output['tech'] = output.apply(lambda row: tools.VehDetails[row['vehicle']]['Tech'], axis=1)
@@ -299,107 +288,170 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
   excel.Quit()
   del(excel)
 
+def prepareDir(outputDirP):
+
+  outputDir = outputDirP
+  logfilename = path.join(outputDir, 'extractEFT.log')
+  new = True
+  # Does it already exist?
+  if path.isdir(outputDir):
+    # It does! See if it's empty.
+    contents = os.listdir(outputDir)
+    if len(contents) == 0:
+      # No contents, so we are beginning afresh. Create the temp dir and the log.
+      os.makedirs(path.join(outputDir, 'temp'))
+    else:
+      # There are contents. Is one of them called log?
+      if path.isfile(logfilename):
+        # There is already a log file. Ask the user if they wish to expand on
+        # work already started.
+        Append = input(('It looks like processing has already begun in this '
+                        'directory. Would you like to continue processing '
+                        'where it was left off, based on the contents of the '
+                        'log file. [y/n]'))
+        if Append.lower() in ['yes', 'y']:
+          new = False
+          if not path.isdir(path.join(outputDir, 'temp')):
+            os.makedirs(path.join(outputDir, 'temp'))
+        else:
+          print(('Processing cannot continue because the designated directory '
+                 'already contains a log file. Either specify a new directory, '
+                 'or delete the log file to start afresh.'))
+          exit()
+      else:
+        # There is not, so we are beginning afresh here too.
+        if not path.isdir(path.join(outputDir, 'temp')):
+          os.makedirs(path.join(outputDir, 'temp'))
+    pass
+  else:
+    # It doesn't. Create it, and create a log file and temporary file directory.
+    os.makedirs(outputDir)
+    os.makedirs(path.join(outputDir, 'temp'))
+  return outputDir, logfilename, new
+
 def parseArgs():
-  parser = argparse.ArgumentParser(description=("Extract emission values from "
-                                                "the EFT, broken down by a "
-                                                "choice of year, location, euro "
-                                                "class, technology and weight class."))
+  desc = """
+  Extract emission values from a designated EFT file broken down by location,
+  year, euro class, technology and weight class.
+
+  Output will be saved to individual csv files for each location, year, euro
+  class and technology. A log file will be created that tracks progress of the
+  processing. All files will be saved to a directory that should be specified
+  by the user. Ideally an empty otherwise unused directory should be specified.
+
+  Processing is very slow, expect at least 5 minutes for every iteration of
+  location, year, euro class and technology. If the processing is cancelled by
+  the user (ctrl+c), or otherwise fails then it can be restarted, so long as
+  the same directory is specified then the programme will first read through
+  the log file and will not re-create files that have already been processed.
+  """
+
+
+  parser = argparse.ArgumentParser(description=desc)
 
   parser.add_argument('inputfile', metavar='input file',
-                      type=str,   nargs=1,
-                      help=("The file to process. This needs to be set up "
-                            "correctly (DETAILS!)."))
-  parser.add_argument('--outputdir', '-o', metavar='output directory',
-                      type=str,   nargs='?', default=None,
+                      type=str,
+                      help=("The file to process. This should be a copy of EFT "
+                            "version 7.4 or greater, and it needs a small amount "
+                            "of initial setup. Under Select Pollutants sellect "
+                            "NOx, PM10 and PM2.5. Under Traffic Format sellect "
+                            "'Alternative Technologies'. Select 'Air Quality "
+                            "Modelling (g/km/s)' under 'Select Outputs', and "
+                            "'Euro Compositions' under 'Advanced Options'. All "
+                            "other fields should be either empty or should take "
+                            "their default values."))
+  parser.add_argument('outputdir', metavar='output directory',
+                      type=str,
                       help=("The directory in which to save output files. If "
                             "the directory does not exist then it will be "
-                            "created, assuming required permissions, etc. "
-                            "Default current working directory."))
-  parser.add_argument('--area', '-a', metavar='areas',
+                            "created, assuming required permissions, etc."))
+  parser.add_argument('-a', metavar='areas',
                       type=str, nargs='*', default='Scotland',
                       choices=tools.availableAreas.append('all'),
                       help=("The areas to be processed. One or more of '{}'. "
                             "Default 'Scotland'.").format("', '".join(tools.availableAreas)))
-  parser.add_argument('--years', '-y', metavar='year',
+  parser.add_argument('-y', metavar='year',
                       type=int, nargs='*', default=ynow,
                       choices=range(2008, 2031),
-                      help="The year or years to be processed. Default {}.".format(ynow))
+                      help="The year or years to be processed. Default current year.")
   euroChoices = [99]
   euroChoices.extend(tools.availableEuros)
-  parser.add_argument('--euros', '-e', metavar='euro classes',
+  parser.add_argument('-e', metavar='euro classes',
                       type=int, nargs='*', default=99,
                       choices = euroChoices,
                       help=("The euro class or classes to be processed. One of "
                             "more number between 0 and 6, or 99 which will "
                             "instruct the code to use the default euro breakdown "
                             "for the year specified. Default 99."))
+  parser.add_argument('-w', metavar='weight mode',
+                      type=str, nargs=1, default='all',
+                      choices = ['all', 'mix'],
+                      help=("The weight mode, either 'all' or 'mix'. 'mix' "
+                            "mode does not split emission factors by weight "
+                            "class, instead using the default mix from the EFT, "
+                            "while 'all' mode splits by all possible "
+                            "weight classes. Default 'all'."))
+  parser.add_argument('-t', metavar='tech mode',
+                      type=str, nargs=1, default='all',
+                      choices = ['all', 'mix'],
+                      help=("The technology mode, either 'all' or 'mix'. 'mix' "
+                            "mode does not split emission factors by technology "
+                            "class, instead using the default mix from the EFT "
+                            ", while 'all' mode splits by all possible "
+                            "technology classes. By technology we mean the "
+                            "varied additional technologies applied to vehicles "
+                            "of different euro classes to reduce emission "
+                            "factors, e.g. DPF for diesel vehicles, and "
+                            "technology 'c' and 'd' for euro class 6. Default 'all'."))
   parser.add_argument('--keeptemp',
                       type=bool,  nargs='?', default=False,
                       help=("Whether to keep or delete temporary files. "
                             "Boolean. Default False (delete)."))
-  parser.add_argument('--loggingmode',
-                      nargs='?', default='INFO',
-                      help=("The logging mode."))
+  #parser.add_argument('--loggingmode',
+  #                    nargs='?', default='INFO',
+  #                    help=("The logging mode."))
 
   return parser.parse_args()
 
-def prepareDir(outputDirP, mode='makedir'):
+def inputArgsEqual(newargs, logfilename):
+  searchStr = 'Input arguments parsed as: '
+  with open(logfilename, 'r') as f:
+    for line in f:
+      # We want the last set of commands.
+      if searchStr in line:
+        oldargs = line[line.find(searchStr)+len(searchStr):-1]
+  # Check that they are equal
+  oldargs = ast.literal_eval(oldargs)
+  newargs = vars(newargs)
 
-  if outputDirP is None:
-    # Just use the current working directory. Don't search for any pre-started
-    # output files.
-    outputDir = os.getcwd()
-    logfilename = path.join(outputDir, 'extractEFT_{}.log'.format(datetime.now().strftime('%Y%m%d%H%M%S')))
-    if not path.isdir(path.join(outputDir, 'temp')):
-      os.makedirs(path.join(outputDir, 'temp'))
-  else:
-    outputDir = outputDirP
-    logfilename = path.join(outputDir, 'extractEFT.log')
-    # Does it already exist?
-    if path.isdir(outputDir):
-      # It does! See if it's empty.
-      contents = os.listdir(outputDir)
-      if len(contents) == 0:
-        # No contents, so we are beginning afresh. Create the temp dir and the log.
-        os.makedirs(path.join(outputDir, 'temp'))
-      else:
-        # There are contents. Is one of them called log?
-        if path.isfile(logfilename):
-          # There is already a log file. Ask the user if they wish to expand on
-          # work already started.
-          Append = input(('It looks like processing has already begun in this '
-                          'directory. Would you like to continue processing '
-                          'where it was left off, based on the contents of the '
-                          'log file. [y/n]'))
-          if Append.lower() in ['yes', 'y']:
-            if not path.isdir(path.join(outputDir, 'temp')):
-              os.makedirs(path.join(outputDir, 'temp'))
-          else:
-            print(('Processing cannot continue because the designated directory '
-                   'already contains a log file. Either specify a new directory, '
-                   'or delete the log file to start afresh.'))
-            exit()
-        else:
-          # There is not, so we are beginning afresh here too.
-          if not path.isdir(path.join(outputDir, 'temp')):
-            os.makedirs(path.join(outputDir, 'temp'))
+  if oldargs != newargs:
+    print('')
+    print(('You are attempting to continue evaluation based on a different set '
+           'of input arguments:'))
+    for key in oldargs.keys():
+      print('Old: {}, {}'.format(key, oldargs[key]))
+      print('New: {}, {}'.format(key, newargs[key]))
+
+    Cont = input('Do you wish to continue. [y/n]')
+    if Cont.lower() in ['yes', 'y']:
       pass
     else:
-      # It doesn't. Create it, and create a log file and temporary file directory.
-      os.makedirs(outputDir)
-      os.makedirs(path.join(outputDir, 'temp'))
-  return outputDir, logfilename
+      exit()
 
 def main():
   global logger
 
   # Parse the input arguments.
   pargs = parseArgs()
-
   #tools.combineFiles(pargs.outputdir)
 
   # Get the assigned directory and prepare temporary directories and log files.
-  outputDir, logfilename = prepareDir(pargs.outputdir)
+  outputDir, logfilename, new = prepareDir(pargs.outputdir)
+
+  if not new:
+    # See if the input arguments are identical to the last time this directory
+    # was processed.
+    inputArgsEqual(pargs, logfilename)
 
   # Create the log file.
   logger = logging.getLogger('extractEFT')
@@ -414,17 +466,18 @@ def main():
   logger.addHandler(logfilehandler)
   logger.addHandler(logstreamhandler)
   logger.info('Program started with command: "{}"'.format(' '.join(sys.argv)))
-  logger.info('Input arguments parsed as: {}'.format(pargs))
+  logger.info('Input arguments parsed as: {}'.format(vars(pargs)))
 
   # Read the log file to see if any combination of location, year, euroclass,
   # and tech have already been completed.
   completed = tools.getCompletedFromLog(logfilename, mode='both')
 
   # Run the processing routine.
-  processEFT(pargs.inputfile, pargs.outputdir, pargs.area, pargs.years,
-             euroClasses=pargs.euros, splitSize=True, splitBusCoach=True,
-             splitEuroTech=True, keepTempFiles=pargs.keeptemp,
-             completed=completed)
+  processEFT(pargs.inputfile, pargs.outputdir, pargs.a, pargs.y,
+             euroClasses=pargs.e, weights=pargs.w, techs=pargs.t,
+             keepTempFiles=pargs.keeptemp, completed=completed)
+
+
 
 if __name__ == '__main__':
   main()
