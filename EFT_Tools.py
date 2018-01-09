@@ -1,5 +1,6 @@
 from os import path
 import os
+import shutil
 import re
 import datetime, time
 import numpy as np
@@ -701,8 +702,8 @@ def checkEuroClassesValid(workBook, vehRowStarts, vehRowEnds, EuroClassNameColum
   """
   parentFrame = inspect.currentframe().f_back
   (filename, xa, xb, xc, xd) = inspect.getframeinfo(parentFrame)
-  if filename == '.\extractEverything.py':
-    logger = logging.getLogger("extractEverything.EFT_Tools.checkEuroClassesValid")
+  if filename == '.\extractEFT.py':
+    logger = logging.getLogger("extractEFT.EFT_Tools.checkEuroClassesValid")
   else:
     logger = None
 
@@ -1042,11 +1043,11 @@ def runAndExtract(fileName, vehSplit, details, location, year, euroClass,
     excel = win32.gencache.EnsureDispatch('Excel.Application')
     closeExcel = True
 
-  # Get the logging details if called by extractEverything
+  # Get the logging details if called by extractEFT
   parentFrame = inspect.currentframe().f_back
   (filename, xa, xb, xc, xd) = inspect.getframeinfo(parentFrame)
-  if filename == '.\extractEverything.py':
-    logger = logging.getLogger("extractEverything.EFT_Tools.checkEuroClassesValid")
+  if filename == '.\extractEFT.py':
+    logger = logging.getLogger("extractEFT.EFT_Tools.checkEuroClassesValid")
   else:
     logger = None
 
@@ -1258,6 +1259,86 @@ def runAndExtract(fileName, vehSplit, details, location, year, euroClass,
     excel.Quit()
     del(excelObj) # Make sure it's gone. Apparently some people have found this neccesary.
   return excel, tempSaveName, defaultProportions, busCoachProportions, weightclassnames, gotTechs
+
+def combineFiles(directory):
+  """
+  Combine the created files within a directory. It works by reading the
+  directory's log file and reads those files that have been completed.
+  """
+
+  # Does the directory exist?
+  if not path.isdir(directory):
+    raise ValueError('Directory cannot be found.')
+  # Search for the log file.
+  contents = os.listdir(directory)
+  if len(contents) == 0:
+    raise ValueError('Directory is empty.')
+  go = False
+  for content in contents:
+    if content[-4:] == '.log':
+      logfilename = path.join(directory, content)
+      yn = input(('Combine files listed as completed '
+                  'in log file {}? [y/n]'.format(logfilename)))
+      if yn.upper() != 'Y':
+        continue
+      else:
+        go = True
+        break
+
+  first = True
+  if go:
+    [fname, ext] = os.path.splitext(logfilename)
+    fnew = fname+'_combined.csv'
+    completed = getCompletedFromLog(logfilename)
+    filenames = list(completed['saveloc'])
+
+    for fni, fn in enumerate(filenames):
+      if first:
+        shutil.copyfile(fn, fnew)
+        first = False
+      else:
+        df = pd.read_csv(fn)
+        df.to_csv(fnew, mode='a', header=False, index=False)
+      print('Added file {} of {}: '.format(fni+1, len(filenames)))
+
+def getCompletedFromLog(logfilename, mode='completed'):
+  """
+  Read the log file to see if any combination of location, year, euroclass,
+  and tech have already been completed. Returns completed parameters in a
+  pandas dataframe. Can also return combinations marked as skipped.
+
+  logfilename should be the path to a log file created by extractEFT.py
+  mode can be 'completed', 'skipped', or 'both'.
+  """
+
+  CompletedSearchStr = 'COMPLETED (area, year, euro, tech, saveloc): '
+  SkippedSearchStr = 'SKIPPED (area, year, euro, tech, saveloc): '
+  if mode == 'completed':
+    SearchStrs = [CompletedSearchStr]
+  elif mode == 'skipped':
+    SearchStrs = [SkippedSearchStr]
+  elif mode == 'both':
+    SearchStrs = [CompletedSearchStr, SkippedSearchStr]
+  else:
+    raise ValueError("mode '{}' is not understood.".format(mode))
+
+
+  completed = pd.DataFrame(columns=['area', 'year', 'euro', 'tech', 'saveloc'])
+  ci = 0
+  with open(logfilename, 'r') as logf:
+    for line in logf:
+
+
+      for SearchStr in SearchStrs:
+        if SearchStr in line:
+          ci += 1
+          info = line[line.find(SearchStr)+len(SearchStr):-2]
+          infosplt = info.split(',')
+          completed.loc[ci] = [infosplt[0].strip(), int(infosplt[1].strip()),
+                               int(infosplt[2].strip()), infosplt[3].strip(),
+                               infosplt[4].strip()]
+          break
+  return completed
 
 if __name__ == '__main__':
   # For testing.
