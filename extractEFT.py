@@ -13,7 +13,6 @@ import numpy as np
 import pandas as pd
 import win32com.client as win32
 
-
 import EFT_Tools as tools
 
 
@@ -24,6 +23,8 @@ ynow = datetime.now().year
 def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6],
                weights='all', techs='all', keepTempFiles=False,
                saveFile=None,completed=None):
+
+  loggerM = logger.getChild('processEFT')
 
   if type(years) is not list:
     years = [years]
@@ -66,10 +67,6 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
 
   BusesOptions = [True, False]
 
-
-  #if splitSize:
-    #sizeVehs = details['sizeRowEnds'].keys()
-    #vehiclesToSkip.extend(sizeVehs)
   techOptions = ['All']
   if techs =='all':
     techOptions.extend(tools.euroClassTechnologies)
@@ -90,40 +87,40 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
     subprocess.Popen([tools.ahk_exepath, ahk_ahkpathG])
   wb = excel.Workbooks.Open(fileNameT)
   excel.Visible = True
-  tools.checkEuroClassesValid(wb, details['vehRowStartsMC'], details['vehRowEndsMC'], tools.EuroClassNameColumnsMC, Type=1)
-  tools.checkEuroClassesValid(wb, details['vehRowStartsHB'], details['vehRowEndsHB'], tools.EuroClassNameColumnsMC, Type=2)
-  tools.checkEuroClassesValid(wb, details['vehRowStarts'], details['vehRowEnds'], tools.EuroClassNameColumns, Type=0)
+  tools.checkEuroClassesValid(wb, details['vehRowStartsMC'], details['vehRowEndsMC'], tools.EuroClassNameColumnsMC, Type=1, logger=loggerM)
+  tools.checkEuroClassesValid(wb, details['vehRowStartsHB'], details['vehRowEndsHB'], tools.EuroClassNameColumnsMC, Type=2, logger=loggerM)
+  tools.checkEuroClassesValid(wb, details['vehRowStarts'], details['vehRowEnds'], tools.EuroClassNameColumns, Type=0, logger=loggerM)
   wb.Close(True)
 
   #inputData = tools.createEFTInput(vBreakdown=vehsplit, roadTypes='all', vehiclesToSkip=vehiclesToSkip)
   for loci, location in enumerate(locations):
-    logger.info('{:02d}             Beginning processing for location {} of {}: "{}".'.format(loci+1, loci+1, len(locations), location))
+    loggerM.info('{:02d}             Beginning processing for location {} of {}: "{}".'.format(loci+1, loci+1, len(locations), location))
     for yeari, year in enumerate(years):
-      logger.info('{:02d} {:02d}          Beginning processing for year {} of {}: "{}".'.format(loci+1, yeari+1, yeari+1, len(years), year))
+      loggerM.info('{:02d} {:02d}          Beginning processing for year {} of {}: "{}".'.format(loci+1, yeari+1, yeari+1, len(years), year))
       #busCoachSplit = pd.DataFrame(columns=['year', 'area', 'version', 'type', 'Buses', 'Coaches'])
       #busCoachDone = False
       for euroi, euroClass in enumerate(euroClasses):
-        logger.info('{:02d} {:02d} {:02d}       Beginning processing for euroclass {} of {}: "{}".'.format(loci+1, yeari+1, euroi+1, euroi+1, len(euroClasses), euroClass))
+        loggerM.info('{:02d} {:02d} {:02d}       Beginning processing for euroclass {} of {}: "{}".'.format(loci+1, yeari+1, euroi+1, euroi+1, len(euroClasses), euroClass))
         if euroClass == 99:
           # Euro class of euro 99 means use default mix, and default mix of tech.
-          logger.info('{:02d} {:02d} {:02d}       Euro class of 99 specifies using default euro mix, and default tech.'.format(loci+1, yeari+1, euroi+1))
+          loggerM.info('{:02d} {:02d} {:02d}       Euro class of 99 specifies using default euro mix, and default tech.'.format(loci+1, yeari+1, euroi+1))
           techs = ['All']
         else:
           techs = techOptions
         for techi, tech in enumerate(techs):
 
-          logger.info('{:02d} {:02d} {:02d} {:02d}    Beginning processing for technology {} of {}: "{}".'.format(loci+1, yeari+1, euroi+1, techi+1, techi+1, len(techs), tech))
+          loggerM.info('{:02d} {:02d} {:02d} {:02d}    Beginning processing for technology {} of {}: "{}".'.format(loci+1, yeari+1, euroi+1, techi+1, techi+1, len(techs), tech))
 
           # See if this is already completed.
           matchingRow = completed[(completed['area'] == location) & (completed['year'] == year) & (completed['euro'] == euroClass) & (completed['tech'] == tech)].index.tolist()
           if len(matchingRow) > 0:
             completedfile = completed.loc[matchingRow[0]]['saveloc']
             if completedfile == 'No File':
-              logger.info('{:02d} {:02d} {:02d} {:02d}    Processing for these specifications has previously been skipped.'.format(loci+1, yeari+1, euroi+1, techi+1, completedfile))
+              loggerM.info('{:02d} {:02d} {:02d} {:02d}    Processing for these specifications has previously been skipped.'.format(loci+1, yeari+1, euroi+1, techi+1, completedfile))
             else:
               [oP, FNC] = path.split(completedfile)
-              logger.info('{:02d} {:02d} {:02d} {:02d}    Processing for these specifications has already been completed.'.format(loci+1, yeari+1, euroi+1, techi+1))
-              logger.info('{:02d} {:02d} {:02d} {:02d}    Results saved in {}.'.format(loci+1, yeari+1, euroi+1, techi+1, FNC))
+              loggerM.info('{:02d} {:02d} {:02d} {:02d}    Processing for these specifications has already been completed.'.format(loci+1, yeari+1, euroi+1, techi+1))
+              loggerM.info('{:02d} {:02d} {:02d} {:02d}    Results saved in {}.'.format(loci+1, yeari+1, euroi+1, techi+1, FNC))
             continue
 
           # Assign save locations.
@@ -133,28 +130,28 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
 
           # Check to see if this technology is available for this euro class.
           if tech not in tools.euroClassNameVariations[euroClass].keys():
-            logger.info('{:02d} {:02d} {:02d} {:02d}    Not available for this euro class.'.format(loci+1, yeari+1, euroi+1, techi+1))
-            logger.info('{:02d} {:02d} {:02d} {:02d}    SKIPPED (area, year, euro, tech, saveloc): {}, {}, {}, {}, {}.'.format(loci+1, yeari+1, euroi+1, techi+1, location, year, euroClass, tech, 'No File'))
+            loggerM.info('{:02d} {:02d} {:02d} {:02d}    Not available for this euro class.'.format(loci+1, yeari+1, euroi+1, techi+1))
+            loggerM.info('{:02d} {:02d} {:02d} {:02d}    SKIPPED (area, year, euro, tech, saveloc): {}, {}, {}, {}, {}.'.format(loci+1, yeari+1, euroi+1, techi+1, location, year, euroClass, tech, 'No File'))
             continue
 
           for doBus in BusesOptions:
             if doBus is None:
               pass
             elif doBus:
-              logger.info('{:02d} {:02d} {:02d} {:02d}    Buses and coaches.'.format(loci+1, yeari+1, euroi+1, techi+1))
+              loggerM.info('{:02d} {:02d} {:02d} {:02d}    Buses and coaches.'.format(loci+1, yeari+1, euroi+1, techi+1))
               if tech in ['c', 'd']:
-                logger.info('{:02d} {:02d} {:02d} {:02d}    Not available for technology {}.'.format(loci+1, yeari+1, euroi+1, techi+1, tech))
+                loggerM.info('{:02d} {:02d} {:02d} {:02d}    Not available for technology {}.'.format(loci+1, yeari+1, euroi+1, techi+1, tech))
                 continue
               elif (euroClass in [5]) and (tech == 'Standard'):
-                logger.info('{:02d} {:02d} {:02d} {:02d}    Not applicable for technology {} for euro class {}.'.format(loci+1, yeari+1, euroi+1, techi+1, tech, euroClass))
+                loggerM.info('{:02d} {:02d} {:02d} {:02d}    Not applicable for technology {} for euro class {}.'.format(loci+1, yeari+1, euroi+1, techi+1, tech, euroClass))
                 continue
             else:
-              logger.info('{:02d} {:02d} {:02d} {:02d}    All vehicles except buses and coaches.'.format(loci+1, yeari+1, euroi+1, techi+1))
+              loggerM.info('{:02d} {:02d} {:02d} {:02d}    All vehicles except buses and coaches.'.format(loci+1, yeari+1, euroi+1, techi+1))
 
             for weighti, weight in enumerate(weights):
-              logger.info('{:02d} {:02d} {:02d} {:02d} {:02d} Beginning processing for weight row {} of {}.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1, weighti+1, len(weights)))
+              loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Beginning processing for weight row {} of {}.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1, weighti+1, len(weights)))
               if weight == 99:
-                logger.info('{:02d} {:02d} {:02d} {:02d} {:02d} Weight row 99 specifies using the default weight mix.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Weight row 99 specifies using the default weight mix.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
               if doBus is None:
                 # Extract buses and coaches together, i.e. extract them, along
                 # with all other vehicles and don't treat them any differenctly.
@@ -165,7 +162,7 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
                        fileNameT, vehsplit, details, location, year, euroClass,
                        tools.ahk_exepath, ahk_ahkpathG, versionForOutPut,
                        tech=tech, sizeRow=weight, DoHybridBus=True, DoBusCoach=True,
-                       excel=excel, vehiclesToSkip=vehs2Skip)
+                       excel=excel, vehiclesToSkip=vehs2Skip, logger=loggerM)
                 if newSavedFile is None:
                   output = None
                 else:
@@ -183,7 +180,7 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
                        fileNameT, vehsplit, details, location, year, euroClass,
                        tools.ahk_exepath, ahk_ahkpathG, versionForOutPut,
                        tech=tech, sizeRow=weight, DoHybridBus=False, DoBusCoach=False,
-                       excel=excel, vehiclesToSkip=vehs2Skip)
+                       excel=excel, vehiclesToSkip=vehs2Skip, logger=loggerM)
                 if newSavedFile is None:
                   output = None
                 else:
@@ -194,21 +191,18 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
                   output['weight'] = 'None'
                   for vehclass, wcn in weightclassnames.items():
                     for vehclass2 in tools.in2outVeh[vehclass]:
-                      vehclass
-                      vehclass2
-                      wcn
                       output.loc[output.vehicle == vehclass2, 'weight'] = '{} - {}'.format(vehclass, wcn)
               else:
                 # Extract only buses and coaches, and split them.
-                logger.info('{:02d} {:02d} {:02d} {:02d} {:02d} Buses...'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Buses...'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
                 excel, newSavedFileBus, b, busCoachRatio, weightclassnames, gotTechsB = tools.runAndExtract(
                       fileNameT, vehsplit, details, location, year, euroClass,
                       tools.ahk_exepath, ahk_ahkpathG, versionForOutPut,
                       tech=tech, sizeRow=weight, DoHybridBus=True, DoBusCoach=True,
-                      DoMCycles=False, excel=excel, busCoach='bus')
+                      DoMCycles=False, excel=excel, busCoach='bus', logger=loggerM)
                 if newSavedFileBus is None:
                   gotBus = False
-                  logger.info('{:02d} {:02d} {:02d} {:02d} {:02d} No buses for this weight class.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                  loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} No buses for this weight class.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
                 else:
                   tempFilesCreated.append(newSavedFileBus)
                   outputBus = tools.extractOutput(newSavedFileBus, versionForOutPut, year, location, euroClass, details, techDetails=[tech, gotTechsB])
@@ -216,15 +210,15 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
                   outputBus.loc[outputBus.vehicle == 'Bus and Coach', 'vehicle'] = 'Bus'
                   outputBus['weight'] = 'Bus - {}'.format(weightclassnames['Bus'])
                   gotBus = True
-                logger.info('{:02d} {:02d} {:02d} {:02d} {:02d} Coaches...'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Coaches...'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
                 excel, newSavedFileCoa, b, busCoachRatio, weightclassnames, gotTechsC = tools.runAndExtract(
                       fileNameT, vehsplit, details, location, year, euroClass,
                       tools.ahk_exepath, ahk_ahkpathG, versionForOutPut,
                       tech=tech, sizeRow=weight, DoHybridBus=False, DoBusCoach=True,
-                      DoMCycles=False, excel=excel, busCoach='coach')
+                      DoMCycles=False, excel=excel, busCoach='coach', logger=loggerM)
                 if newSavedFileCoa is None:
                   gotCoach = False
-                  logger.info('{:02d} {:02d} {:02d} {:02d} {:02d} No buses for this weight class.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                  loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} No buses for this weight class.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
                 else:
                   tempFilesCreated.append(newSavedFileCoa)
                   outputCoa = tools.extractOutput(newSavedFileCoa, versionForOutPut, year, location, euroClass, details, techDetails=[tech, gotTechsC])
@@ -243,7 +237,7 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
 
               if output is None:
                 # No output for this weightclass, there'll be none for any higher either.
-                logger.info('{:02d} {:02d} {:02d} {:02d} {:02d} No output for this weight class. Skipping any higher weight classes.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} No output for this weight class. Skipping any higher weight classes.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
                 break
               # Now add fuel information, etc.
               output['fuel'] = output.apply(lambda row: tools.VehDetails[row['vehicle']]['Fuel'], axis=1)
@@ -258,7 +252,7 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
 
               output['NO2 (g/km/s/veh)'] = output['NOx (g/km/s/veh)']*output['NOx2NO2']
               output = output.sort_values(['year', 'area', 'type', 'euro', 'speed', 'vehicle type', 'fuel', 'vehicle', 'weight'])
-              logger.info('{:02d} {:02d} {:02d} {:02d} {:02d} Writing {} rows to file.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1, output.shape[0]))
+              loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Writing {} rows to file.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1, output.shape[0]))
               if first:
                 # Save to a new csv file.
                 output.to_csv(outputFileCSVinPrep, index=False)
@@ -268,23 +262,23 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
                 # Append to the csv file.
                 output.to_csv(outputFileCSVinPrep, mode='a', header=False, index=False)
                 #defaultProportions.to_csv(fileNameDefaultProportionsNotComplete, mode='a', header=False, index=False)
-              logger.info('{:02d} {:02d} {:02d} {:02d} {:02d} Processing complete for weight row {} of {}.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1, weighti+1, len(weights)))
+              loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Processing complete for weight row {} of {}.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1, weighti+1, len(weights)))
 
             if doBus is None:
               pass
             elif doBus:
-              logger.info('{:02d} {:02d} {:02d} {:02d}    Processing for Buses and Coaches complete.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+              loggerM.info('{:02d} {:02d} {:02d} {:02d}    Processing for Buses and Coaches complete.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
             else:
-              logger.info('{:02d} {:02d} {:02d} {:02d}    Processing for non-Buses complete.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+              loggerM.info('{:02d} {:02d} {:02d} {:02d}    Processing for non-Buses complete.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
 
-          logger.info('{:02d} {:02d} {:02d} {:02d}    Processing complete for technology {} of {}: "{}".'.format(loci+1, yeari+1, euroi+1, techi+1, techi+1, len(techs), tech))
-          logger.info('{:02d} {:02d} {:02d} {:02d}    Results saved in {}.'.format(loci+1, yeari+1, euroi+1, techi+1, outputFileCSV))
-          logger.info('{:02d} {:02d} {:02d} {:02d}    COMPLETED (area, year, euro, tech, saveloc): {}, {}, {}, {}, {}.'.format(loci+1, yeari+1, euroi+1, techi+1, location, year, euroClass, tech, outputFileCSV))
+          loggerM.info('{:02d} {:02d} {:02d} {:02d}    Processing complete for technology {} of {}: "{}".'.format(loci+1, yeari+1, euroi+1, techi+1, techi+1, len(techs), tech))
+          loggerM.info('{:02d} {:02d} {:02d} {:02d}    Results saved in {}.'.format(loci+1, yeari+1, euroi+1, techi+1, outputFileCSV))
+          loggerM.info('{:02d} {:02d} {:02d} {:02d}    COMPLETED (area, year, euro, tech, saveloc): {}, {}, {}, {}, {}.'.format(loci+1, yeari+1, euroi+1, techi+1, location, year, euroClass, tech, outputFileCSV))
           shutil.move(outputFileCSVinPrep, outputFileCSV)
-        logger.info('{:02d} {:02d} {:02d}       Processing complete for euroclass {} of {}: "{}".'.format(loci+1, yeari+1, euroi+1, euroi+1, len(euroClasses), euroClass))
-      logger.info('{:02d} {:02d}          Processing complete for year {} of {}: "{}".'.format(loci+1, yeari+1, yeari+1, len(years), year))
-    logger.info('{:02d}             Processing complete for location {} of {}: "{}".'.format(loci+1, loci+1, len(locations), location))
-  logger.info('Process Complete.')
+        loggerM.info('{:02d} {:02d} {:02d}       Processing complete for euroclass {} of {}: "{}".'.format(loci+1, yeari+1, euroi+1, euroi+1, len(euroClasses), euroClass))
+      loggerM.info('{:02d} {:02d}          Processing complete for year {} of {}: "{}".'.format(loci+1, yeari+1, yeari+1, len(years), year))
+    loggerM.info('{:02d}             Processing complete for location {} of {}: "{}".'.format(loci+1, loci+1, len(locations), location))
+  loggerM.info('Process Complete.')
   excel.Quit()
   del(excel)
 
@@ -407,9 +401,10 @@ def parseArgs():
                       type=bool,  nargs='?', default=False,
                       help=("Whether to keep or delete temporary files. "
                             "Boolean. Default False (delete)."))
-  #parser.add_argument('--loggingmode',
-  #                    nargs='?', default='INFO',
-  #                    help=("The logging mode."))
+  parser.add_argument('--loggingmode',
+                      nargs='?', default='INFO',
+                      choices=['INFO', 'DEBUG'],
+                      help=("The logging mode. Either INFO or DEBUG, default INFO."))
 
   return parser.parse_args()
 
@@ -454,8 +449,14 @@ def main():
     compareArgsEqual(pargs, logfilename)
 
   # Create the log file.
-  logger = logging.getLogger('extractEFT')
-  logger.setLevel(logging.INFO)
+  loggerName = __name__
+  logger = logging.getLogger(loggerName)
+  if pargs.loggingmode == 'INFO':
+    logger.setLevel(logging.INFO)
+  elif pargs.loggingmode == 'DEBUG':
+    logger.setLevel(logging.DEBUG)
+  else:
+    raise ValueError("Logging mode '{}' not understood.".format(pargs.loggingmode))
 
   fileFormatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
   streamFormatter = logging.Formatter('%(asctime)s - %(message)s')

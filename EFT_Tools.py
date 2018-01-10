@@ -199,12 +199,12 @@ techVehs = {'DPF': ['Car', 'Diesel Car', 'Taxi (black cab)', 'LGV', 'HGV',
             'Standard': AllVehs,
             'All': AllVehs}
 
-in2outVeh = {'Car': ['Petrol Car', 'Diesel Car', 'Full Hybrid Petrol Car',
-                     'Plugin Hybrid Petrol Car', 'Full Diesel Hybrid Car',
+in2outVeh = {'Car': ['Petrol Car', 'Diesel Car', 'Full Hybrid Petrol Cars',
+                     'Plug-In Hybrid Petrol Cars', 'Full Hybrid Diesel Cars',
                      'E85 Bioethanol Car', 'LPG Car'],
              'Petrol Car': ['Petrol Car'],
              'Diesel Car': ['Diesel Car'],
-             'LGV': ['Petrol LGV', 'Diesel LGV', 'Full Hybrid Petrol LGV',
+             'LGV': ['LGV', 'Petrol LGV', 'Diesel LGV', 'Full Hybrid Petrol LGV',
                      'Plug-In Hybrid Petrol LGV', 'E85 Bioethanol LGV', 'LPG LGV'],
              'HGV': ['Rigid HGV', 'B100 Rigid HGV', 'Artic HGV', 'B100 Artic HGV'],
              'Rigid HGV': ['Rigid HGV', 'B100 Rigid HGV'],
@@ -612,13 +612,21 @@ def createEFTInput(vBreakdown='Detailed Option 2',
                    roadTypes=availableRoadTypes,
                    vehiclesToSkip=['Taxi (black cab)'],
                    vehiclesToInclude=None,
-                   tech='All'):
+                   tech='All',
+                   logger=None):
   """
   vehiclesToInclude trumps (and overwrites) vehiclesToSkip
   """
-  VehSplit = VehSplits[vBreakdown]
 
-  #techVehs
+  # Get the logging details.
+    # Get the logging details.
+  loggerM = getLogger(logger, 'createEFTInput')
+
+  logprint(loggerM, 'Creating EFT input.', level='debug')
+  logprint(loggerM, 'Initial vehiclesToSkip: {}'.format(', '.join(vehiclesToSkip)), level='debug')
+  logprint(loggerM, 'Initial vehiclesToInclude: {}'.format(', '.join(vehiclesToInclude)), level='debug')
+  VehSplit = VehSplits[vBreakdown]
+  logprint(loggerM, 'VehSplit: {}'.format(', '.join(VehSplit)), level='debug')
 
   if vehiclesToInclude is not None:
     # Populate vehiclesToSkip with those vehicles that are not included.
@@ -626,12 +634,15 @@ def createEFTInput(vBreakdown='Detailed Option 2',
     for veh in VehSplit:
       if veh not in vehiclesToInclude:
         vehiclesToSkip.append(veh)
+  logprint(loggerM, 'Intermediate vehiclesToSkip: {}'.format(', '.join(vehiclesToSkip)), level='debug')
   #RoadTypes = ['Urban (not London)', 'Rural (not London)', 'Motorway (not London)']
   if tech != 'All':
     # Add vehicles to vehiclesToSkip that are irrelevant for the chosen technology.
     for veh in VehSplit:
       if veh not in techVehs[tech]:
         vehiclesToSkip.append(veh)
+
+  logprint(loggerM, 'Final vehiclesToSkip: {}'.format(', '.join(vehiclesToSkip)), level='debug')
 
   if type(roadTypes) is str:
     if roadTypes in ['all', 'All', 'ALL']:
@@ -646,11 +657,13 @@ def createEFTInput(vBreakdown='Detailed Option 2',
   numCols = 6 + len(VehSplit)
   inputDF = pd.DataFrame(index=range(numRows), columns=range(numCols))
   ri = -1
+
   for rT in roadTypes:
-    #print('rT - {}'.format(rT))
+    logprint(loggerM, 'roadType - {}'.format(rT), level='debug')
     for sp in speeds:
-      #print('  sp - {}'.format(sp))
+      logprint(loggerM, '  speed - {}'.format(sp), level='debug')
       for veh in VehSplit:
+        logprint(loggerM, '    vehicle - {}'.format(veh), level='debug')
         #print('    veh - {}'.format(veh))
         if vBreakdown == 'Basic Split':
           ri += 2
@@ -670,10 +683,10 @@ def createEFTInput(vBreakdown='Detailed Option 2',
           inputDF.set_value(ri, 6, 1)
         else:
           if veh in vehiclesToSkip:
-            #print('      Skipped')
+            logprint(loggerM, '      skipped', level='debug')
             pass
           else:
-            #print('      Included')
+            logprint(loggerM, '      included', level='debug')
             ri += 1
             inputDF.set_value(ri, 0, 'S{} - {} - {}'.format(sp, veh, rT))
             inputDF.set_value(ri, 1, rT)
@@ -687,34 +700,36 @@ def createEFTInput(vBreakdown='Detailed Option 2',
             inputDF.set_value(ri, len(VehSplit)+4, 1)
             inputDF.set_value(ri, len(VehSplit)+5, 1)
   inputData = inputDF.as_matrix()
-  #inputData = np.ascontiguousarray(inputData)
   return inputData
 
-def logprint(logger, string):
-  try:
-    logger.info(string)
-  except AttributeError:
+def logprint(logger, string, level='info'):
+  if level.lower() == 'info':
+    logfunc = lambda x: logger.info(x)
+  elif level.lower() == 'debug':
+    logfunc = lambda x: logger.debug(x)
+  if logger is not None:
+    logfunc(string)
+  else:
     print(string)
 
-def checkEuroClassesValid(workBook, vehRowStarts, vehRowEnds, EuroClassNameColumns, Type=99):
+def checkEuroClassesValid(workBook, vehRowStarts, vehRowEnds, EuroClassNameColumns, Type=99, logger=None):
   """
   Check that all of the available euro classes are specified.
   """
   parentFrame = inspect.currentframe().f_back
   (filename, xa, xb, xc, xd) = inspect.getframeinfo(parentFrame)
-  if filename == '.\extractEFT.py':
-    logger = logging.getLogger("extractEFT.EFT_Tools.checkEuroClassesValid")
-  else:
-    logger = None
+
+  # Get the logging details.
+  loggerM = getLogger(logger, 'checkEuroClassesValid')
 
   if Type == 1:
-    logprint(logger, "Checking all motorcycle euro class names are understood.")
+    logprint(loggerM, "Checking all motorcycle euro class names are understood.")
   elif Type == 2:
-    logprint(logger, "Checking all hybrid bus euro class names are understood.")
+    logprint(loggerM, "Checking all hybrid bus euro class names are understood.")
   elif Type == 0:
-    logprint(logger, "Checking all other euro class names are understood.")
+    logprint(loggerM, "Checking all other euro class names are understood.")
   else:
-    logprint(logger, "Checking all euro class names are understood.")
+    logprint(loggerM, "Checking all euro class names are understood.")
 
   ws_euro = workBook.Worksheets("UserEuro")
   for [vi, vehRowStart] in enumerate(vehRowStarts):
@@ -1029,11 +1044,19 @@ def extractOutput(fileName, versionForOutPut, year, location, euroClass, details
   output = output.rename(columns=renames)
   return output
 
+def getLogger(logger, modName):
+  if logger is None:
+    return None
+  else:
+    if 'EFT_Tools' in logger.name:
+      return logger.getChild(modName)
+    else:
+      return logger.getChild('EFT_Tools.{}'.format(modName))
 
 def runAndExtract(fileName, vehSplit, details, location, year, euroClass,
                   ahk_exepath, ahk_ahkpathG, versionForOutPut, excel=None,
                   checkEuroClasses=False, DoMCycles=True, DoHybridBus=True, DoBusCoach=False,
-                  inputData='prepare', busCoach='default', sizeRow=99, tech='All', vehiclesToSkip=[]):
+                  inputData='prepare', busCoach='default', sizeRow=99, tech='All', vehiclesToSkip=[], logger=None):
   """
   Prepare the file for running the macro.
   euroClass of 99 will retain default euro breakdown.
@@ -1043,13 +1066,8 @@ def runAndExtract(fileName, vehSplit, details, location, year, euroClass,
     excel = win32.gencache.EnsureDispatch('Excel.Application')
     closeExcel = True
 
-  # Get the logging details if called by extractEFT
-  parentFrame = inspect.currentframe().f_back
-  (filename, xa, xb, xc, xd) = inspect.getframeinfo(parentFrame)
-  if filename == '.\extractEFT.py':
-    logger = logging.getLogger("extractEFT.EFT_Tools.checkEuroClassesValid")
-  else:
-    logger = None
+  # Get the logging details.
+  loggerM = getLogger(logger, 'runAndExtract')
 
   # Start off the autohotkey script as a (parallel) subprocess. This will
   # continually check until the compatibility warning appears, and then
@@ -1113,10 +1131,11 @@ def runAndExtract(fileName, vehSplit, details, location, year, euroClass,
                         'Coach': 'DefaultMix',
                         'Motorcycle': 'DefaultMix'}
 
+  logprint(loggerM, 'weightclassnames: {}'.format(weightclassnames), level='debug')
   vehsToInclude = []
   for veh, wn in weightclassnames.items():
     if (veh in techVehs[tech]) and (veh not in vehiclesToSkip):
-      logprint(logger, '               Including weight "{}" for vehicles of class "{}."'.format(wn, veh))
+      logprint(loggerM, '               Including weight "{}" for vehicles of class "{}."'.format(wn, veh))
       vehsToInclude.extend(in2outVeh[veh])
   for veh in vehiclesToSkip:
     if veh in vehsToInclude:
@@ -1147,7 +1166,7 @@ def runAndExtract(fileName, vehSplit, details, location, year, euroClass,
   if type(inputData) is str:
     if inputData == 'prepare':
       # Prepare the input data.
-      inputData = createEFTInput(vBreakdown=vehSplit, vehiclesToInclude=vehsToInclude, tech=tech)
+      inputData = createEFTInput(vBreakdown=vehSplit, vehiclesToInclude=vehsToInclude, tech=tech, logger=logger)
       #inputData = inputData.as_matrix()
     else:
       raise ValueError("inputData '{}' is not understood.".format(inputData))
@@ -1179,7 +1198,7 @@ def runAndExtract(fileName, vehSplit, details, location, year, euroClass,
     defaultProportions = pd.DataFrame(columns=['year', 'area', 'vehicle', 'euro', 'proportion'])
     # Motorcycles first
     if DoMCycles:
-      logprint(logger, '               Assigning fleet euro proportions for motorcycles.')
+      logprint(loggerM, '               Assigning fleet euro proportions for motorcycles.')
       defaultProportionsMC_, gotTechsMC = specifyEuroProportions(euroClass, wb,
                                   details['vehRowStartsMC'], details['vehRowEndsMC'],
                                   EuroClassNameColumnsMC, DefaultEuroColumnsMC,
@@ -1191,7 +1210,7 @@ def runAndExtract(fileName, vehSplit, details, location, year, euroClass,
     else:
       gotTechsMC = {}
     if DoHybridBus:
-      logprint(logger, '               Assigning fleet euro proportions for hybrid buses.')
+      logprint(loggerM, '               Assigning fleet euro proportions for hybrid buses.')
       defaultProportionsHB_, gotTechsHB = specifyEuroProportions(euroClass, wb,
                                   details['vehRowStartsHB'], details['vehRowEndsHB'],
                                   EuroClassNameColumnsHB, DefaultEuroColumnsHB,
@@ -1202,7 +1221,7 @@ def runAndExtract(fileName, vehSplit, details, location, year, euroClass,
         defaultProportions= defaultProportions.append(defaultProportionsRow)
     else:
       gotTechsHB = {}
-    logprint(logger, "               Assigning fleet euro proportions for all 'other' vehicle types.")
+    logprint(loggerM, "               Assigning fleet euro proportions for all 'other' vehicle types.")
     # And all other vehicles
     defaultProportions_, gotTechs = specifyEuroProportions(euroClass, wb,
                              details['vehRowStarts'], details['vehRowEnds'],
@@ -1232,10 +1251,10 @@ def runAndExtract(fileName, vehSplit, details, location, year, euroClass,
   # Now run the EFT tool.
   ws_input.Select() # Select the appropriate sheet, we can't run the macro
                     # from another sheet.
-  logprint(logger, '               Running EFT routine.')
+  logprint(loggerM, '               Running EFT routine.')
 
   excel.Application.Run("RunEfTRoutine")
-  logprint(logger, '                 Complete.')
+  logprint(loggerM, '                 Complete.')
   time.sleep(0.5)
 
   # Save and Close. Saving as an xlsm, rather than a xlsb, file, so that it
