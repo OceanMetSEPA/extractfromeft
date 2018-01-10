@@ -195,6 +195,7 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
               else:
                 # Extract only buses and coaches, and split them.
                 loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Buses...'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+
                 excel, newSavedFileBus, b, busCoachRatio, weightclassnames, gotTechsB = tools.runAndExtract(
                       fileNameT, vehsplit, details, location, year, euroClass,
                       tools.ahk_exepath, ahk_ahkpathG, versionForOutPut,
@@ -218,7 +219,7 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
                       DoMCycles=False, excel=excel, busCoach='coach', logger=loggerM)
                 if newSavedFileCoa is None:
                   gotCoach = False
-                  loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} No buses for this weight class.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                  loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} No coaches for this weight class.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
                 else:
                   tempFilesCreated.append(newSavedFileCoa)
                   outputCoa = tools.extractOutput(newSavedFileCoa, versionForOutPut, year, location, euroClass, details, techDetails=[tech, gotTechsC])

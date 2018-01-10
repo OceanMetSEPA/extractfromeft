@@ -1143,13 +1143,13 @@ def runAndExtract(fileName, vehSplit, details, location, year, euroClass,
 
   if DoBusCoach:
     if busCoach == 'bus':
-      if sizeRow >= 3:
+      if (sizeRow >= 3) and (sizeRow != 99):
         vehsToInclude = []
       else:
         vehsToInclude = ['Bus and Coach', 'B100 Bus', 'CNG Bus', 'Biomethane Bus',
-                       'Biogas Bus', 'Hybrid Bus', 'FCEV Bus', 'B100 Coach']
+                         'Biogas Bus', 'Hybrid Bus', 'FCEV Bus', 'B100 Coach']
     elif busCoach == 'coach':
-      if sizeRow >= 2:
+      if (sizeRow >= 2) and (sizeRow != 99):
         vehsToInclude = []
       else:
         vehsToInclude = ['Bus and Coach', 'B100 Coach']
