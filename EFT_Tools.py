@@ -39,9 +39,9 @@ versionDetails[7.4]['busCoachRow']   = [429, 430]
 versionDetails[7.4]['sizeRowStarts'] = {'LGV': [392, 397], 'Rigid HGV': [402], 'Artic HGV': [412]}
 versionDetails[7.4]['sizeRowEnds'] = {'LGV': [394, 399], 'Rigid HGV': [409], 'Artic HGV': [416]}
 versionDetails[7.4]['SourceNameName'] = 'Source Name'
-versionDetails[7.4]['AllLDVName'] = 'All LDVs (g/km/s)'
-versionDetails[7.4]['AllHDVName'] = 'All HDVs (g/km/s)'
-versionDetails[7.4]['AllVehName'] = 'All Vehicles (g/km/s)'
+versionDetails[7.4]['AllLDVName'] = 'All LDVs (g/km)'
+versionDetails[7.4]['AllHDVName'] = 'All HDVs (g/km)'
+versionDetails[7.4]['AllVehName'] = 'All Vehicles (g/km)'
 versionDetails[7.4]['PolName'] = 'Pollutant Name'
 versionDetails[8.0] = versionDetails[7.4]
 versionDetails[8.0]['weightRowStarts'] = [382, 387, 392, 397, 402, 412, 436,
@@ -64,9 +64,9 @@ versionDetails[7.0]['vehRowStartsMC'] = [186, 192, 198, 204, 210, 216]
 versionDetails[7.0]['vehRowEndsMC']   = [191, 197, 203, 209, 215, 221]
 versionDetails[7.0]['busCoachRow']   = [482, 483]
 versionDetails[7.0]['SourceNameName'] = 'Source Name'
-versionDetails[7.0]['AllLDVName'] = 'All LDVs (g/km/s)'
-versionDetails[7.0]['AllHDVName'] = 'All HDVs (g/km/s)'
-versionDetails[7.0]['AllVehName'] = 'All Vehicles (g/km/s)'
+versionDetails[7.0]['AllLDVName'] = 'All LDVs (g/km)'
+versionDetails[7.0]['AllHDVName'] = 'All HDVs (g/km)'
+versionDetails[7.0]['AllVehName'] = 'All Vehicles (g/km)'
 versionDetails[7.0]['PolName'] = 'Pollutant Name'
 versionDetails[6.0] = {}
 versionDetails[6.0]['vehRowStarts'] = [69, 79, 100, 110, 123, 139, 155, 170]
@@ -75,9 +75,9 @@ versionDetails[6.0]['vehRowStartsMC'] = [186, 192, 198, 204, 210, 216]
 versionDetails[6.0]['vehRowEndsMC']   = [191, 197, 203, 209, 215, 221]
 versionDetails[6.0]['busCoachRow']   = [482, 483]
 versionDetails[6.0]['SourceNameName'] = 'Source_Name'
-versionDetails[6.0]['AllLDVName'] = 'All LDV (g/km/s)'
-versionDetails[6.0]['AllHDVName'] = 'All HDV (g/km/s)'
-versionDetails[6.0]['AllVehName'] = 'All Vehicle (g/km/s)'
+versionDetails[6.0]['AllLDVName'] = 'All LDV (g/km)'
+versionDetails[6.0]['AllHDVName'] = 'All HDV (g/km)'
+versionDetails[6.0]['AllVehName'] = 'All Vehicle (g/km)'
 versionDetails[6.0]['PolName'] = 'Pollutant_Name'
 availableVersions = versionDetails.keys()
 availableAreas = ['England (not London)', 'Northern Ireland', 'Scotland', 'Wales']
@@ -440,7 +440,7 @@ def addNO2(dataframe, Factors='input/NAEI_NO2Extracted.xlsx', mode='Average'):
   Function that adds NO2 emission factors to a data frame that already has NOx
   emission factors.
 
-  The original data frame must have one column called 'NOx (g/km/s/veh)',
+  The original data frame must have one column called 'NOx (g/km/veh)',
   one column called 'year', and one column called 'vehicle'.
   """
 
@@ -449,18 +449,18 @@ def addNO2(dataframe, Factors='input/NAEI_NO2Extracted.xlsx', mode='Average'):
     Factors = readNO2Factors(Factors, mode=mode)
 
   if mode == 'Average':
-    dataframe['NO2 (g/km/s/veh)'] = dataframe['NOx (g/km/s/veh)']*Factors
+    dataframe['NO2 (g/km/veh)'] = dataframe['NOx (g/km/veh)']*Factors
   elif mode == 'ByYear':
-    dataframe['NO2 (g/km/s/veh)'] = dataframe.apply(lambda row: row['NOx (g/km/s/veh)']*Factors[row['year']], axis=1)
+    dataframe['NO2 (g/km/veh)'] = dataframe.apply(lambda row: row['NOx (g/km/veh)']*Factors[row['year']], axis=1)
   elif mode == 'ByUrban':
     UNU = ['NotUrban', 'Urban']
-    dataframe['NO2 (g/km/s/veh)'] = dataframe.apply(lambda row: row['NOx (g/km/s/veh)']*Factors[UNU[row['Urban']]][row['year']], axis=1)
+    dataframe['NO2 (g/km/veh)'] = dataframe.apply(lambda row: row['NOx (g/km/veh)']*Factors[UNU[row['Urban']]][row['year']], axis=1)
   elif mode == 'ByFuel':
-    dataframe['NO2 (g/km/s/veh)'] = dataframe.apply(lambda row: row['NOx (g/km/s/veh)']*Factors[row['Fuel']][row['vehicle']][row['year']], axis=1)
+    dataframe['NO2 (g/km/veh)'] = dataframe.apply(lambda row: row['NOx (g/km/veh)']*Factors[row['Fuel']][row['vehicle']][row['year']], axis=1)
   elif mode == 'ByRoadType':
-    dataframe['NO2 (g/km/s/veh)'] = dataframe.apply(lambda row: row['NOx (g/km/s/veh)']*Factors[row['type']][row['vehicle']][   max([2013,row['year']])], axis=1)
+    dataframe['NO2 (g/km/veh)'] = dataframe.apply(lambda row: row['NOx (g/km/veh)']*Factors[row['type']][row['vehicle']][   max([2013,row['year']])], axis=1)
   elif mode == 'ByEuro':
-    dataframe['NO2 (g/km/s/veh)'] = dataframe.apply(lambda row: row['NOx (g/km/s/veh)']*Factors[row['vehicle']][row['euro']], axis=1)
+    dataframe['NO2 (g/km/veh)'] = dataframe.apply(lambda row: row['NOx (g/km/veh)']*Factors[row['vehicle']][row['euro']], axis=1)
   else:
     raise ValueError("Mode '{}' not understood.".format(mode))
   return dataframe
@@ -697,8 +697,8 @@ def createEFTInput(vBreakdown='Detailed Option 2',
               else:
                 inputDF.set_value(ri, 3+vehi, 0)
             inputDF.set_value(ri, len(VehSplit)+3, sp)
-            inputDF.set_value(ri, len(VehSplit)+4, 1)
-            inputDF.set_value(ri, len(VehSplit)+5, 1)
+            inputDF.set_value(ri, len(VehSplit)+4, 1) # 1 hour. Not neccesary for g/km output.
+            inputDF.set_value(ri, len(VehSplit)+5, 1) # 1 km. Not neccesary either.
   inputData = inputDF.as_matrix()
   return inputData
 
@@ -1040,7 +1040,7 @@ def extractOutput(fileName, versionForOutPut, year, location, euroClass, details
       Pol_ = 'PM2.5'
     else:
       Pol_ = Pol
-    renames[Pol] = '{} (g/km/s/veh)'.format(Pol_)
+    renames[Pol] = '{} (g/km/veh)'.format(Pol_)
   output = output.rename(columns=renames)
   return output
 
@@ -1053,7 +1053,7 @@ def getLogger(logger, modName):
     else:
       return logger.getChild('EFT_Tools.{}'.format(modName))
 
-def runAndExtract(fileName, vehSplit, details, location, year, euroClass,
+def prepareAndRun(fileName, vehSplit, details, location, year, euroClass,
                   ahk_exepath, ahk_ahkpathG, versionForOutPut, excel=None,
                   checkEuroClasses=False, DoMCycles=True, DoHybridBus=True, DoBusCoach=False,
                   inputData='prepare', busCoach='default', sizeRow=99, tech='All', vehiclesToSkip=[], logger=None):
@@ -1067,7 +1067,7 @@ def runAndExtract(fileName, vehSplit, details, location, year, euroClass,
     closeExcel = True
 
   # Get the logging details.
-  loggerM = getLogger(logger, 'runAndExtract')
+  loggerM = getLogger(logger, 'prepareAndRun')
 
   # Start off the autohotkey script as a (parallel) subprocess. This will
   # continually check until the compatibility warning appears, and then

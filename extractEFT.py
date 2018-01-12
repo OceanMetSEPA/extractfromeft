@@ -158,7 +158,7 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
                 vehs2Skip = ['Taxi (black cab)']
                 if (euroClass in [5]) and (tech == 'Standard'):
                   vehs2Skip = vehs2Skip + vehsToSkipSt5
-                excel, newSavedFile, b, k, weightclassnames, gotTechs = tools.runAndExtract(
+                excel, newSavedFile, b, k, weightclassnames, gotTechs = tools.prepareAndRun(
                        fileNameT, vehsplit, details, location, year, euroClass,
                        tools.ahk_exepath, ahk_ahkpathG, versionForOutPut,
                        tech=tech, sizeRow=weight, DoHybridBus=True, DoBusCoach=True,
@@ -176,7 +176,7 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
                 if (euroClass in [5]) and (tech == 'Standard'):
                   vehs2Skip = vehs2Skip + vehsToSkipSt5
                 # Extract all vehicles except buses and coaches.
-                excel, newSavedFile, b, k, weightclassnames, gotTechs = tools.runAndExtract(
+                excel, newSavedFile, b, k, weightclassnames, gotTechs = tools.prepareAndRun(
                        fileNameT, vehsplit, details, location, year, euroClass,
                        tools.ahk_exepath, ahk_ahkpathG, versionForOutPut,
                        tech=tech, sizeRow=weight, DoHybridBus=False, DoBusCoach=False,
@@ -196,7 +196,7 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
                 # Extract only buses and coaches, and split them.
                 loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Buses...'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
 
-                excel, newSavedFileBus, b, busCoachRatio, weightclassnames, gotTechsB = tools.runAndExtract(
+                excel, newSavedFileBus, b, busCoachRatio, weightclassnames, gotTechsB = tools.prepareAndRun(
                       fileNameT, vehsplit, details, location, year, euroClass,
                       tools.ahk_exepath, ahk_ahkpathG, versionForOutPut,
                       tech=tech, sizeRow=weight, DoHybridBus=True, DoBusCoach=True,
@@ -212,7 +212,7 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
                   outputBus['weight'] = 'Bus - {}'.format(weightclassnames['Bus'])
                   gotBus = True
                 loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Coaches...'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
-                excel, newSavedFileCoa, b, busCoachRatio, weightclassnames, gotTechsC = tools.runAndExtract(
+                excel, newSavedFileCoa, b, busCoachRatio, weightclassnames, gotTechsC = tools.prepareAndRun(
                       fileNameT, vehsplit, details, location, year, euroClass,
                       tools.ahk_exepath, ahk_ahkpathG, versionForOutPut,
                       tech=tech, sizeRow=weight, DoHybridBus=False, DoBusCoach=True,
@@ -251,7 +251,7 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
               else:
                 output['NOx2NO2'] = output.apply(lambda row: NO2FEU[tools.VehDetails[row['vehicle']]['NOxVeh']][row['euro']], axis=1)
 
-              output['NO2 (g/km/s/veh)'] = output['NOx (g/km/s/veh)']*output['NOx2NO2']
+              output['NO2 (g/km/veh)'] = output['NOx (g/km/veh)']*output['NOx2NO2']
               output = output.sort_values(['year', 'area', 'type', 'euro', 'speed', 'vehicle type', 'fuel', 'vehicle', 'weight'])
               loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Writing {} rows to file.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1, output.shape[0]))
               if first:
@@ -348,10 +348,10 @@ def parseArgs():
                       type=str,
                       help=("The file to process. This should be a copy of EFT "
                             "version 7.4 or greater, and it needs a small amount "
-                            "of initial setup. Under Select Pollutants sellect "
-                            "NOx, PM10 and PM2.5. Under Traffic Format sellect "
-                            "'Alternative Technologies'. Select 'Air Quality "
-                            "Modelling (g/km/s)' under 'Select Outputs', and "
+                            "of initial setup. Under Select Pollutants select "
+                            "NOx, PM10 and PM2.5. Under Traffic Format select "
+                            "'Alternative Technologies'. Select 'Emission Rates "
+                            "(g/km)' under 'Select Outputs', and "
                             "'Euro Compositions' under 'Advanced Options'. All "
                             "other fields should be either empty or should take "
                             "their default values."))
