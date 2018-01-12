@@ -62,7 +62,7 @@ def do(directory):
           renames[colNameOld] = colNameNew
       if gotAny:
         df = df.rename(columns=renames)
-        df.to_csv(fn, mode='w', header=True, index=True)
+        df.to_csv(fn, mode='w', header=True, index=False)
       else:
         print('  no changes neccesary.')
   return fnew
