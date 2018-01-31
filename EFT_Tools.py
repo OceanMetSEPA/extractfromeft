@@ -2,6 +2,7 @@ from os import path
 import os
 import shutil
 import re
+import ast
 import datetime, time
 import numpy as np
 import pandas as pd
@@ -36,8 +37,12 @@ versionDetails[7.4]['vehRowEndsMC']   = [182,188,194,200,206,212]
 versionDetails[7.4]['vehRowStartsHB'] = [324,328,332] # Hybrid buses
 versionDetails[7.4]['vehRowEndsHB']   = [327,331,335]
 versionDetails[7.4]['busCoachRow']   = [429, 430]
-versionDetails[7.4]['sizeRowStarts'] = {'LGV': [392, 397], 'Rigid HGV': [402], 'Artic HGV': [412]}
-versionDetails[7.4]['sizeRowEnds'] = {'LGV': [394, 399], 'Rigid HGV': [409], 'Artic HGV': [416]}
+versionDetails[7.4]['sizeRowStarts'] = {'LGV': [392, 397],
+                                        'Rigid HGV': [402],
+                                        'Artic HGV': [412]}
+versionDetails[7.4]['sizeRowEnds'] = {'LGV': [394, 399],
+                                      'Rigid HGV': [409],
+                                      'Artic HGV': [416]}
 versionDetails[7.4]['SourceNameName'] = 'Source Name'
 versionDetails[7.4]['AllLDVName'] = 'All LDVs (g/km)'
 versionDetails[7.4]['AllHDVName'] = 'All HDVs (g/km)'
@@ -50,13 +55,15 @@ versionDetails[8.0]['weightRowStarts'] = [382, 387, 392, 397, 402, 412, 436,
 versionDetails[8.0]['weightRowEnds'] =   [384, 389, 394, 399, 409, 416, 438,
                                           443, 448, 459, 464, 469, 474, 485,
                                           490, 500, 507]
-versionDetails[8.0]['weightRowNames'] = ['Car', 'Car', 'LGV', 'LGV', 'Rigid HGV',
-                                         'Artic HGV',  'Car', 'Car', 'Car', 'Car',
-                                         'Car', 'LGV', 'LGV', 'LGV', 'LGV',
-                                         'Rigid HGV', 'Artic HGV']
+versionDetails[8.0]['weightRowNames'] = ['Car', 'Car', 'LGV', 'LGV',
+                                         'Rigid HGV', 'Artic HGV',  'Car',
+                                         'Car', 'Car', 'Car', 'Car', 'LGV',
+                                         'LGV', 'LGV', 'LGV', 'Rigid HGV',
+                                         'Artic HGV']
 versionDetails[8.0]['weightRowStartsBus'] = [419, 425, 512, 532, 537]
 versionDetails[8.0]['weightRowEndsBus'] =   [421, 426, 514, 534, 538]
-versionDetails[8.0]['weightRowNamesBus'] = ['Bus', 'Coach', 'Bus', 'Bus', 'Coach']
+versionDetails[8.0]['weightRowNamesBus'] = ['Bus', 'Coach', 'Bus', 'Bus',
+                                            'Coach']
 versionDetails[7.0] = {}
 versionDetails[7.0]['vehRowStarts'] = [69, 79, 100, 110, 123, 139, 155, 170]
 versionDetails[7.0]['vehRowEnds']   = [75, 87, 106, 119, 134, 150, 166, 181]
@@ -80,78 +87,122 @@ versionDetails[6.0]['AllHDVName'] = 'All HDV (g/km)'
 versionDetails[6.0]['AllVehName'] = 'All Vehicle (g/km)'
 versionDetails[6.0]['PolName'] = 'Pollutant_Name'
 availableVersions = versionDetails.keys()
-availableAreas = ['England (not London)', 'Northern Ireland', 'Scotland', 'Wales']
-availableRoadTypes = ['Urban (not London)', 'Rural (not London)', 'Motorway (not London)']
+availableAreas = ['England (not London)', 'Northern Ireland',
+                  'Scotland', 'Wales']
+availableRoadTypes = ['Urban (not London)', 'Rural (not London)',
+                      'Motorway (not London)']
 availableModes = ['ExtractAll', 'ExtractCarRatio', 'ExtractBus']
 availableEuros = [0,1,2,3,4,5,6]
 
+weightClassNameVariations = {'1_<1400': '<1400 cc',
+                             '2_1400-2000': '1400-2000 cc',
+                             '3_>2000': '>2000 cc',
+                             '1N1 (I)': 'N1 (I)',
+                             '2N1 (II)': 'N1 (II)',
+                             '3N1 (III)': 'N1 (III)',
+                             '1_3.5-7.5 t': '3.5-7.5 t',
+                             '2_7.5-12 t': '7.5-12 t',
+                             '3_12-14 t': '12-14 t',
+                             '4_14-20 t': '14-20 t',
+                             '5_20-26 t': '20-26 t',
+                             '6_26-28 t': '26-28 t',
+                             '7_28-32 t': '28-32 t',
+                             '8_>32 t': '>32 t',
+                             '1_14-20 t': '14-20 t',
+                             '2_20-28 t': '20-28 t',
+                             '3_28-34 t': '28-34 t',
+                             '4_34-40 t': '34-40 t',
+                             '5_40-50 t': '40-50 t',
+                             '1Urban Buses Midi <=15 t': '<=15 t',
+                             '2Urban Buses Standard 15 - 18 t': '15-18 t',
+                             '3Urban Buses Articulated >18 t': '>18 t',
+                             '1Coaches Standard <=18 t': '<=18 t',
+                             '2Coaches Articulated >18 t': '>18 t',
+                             'Single Decker': '<=15 t',
+                             'Double Decker': '15-18 t',
+                             'Articulated': '>18 t'}
+
 euroClassNameVariations = {}
-euroClassNameVariations[0] = {'All': ['1Pre-Euro 1', '1Pre-Euro I', '1_Pre-Euro 1',
-                                      '2Pre-Euro 1', '4Pre-Euro 1', '5Pre-Euro 1',
-                                      '6Pre-Euro 1', '7Pre-Euro 1', '1_Pre-Euro 1'],
-                              'Standard': ['1Pre-Euro 1', '1Pre-Euro I', '1_Pre-Euro 1',
-                                      '2Pre-Euro 1', '4Pre-Euro 1', '5Pre-Euro 1',
-                                      '6Pre-Euro 1', '7Pre-Euro 1', '1_Pre-Euro 1']}
-euroClassNameVariations[1] = {'All': ['2Euro 1', '2Euro I', '1Euro 1', '2Euro 1',
-                                      '2Euro 1', '4Euro 1', '5Euro 1', '6Euro 1',
-                                      '7Euro 1', '9 Euro I DPFRF', '8Euro 1 DPFRF',
+euroClassNameVariations[0] = {'All': ['1Pre-Euro 1', '1Pre-Euro I',
+                                      '1_Pre-Euro 1', '2Pre-Euro 1',
+                                      '4Pre-Euro 1', '5Pre-Euro 1',
+                                      '6Pre-Euro 1', '7Pre-Euro 1',
+                                      '1_Pre-Euro 1'],
+                              'Standard': ['1Pre-Euro 1', '1Pre-Euro I',
+                                           '1_Pre-Euro 1', '2Pre-Euro 1',
+                                           '4Pre-Euro 1', '5Pre-Euro 1',
+                                           '6Pre-Euro 1', '7Pre-Euro 1',
+                                           '1_Pre-Euro 1']}
+euroClassNameVariations[1] = {'All': ['2Euro 1', '2Euro I', '1Euro 1',
+                                      '2Euro 1', '2Euro 1', '4Euro 1',
+                                      '5Euro 1', '6Euro 1', '7Euro 1',
+                                      '9 Euro I DPFRF', '8Euro 1 DPFRF',
                                       '9Euro I DPFRF'],
-                              'DPF': ['9 Euro I DPFRF', '8Euro 1 DPFRF', '9Euro I DPFRF'],
-                              'Standard': ['2Euro 1', '2Euro I', '1Euro 1', '2Euro 1',
-                                      '2Euro 1', '4Euro 1', '5Euro 1', '6Euro 1',
-                                      '7Euro 1']}
-euroClassNameVariations[2] = {'All': ['3Euro 2', '3Euro II', '1Euro 2', '2Euro 2',
-                                      '2Euro 2', '4Euro 2', '5Euro 2', '6Euro 2',
-                                      '7Euro 2', '10 Euro II DPFRF', '9Euro II SCRRF',
+                              'DPF': ['9 Euro I DPFRF', '8Euro 1 DPFRF',
+                                      '9Euro I DPFRF'],
+                              'Standard': ['2Euro 1', '2Euro I', '1Euro 1',
+                                           '2Euro 1', '2Euro 1', '4Euro 1',
+                                           '5Euro 1', '6Euro 1', '7Euro 1']}
+euroClassNameVariations[2] = {'All': ['3Euro 2', '3Euro II', '1Euro 2',
+                                      '2Euro 2', '2Euro 2', '4Euro 2',
+                                      '5Euro 2', '6Euro 2', '7Euro 2',
+                                      '10 Euro II DPFRF', '9Euro II SCRRF',
                                       '9Euro 2 DPFRF'],
                               'DPF': ['10 Euro II DPFRF', '9Euro 2 DPFRF'],
                               'SCR': ['9Euro II SCRRF'],
-                              'Standard': ['3Euro 2', '3Euro II', '1Euro 2', '2Euro 2',
-                                      '2Euro 2', '4Euro 2', '5Euro 2', '6Euro 2',
-                                      '7Euro 2']}
-euroClassNameVariations[3] = {'All': ['4Euro 3', '4Euro III', '1Euro 3', '2Euro 3',
-                                      '2Euro 3', '4Euro 3', '5Euro 3', '6Euro 3',
-                                      '7Euro 3', '11 Euro III DPFRF', '10Euro III SCRRF',
+                              'Standard': ['3Euro 2', '3Euro II', '1Euro 2',
+                                           '2Euro 2', '2Euro 2', '4Euro 2',
+                                           '5Euro 2', '6Euro 2', '7Euro 2']}
+euroClassNameVariations[3] = {'All': ['4Euro 3', '4Euro III', '1Euro 3',
+                                      '2Euro 3', '2Euro 3', '4Euro 3',
+                                      '5Euro 3', '6Euro 3', '7Euro 3',
+                                      '11 Euro III DPFRF', '10Euro III SCRRF',
                                       '8Euro 3 DPF', '10Euro 3 DPFRF'],
-                              'DPF': ['11 Euro III DPFRF', '8Euro 3 DPF', '10Euro 3 DPFRF'],
+                              'DPF': ['11 Euro III DPFRF', '8Euro 3 DPF',
+                                      '10Euro 3 DPFRF'],
                               'SCR': ['10Euro III SCRRF'],
-                              'Standard': ['4Euro 3', '4Euro III', '1Euro 3', '2Euro 3',
-                                      '2Euro 3', '4Euro 3', '5Euro 3', '6Euro 3',
-                                      '7Euro 3']}
-euroClassNameVariations[4] = {'All': ['5Euro 4', '5Euro IV', '1Euro 4', '2Euro 4',
-                                      '2Euro 4', '4Euro 4', '5Euro 4', '6Euro 4',
-                                      '7Euro 4', '12 Euro IV DPFRF', '11Euro IV SCRRF',
+                              'Standard': ['4Euro 3', '4Euro III', '1Euro 3',
+                                           '2Euro 3', '2Euro 3', '4Euro 3',
+                                           '5Euro 3', '6Euro 3', '7Euro 3']}
+euroClassNameVariations[4] = {'All': ['5Euro 4', '5Euro IV', '1Euro 4',
+                                      '2Euro 4', '2Euro 4', '4Euro 4',
+                                      '5Euro 4', '6Euro 4', '7Euro 4',
+                                      '12 Euro IV DPFRF', '11Euro IV SCRRF',
                                       '9Euro 4 DPF'],
                               'DPF': ['12 Euro IV DPFRF', '9Euro 4 DPF'],
                               'SCR': ['11Euro IV SCRRF'],
-                              'Standard': ['5Euro 4', '5Euro IV', '1Euro 4', '2Euro 4',
-                                      '2Euro 4', '4Euro 4', '5Euro 4', '6Euro 4',
-                                      '7Euro 4']}
-euroClassNameVariations[5] = {'All': ['6Euro 5', '6Euro V', '1Euro 5', '2Euro 5',
-                                      '2Euro 5', '4Euro 5', '5Euro 5', '6Euro 5',
-                                      '7Euro 5', '7Euro V_SCR', '6Euro V_EGR',
-                                      '12Euro V EGR + SCRRF'],
+                              'Standard': ['5Euro 4', '5Euro IV', '1Euro 4',
+                                           '2Euro 4', '2Euro 4', '4Euro 4',
+                                           '5Euro 4', '6Euro 4', '7Euro 4']}
+euroClassNameVariations[5] = {'All': ['6Euro 5', '6Euro V', '1Euro 5',
+                                      '2Euro 5',
+                                      '2Euro 5', '4Euro 5', '5Euro 5',
+                                      '6Euro 5', '7Euro 5', '7Euro V_SCR',
+                                      '6Euro V_EGR', '12Euro V EGR + SCRRF'],
                               'EGR': ['6Euro V_EGR'],
                               'SCR': ['7Euro V_SCR'],
                               'EGR + SCRRF': ['12Euro V EGR + SCRRF'],
-                              'Standard': ['6Euro 5', '6Euro V', '1Euro 5', '2Euro 5',
-                                      '2Euro 5', '4Euro 5', '5Euro 5', '6Euro 5',
-                                      '7Euro 5']}
-euroClassNameVariations[6] = {'All': ['7Euro 6', '6Euro VI', '1Euro 6', '2Euro 6',
-                                      '2Euro 6', '4Euro 6', '5Euro 6', '6Euro 6',
-                                      '7Euro 6', '8Euro VI', '7Euro 6c', '7Euro 6d'],
-                              'Standard': ['7Euro 6', '6Euro VI', '1Euro 6', '2Euro 6',
-                                      '2Euro 6', '4Euro 6', '5Euro 6', '6Euro 6',
-                                      '7Euro 6', '8Euro VI'],
+                              'Standard': ['6Euro 5', '6Euro V', '1Euro 5',
+                                           '2Euro 5', '2Euro 5', '4Euro 5',
+                                           '5Euro 5', '6Euro 5', '7Euro 5']}
+euroClassNameVariations[6] = {'All': ['7Euro 6', '6Euro VI', '1Euro 6',
+                                      '2Euro 6', '2Euro 6', '4Euro 6', '5Euro 6',
+                                      '6Euro 6', '7Euro 6', '8Euro VI',
+                                      '7Euro 6c', '7Euro 6d'],
+                              'Standard': ['7Euro 6', '6Euro VI', '1Euro 6',
+                                           '2Euro 6', '2Euro 6', '4Euro 6',
+                                           '5Euro 6', '6Euro 6', '7Euro 6',
+                                           '8Euro VI'],
                               'c': ['7Euro 6c'],
                               'd': ['7Euro 6d']}
-euroClassNameVariations[99] = {'All': ['7Euro 6', '6Euro VI', '1Euro 6', '2Euro 6',
-                                      '2Euro 6', '4Euro 6', '5Euro 6', '6Euro 6',
-                                      '7Euro 6', '8Euro VI', '7Euro 6c', '7Euro 6d']}
+euroClassNameVariations[99] = {'All': ['7Euro 6', '6Euro VI', '1Euro 6',
+                                       '2Euro 6', '2Euro 6', '4Euro 6',
+                                       '5Euro 6', '6Euro 6', '7Euro 6',
+                                       '8Euro VI', '7Euro 6c', '7Euro 6d']}
 
 euroClassNameVariationsIgnore = ['B100 Rigid HGV', 'Biodiesel Buses',
                                  'Biodiesel Coaches', 'Hybrid Buses',
-                                 'Biodiesel Buses', 'Biodiesel Coaches'] # Ignore these.
+                                 'Biodiesel Buses', 'Biodiesel Coaches']
 
 AllowedTechs = {'LGV': ['c', 'd', 'Standard', 'DPF'],
                 'Rigid HGV': ['Standard', 'DPF', 'EGR', 'SCR', 'EGR + SCRRF'],
@@ -168,14 +219,17 @@ VehSplits = {'Basic Split': ['HDV'],
              'Alternative Technologies': ['Petrol Car', 'Diesel Car',
                                    'Taxi (black cab)', 'LGV', 'Rigid HGV',
                                    'Artic HGV', 'Bus and Coach', 'Motorcycle',
-                                   'Full Hybrid Petrol Cars', 'Plug-In Hybrid Petrol Cars',
+                                   'Full Hybrid Petrol Cars',
+                                   'Plug-In Hybrid Petrol Cars',
                                    'Full Hybrid Diesel Cars', 'Battery EV Cars',
-                                   'FCEV Cars', 'E85 Bioethanol Cars', 'LPG Cars',
-                                   'Full Hybrid Petrol LGV', 'Plug-In Hybrid Petrol LGV',
-                                   'Battery EV LGV', 'FCEV LGV', 'E85 Bioethanol LGV',
-                                   'LPG LGV', 'B100 Rigid HGV', 'B100 Artic HGV',
-                                   'B100 Bus', 'CNG Bus', 'Biomethane Bus',
-                                   'Biogas Bus', 'Hybrid Bus', 'FCEV Bus', 'B100 Coach']}
+                                   'FCEV Cars', 'E85 Bioethanol Cars',
+                                   'LPG Cars', 'Full Hybrid Petrol LGV',
+                                   'Plug-In Hybrid Petrol LGV',
+                                   'Battery EV LGV', 'FCEV LGV',
+                                   'E85 Bioethanol LGV', 'LPG LGV',
+                                   'B100 Rigid HGV', 'B100 Artic HGV', 'B100 Bus',
+                                   'CNG Bus', 'Biomethane Bus', 'Biogas Bus',
+                                   'Hybrid Bus', 'FCEV Bus', 'B100 Coach']}
 AllVehs = []
 for val in VehSplits.values():
   AllVehs.extend(val)
@@ -254,6 +308,8 @@ UserDefinedBusColumn = ["D"]
 UserDefinedBusMWColumn = ["E"]
 DefaultBusColumn = ["B"]
 DefaultBusMWColumn = ["C"]
+NameWeightColumn = "A"
+DefaultWeightColumn = "B"
 
 VehDetails = {'Petrol Car': {'Fuel': 'Petrol', 'Veh': 'Car', 'Tech': 'Internal Combustion', 'NOxVeh': 'Petrol Car'},
               'Diesel Car': {'Fuel': 'Diesel', 'Veh': 'Car', 'Tech': 'Internal Combustion', 'NOxVeh': 'Diesel Car'},
@@ -1101,6 +1157,192 @@ def getLogger(logger, modName):
     else:
       return logger.getChild('EFT_Tools.{}'.format(modName))
 
+def readProportions(fileName, details, location, year,
+                    ahk_exepath, ahk_ahkpathG,
+                    versionForOutPut, excel=None, logger=None):
+  closeExcel = False
+  if excel is None:
+    excel = win32.gencache.EnsureDispatch('Excel.Application')
+    closeExcel = True
+
+  # Get the logging details.
+  loggerM = getLogger(logger, 'readProportions')
+
+  # Start off the autohotkey script as a (parallel) subprocess. This will
+  # continually check until the compatibility warning appears, and then
+  # close the warning.
+  if path.isfile(ahk_exepath):
+    subprocess.Popen([ahk_exepath, ahk_ahkpathG])
+
+  # Open the document.
+  wb = excel.Workbooks.Open(fileName)
+  excel.Visible = True
+
+  # Set the default values in the Input Data sheet.
+  ws_input = wb.Worksheets("Input Data")
+  ws_input.Range("B4").Value = location
+  ws_input.Range("B5").Value = year
+
+  ws_euro = wb.Worksheets("UserEuro")
+
+  # Euro split!
+  logprint(loggerM, 'Extracting default euro split proportions.', level='info')
+
+  startrows = ['vehRowStarts', 'vehRowStartsMC', 'vehRowStartsHB']
+  endrows = ['vehRowEnds', 'vehRowEndsMC', 'vehRowEndsHB']
+  vehtypes = ['Most Vehicles', 'Motorcycles', 'Hybrid Buses']
+  EuroClassNameColumnsDict = {'Most Vehicles': EuroClassNameColumns,
+                              'Motorcycles': EuroClassNameColumnsMC,
+                              'Hybrid Buses': EuroClassNameColumnsHB}
+  DefaultEuroColumnsDict = {'Most Vehicles': DefaultEuroColumns,
+                            'Motorcycles': DefaultEuroColumnsMC,
+                            'Hybrid Buses': DefaultEuroColumnsHB}
+  first = True
+  for ci, poltype in enumerate(['NOx', 'PM']):
+    for ri in range(len(startrows)):
+      logprint(loggerM, '  Dealing with euro proportions for {} - {}.'.format(vehtypes[ri], poltype), level='info')
+      ColName = EuroClassNameColumnsDict[vehtypes[ri]][ci]
+      ColProp = DefaultEuroColumnsDict[vehtypes[ri]][ci]
+      vehRowStarts = details[startrows[ri]]
+      vehRowEnds = details[endrows[ri]]
+      propdf = getProportions(ws_euro, ColName, ColProp, vehRowStarts,
+                              vehRowEnds, mode=vehtypes[ri], logger=loggerM)
+      propdf['poltype'] = poltype
+      if first:
+        df = propdf
+        first = False
+      else:
+        df = df.append(propdf)
+  df_allEuros = df
+
+  # Weight split!
+  logprint(loggerM, 'Extracting default weight split proportions.', level='info')
+
+  startrows = ['weightRowStarts', 'weightRowStartsBus']
+  endrows = ['weightRowEnds', 'weightRowEndsBus']
+  vehtypes = ['Most Vehicles', 'Buses']
+
+  first = True
+  for ri in range(len(startrows)):
+    logprint(loggerM, '  Dealing with weight proportions for {}.'.format(vehtypes[ri]), level='info')
+    ColName = NameWeightColumn
+    ColProp = DefaultWeightColumn
+    vehRowStarts = details[startrows[ri]]
+    vehRowEnds = details[endrows[ri]]
+    propdf = getProportions(ws_euro, ColName, ColProp, vehRowStarts,
+                            vehRowEnds, mode='Weights', logger=loggerM)
+    if first:
+      df = propdf
+      first = False
+    else:
+      df = df.append(propdf)
+  df_weights = df
+
+  wb.Close(True)
+  if closeExcel:
+    excel.Quit()
+    del(excelObj)
+
+  # Now extract euro classes on their own (no techs)
+  logprint(loggerM, 'Concolidating euro classes.', level='info')
+
+  vehs = set(df_allEuros['vehicle'])
+  eurs = set(df_allEuros['euroclass'])
+  pols = set(df_allEuros['poltype'])
+  first = True
+  for veh in vehs:
+    df_1 = df_allEuros[df_allEuros['vehicle'] == veh]
+    for eur in eurs:
+      df_2 = df_1[df_1['euroclass'] == eur]
+      for pol in pols:
+        df_3 = df_2[df_2['poltype'] == pol]
+        ss = df_3['proportion'].sum()
+        df_ = pd.DataFrame([[veh, eur, pol, ss]],
+                           columns=['vehicle', 'euroclass',
+                                    'poltype', 'proportion'])
+        if first:
+          df = df_
+          first = False
+        else:
+          df = df.append(df_)
+  df_consEuros = df
+
+  return df_allEuros, df_weights, df_consEuros
+
+def getProportions(ws, ColName, ColProp, vehRowStarts,
+                   vehRowEnds, mode='Most Vehicles', logger=None):
+
+    # Get the logging details.
+  loggerM = getLogger(logger, 'getProportions')
+
+  # Start a pandas dateframe.
+  df = pd.DataFrame(columns=['vehicle', 'euroname',
+                             'euroclass', 'technology', 'proportion'])
+  for vehi in range(len(vehRowStarts)):
+    starow = vehRowStarts[vehi]
+    endrow = vehRowEnds[vehi]
+    if mode == 'Most Vehicles':
+      vehName = ws.Range("{}{}".format(ColName, starow-1)).Value
+      while vehName is None:
+        vehName = ws.Range("{}{}".format(ColName, starow)).Value
+        starow += 1
+    elif mode == 'Motorcycles':
+      stroke_ = ws.Range("A{}".format(starow)).Value
+      weight_ = ws.Range("A{}".format(starow+1)).Value
+      if stroke_ == '0-50cc':
+        vehName = 'Motorcycle - 0-50cc'
+      else:
+        vehName = 'Motorcycle - {} - {}'.format(stroke_, weight_)
+    elif mode == 'Hybrid Buses':
+      decker_ = ws.Range("A{}".format(starow)).Value
+      vehName = 'Hybrid Buses - {}'.format(decker_)
+      starow += 1  # Grrrrr. Poor formatting in the EFT
+      endrow += 1
+    elif mode == 'Weights':
+      vehName = ws.Range("{}{}".format(ColName, starow-1)).Value
+    else:
+      raise ValueError("mode '{}' is not recognised.".format(mode))
+    for row in range(starow, endrow+1):
+      euroName = ws.Range("{}{}".format(ColName, row)).Value
+      if euroName is not None:
+        proportion = ws.Range("{}{}".format(ColProp, row)).Value
+        logprint(loggerM, 'vehName: {}, euroName: {}, proportion: {}'.format(vehName, euroName, proportion), level='debug')
+        got = False
+        if mode == 'Weights':
+          euroName = weightClassNameVariations[euroName]
+          df1 = pd.DataFrame([[vehName, euroName, -99, '--', proportion]],
+                               columns=['vehicle', 'euroname',
+                                        'euroclass', 'technology', 'proportion'])
+          df = df.append(df1, 1)
+          continue
+        for euroI, euronames in euroClassNameVariations.items():
+          if euroI == 99:
+            continue
+          if euroName in euronames['All']:
+            got = True
+            tech = 'Standard'
+            for techname, euronamestechs in euronames.items():
+              if techname == 'All':
+                continue
+              if euroName in euronamestechs:
+                tech = techname
+                break
+            df1 = pd.DataFrame([[vehName, euroName, euroI, tech, proportion]],
+                               columns=['vehicle', 'euroname',
+                                        'euroclass', 'technology', 'proportion'])
+            df = df.append(df1, 1)
+
+        if not got:
+          raise ValueError("Can't identify euro class from {}.".format(euroName))
+  if mode == 'Weights':
+    df = df.rename(columns={'euroname': 'weightclass'})
+    df = df.drop('euroclass', 1)
+    df = df.drop('technology', 1)
+  return df
+
+
+
+
 def prepareAndRun(fileName, vehSplit, details, location, year, euroClass,
                   ahk_exepath, ahk_ahkpathG, versionForOutPut, excel=None,
                   checkEuroClasses=False, DoMCycles=True, DoHybridBus=True, DoBusCoach=False,
@@ -1381,12 +1623,15 @@ def getCompletedFromLog(logfilename, mode='completed'):
 
   CompletedSearchStr = 'COMPLETED (area, year, euro, tech, saveloc): '
   SkippedSearchStr = 'SKIPPED (area, year, euro, tech, saveloc): '
+  ProportionsSearchStr = 'COMPLETED (area, year): '
   if mode == 'completed':
     SearchStrs = [CompletedSearchStr]
   elif mode == 'skipped':
     SearchStrs = [SkippedSearchStr]
   elif mode == 'both':
     SearchStrs = [CompletedSearchStr, SkippedSearchStr]
+  elif mode == 'proportions':
+    SearchStrs = [ProportionsSearchStr]
   else:
     raise ValueError("mode '{}' is not understood.".format(mode))
 
