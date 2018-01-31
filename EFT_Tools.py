@@ -1069,6 +1069,29 @@ def compareArgsEqual(newargs, logfilename):
     else:
       exit()
 
+def prepareLogger(loggerName, logfilename, pargs, inString):
+  loggerName = __name__
+  logger = logging.getLogger(loggerName)
+  if pargs.loggingmode == 'INFO':
+    logger.setLevel(logging.INFO)
+  elif pargs.loggingmode == 'DEBUG':
+    logger.setLevel(logging.DEBUG)
+  else:
+    raise ValueError("Logging mode '{}' not understood.".format(pargs.loggingmode))
+
+  fileFormatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+  streamFormatter = logging.Formatter('%(asctime)s - %(message)s')
+  logfilehandler = logging.FileHandler(logfilename)
+  logfilehandler.setFormatter(fileFormatter)
+  logstreamhandler = logging.StreamHandler()
+  logstreamhandler.setFormatter(streamFormatter)
+  logger.addHandler(logfilehandler)
+  logger.addHandler(logstreamhandler)
+
+  logger.info('Program started with command: "{}"'.format(inString))
+  logger.info('Input arguments parsed as: {}'.format(vars(pargs)))
+  return logger
+
 def getLogger(logger, modName):
   if logger is None:
     return None

@@ -450,25 +450,8 @@ def main():
     tools.compareArgsEqual(pargs, logfilename)
 
   # Create the log file.
-  loggerName = __name__
-  logger = logging.getLogger(loggerName)
-  if pargs.loggingmode == 'INFO':
-    logger.setLevel(logging.INFO)
-  elif pargs.loggingmode == 'DEBUG':
-    logger.setLevel(logging.DEBUG)
-  else:
-    raise ValueError("Logging mode '{}' not understood.".format(pargs.loggingmode))
-
-  fileFormatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-  streamFormatter = logging.Formatter('%(asctime)s - %(message)s')
-  logfilehandler = logging.FileHandler(logfilename)
-  logfilehandler.setFormatter(fileFormatter)
-  logstreamhandler = logging.StreamHandler()
-  logstreamhandler.setFormatter(streamFormatter)
-  logger.addHandler(logfilehandler)
-  logger.addHandler(logstreamhandler)
-  logger.info('Program started with command: "{}"'.format(' '.join(sys.argv)))
-  logger.info('Input arguments parsed as: {}'.format(vars(pargs)))
+  inString = ' '.join(sys.argv)
+  logger = tools.prepareLogger(__name__, logfilename, pargs, inString)
 
   # Read the log file to see if any combination of location, year, euroclass,
   # and tech have already been completed.
