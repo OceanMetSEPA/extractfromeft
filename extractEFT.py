@@ -447,7 +447,7 @@ def main():
   if not new:
     # See if the input arguments are identical to the last time this directory
     # was processed.
-    compareArgsEqual(pargs, logfilename)
+    tools.compareArgsEqual(pargs, logfilename)
 
   # Create the log file.
   loggerName = __name__

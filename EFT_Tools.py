@@ -1044,6 +1044,31 @@ def extractOutput(fileName, versionForOutPut, year, location, euroClass, details
   output = output.rename(columns=renames)
   return output
 
+def compareArgsEqual(newargs, logfilename):
+  searchStr = 'Input arguments parsed as: '
+  with open(logfilename, 'r') as f:
+    for line in f:
+      # We want the last set of commands.
+      if searchStr in line:
+        oldargs = line[line.find(searchStr)+len(searchStr):-1]
+  # Check that they are equal
+  oldargs = ast.literal_eval(oldargs)
+  newargs = vars(newargs)
+
+  if oldargs != newargs:
+    print('')
+    print(('You are attempting to continue evaluation based on a different set '
+           'of input arguments:'))
+    for key in oldargs.keys():
+      print('Old: {}, {}'.format(key, oldargs[key]))
+      print('New: {}, {}'.format(key, newargs[key]))
+
+    Cont = input('Do you wish to continue. [y/n]')
+    if Cont.lower() in ['yes', 'y']:
+      pass
+    else:
+      exit()
+
 def getLogger(logger, modName):
   if logger is None:
     return None
