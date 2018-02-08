@@ -1213,6 +1213,8 @@ def readProportions(fileName, details, location, year,
         first = False
       else:
         df = df.append(propdf)
+  df['year'] = year
+  df['area'] = location
   df_allEuros = df
 
   # Weight split!
@@ -1236,6 +1238,8 @@ def readProportions(fileName, details, location, year,
       first = False
     else:
       df = df.append(propdf)
+  df['year'] = year
+  df['area'] = location
   df_weights = df
 
   wb.Close(True)
@@ -1265,6 +1269,8 @@ def readProportions(fileName, details, location, year,
           first = False
         else:
           df = df.append(df_)
+  df['year'] = year
+  df['area'] = location
   df_consEuros = df
 
   return df_allEuros, df_weights, df_consEuros
@@ -1306,6 +1312,14 @@ def getProportions(ws, ColName, ColProp, vehRowStarts,
       euroName = ws.Range("{}{}".format(ColName, row)).Value
       if euroName is not None:
         proportion = ws.Range("{}{}".format(ColProp, row)).Value
+        if not isinstance(proportion, float):
+          logprint(loggerM, 'Bad proportion value "{}" for veh {}, euro {}.'.format(proportion, vehName, euroName), level='info')
+          proportion = ws.Range("D{}".format(row)).Value
+          if not isinstance(proportion, float):
+            print(proportion)
+            raise ValueError('Proportion must be a float.')
+          else:
+            logprint(loggerM, 'Fixed. Proportion value {}.'.format(proportion), level='info')
         logprint(loggerM, 'vehName: {}, euroName: {}, proportion: {}'.format(vehName, euroName, proportion), level='debug')
         got = False
         if mode == 'Weights':

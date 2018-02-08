@@ -18,7 +18,7 @@ from shutil import copyfile
 import win32com.client as win32
 import numpy as np
 
-import tools
+import EFT_Tools as tools
 
 # The auto hot key paths, so that the initial warning window on the EFT can be
 # closed automatically.
@@ -26,8 +26,8 @@ ahk_exepath = 'C:\Program Files\AutoHotkey\AutoHotkey.exe'
 ahk_ahkpath = 'closeWarning.ahk'
 
 
-InputFile = 'original\EFT2017_v7.4_original.xlsb'
-OutputFile = 'output\EFT2017_v7.4_Extracted.xlsx'
+InputFile = 'original\EFT2017_v8.0_original.xlsb'
+OutputFile = 'output\EFT2017_v8.0_Extracted.xlsx'
 
 # Create a temporary copy so that we don't risk changing the original.
 infn, inex = os.path.splitext(InputFile)
