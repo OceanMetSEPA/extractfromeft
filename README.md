@@ -9,7 +9,7 @@ See https://oceanmet.atlassian.net/wiki/display/airmod/Updates+to+EFT+-+v7.4# fo
 This group of functions is used to extract single vehicle emission factors from the EFT.
 
 ### Usage: extractEFT.py ###
-```python
+```
 usage: extractEFT.py [-h] [-a [areas [areas ...]]] [-y [year [year ...]]]
                      [-e [euro classes [euro classes ...]]] [-w weight mode]
                      [-t tech mode] [--keeptemp [KEEPTEMP]]
