@@ -234,13 +234,13 @@ def doEFT(data, fName, area, year, vehBreakdown, no2file, excel='Create', keepte
 
     # Now consolidate all of the vehicle columns.
     for pol in pollutants:
-      data['EFT {} (g/km)'.format(pol)] = 0
+      data['E_{}'.format(pol)] = 0
 
     for colname in list(data):
       for pol in pollutants:
         pname = pol.replace('.', '')
         if colname[-1*len(pname):] == pname:
-          data['EFT {} (g/km)'.format(pol)] += data[colname]
+          data['E_{}'.format(pol)] += data[colname]
           data = data.drop(colname, 1)
 
 
@@ -262,7 +262,7 @@ def doEFT(data, fName, area, year, vehBreakdown, no2file, excel='Create', keepte
     colstodo = []
     for pol in pollutants:
       pol_ = pol.replace('.', '')
-      rename = 'EFT {} (g/km)'.format(pol_)
+      rename = 'E_{}'.format(pol_)
       renames[pol] = rename
       colstodo.append(rename)
     output = output.rename(columns=renames)
@@ -277,9 +277,9 @@ def doEFT(data, fName, area, year, vehBreakdown, no2file, excel='Create', keepte
       if sN_1 != sN_2:
         # Shouldn't happen, but just in case.
         raise Exception('Source Names are not equal!!!')
-      output['EFT f-NO2'] = list(outputNO2['f-NO2 Value'])
-      output['EFT NO2 (g/km)'] = output['EFT NOx (g/km)'] * output['EFT f-NO2']
-      colstodo.extend(['EFT f-NO2', 'EFT NO2 (g/km)'])
+      output['E_f-NO2'] = list(outputNO2['f-NO2 Value'])
+      output['E_NO2'] = output['E_NOx'] * output['E_f-NO2']
+      colstodo.extend(['E_f-NO2', 'E_NO2'])
       pollutants.append('NO2')
 
     for col in colstodo: #.loc
