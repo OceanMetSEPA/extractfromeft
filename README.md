@@ -81,7 +81,7 @@ optional arguments:
 ##  shp2EFT.py ##
 This programme will take a shape file representing roads with associated traffic counts
 and run it through the EFT. It will save a new shapefile with the emission rates for 
-NO<sub>X</sub>, NO<sub>2</sub>, PM<sub>10</sub> and PM<sub>2.5</sub>.
+NOx, NO2, PM10 and PM2.5.
 
 ### Usage shp2EFT.py ###
 ```text
@@ -136,3 +136,17 @@ optional arguments:
                         Whether to keep or delete temporary files. Boolean.
                         Default False (delete).
 ```
+
+## ExtractHiddenSheets.py ##
+Most of the internal data within the EFT is saved on hidden sheets and protected with a password, well
+guess what, it turns out that passwords in excel documents are only really useful for blocking access 
+to users using excel, python can read the sheet's contents no problem.
+
+This script extracts all sheets from the EFT and saves them to a new un-password-protected document. It's
+not perfect, you don't get to see the original formatting, and you don't get to see any functions or the
+source for the macros, but it's better than nothing.
+
+As a script rather than a function this programme will need to be edited by users when it is required.
+
+##  EFT_Tools.py ##
+A range of functions used by other main programmes.
