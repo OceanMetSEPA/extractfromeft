@@ -1,6 +1,8 @@
 # ExtractFromEFT #
 
-A suite of tools for interacting with and extracting data from the [Emission Factor Toolkit](https://laqm.defra.gov.uk/review-and-assessment/tools/emissions-factors-toolkit.html).
+A suite of tools for interacting with and extracting data from the
+[Emission Factor Toolkit](https://laqm.defra.gov.uk/review-and-assessment/tools/emissions-factors-toolkit.html)
+(EFT).
 
 See https://oceanmet.atlassian.net/wiki/display/airmod/Updates+to+EFT+-+v7.4# for details.
 
@@ -77,9 +79,9 @@ optional arguments:
 ```
 
 ##  shp2EFT.py ##
-
+This programme will take a shape file representing roads with associated traffic counts and run it through the EFT. It will save a new shapefile 
 ### Usage shp2EFT.py ###
-'''python
+```text
 usage: shp2EFT.py [-h] [--vehCountNames [Vehicle count field names]]
                   [--trafficFormat [Traffic Format]] [-a [area]] [-y [year]]
                   [--saveloc [output shape file location]]
@@ -130,4 +132,4 @@ optional arguments:
   --keeptemp [keeptemp]
                         Whether to keep or delete temporary files. Boolean.
                         Default False (delete).
-'''
+```
