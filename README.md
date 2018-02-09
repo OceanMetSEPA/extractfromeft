@@ -79,7 +79,10 @@ optional arguments:
 ```
 
 ##  shp2EFT.py ##
-This programme will take a shape file representing roads with associated traffic counts and run it through the EFT. It will save a new shapefile 
+This programme will take a shape file representing roads with associated traffic counts
+and run it through the EFT. It will save a new shapefile with the emission rates for 
+NO<sub>X</sub>, NO<sub>2</sub>, PM<sub>10</sub> and PM<sub>2.5</sub>.
+
 ### Usage shp2EFT.py ###
 ```text
 usage: shp2EFT.py [-h] [--vehCountNames [Vehicle count field names]]
