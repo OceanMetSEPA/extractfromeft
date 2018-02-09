@@ -234,6 +234,7 @@ AllVehs = []
 for val in VehSplits.values():
   AllVehs.extend(val)
 AllVehs = list(set(AllVehs))
+allowedVehSplits = list(VehSplits.keys())
 
 techVehs = {'DPF': ['Car', 'Diesel Car', 'Taxi (black cab)', 'LGV', 'HGV',
                     'Rigid HGV', 'Artic HGV', 'Bus and Coach', 'B100 Rigid HGV',
@@ -673,7 +674,6 @@ def createEFTInput(vBreakdown='Detailed Option 2',
   """
   vehiclesToInclude trumps (and overwrites) vehiclesToSkip
   """
-
   # Get the logging details.
     # Get the logging details.
   loggerM = getLogger(logger, 'createEFTInput')

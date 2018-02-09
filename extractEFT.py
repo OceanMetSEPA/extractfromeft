@@ -15,13 +15,11 @@ import win32com.client as win32
 import EFT_Tools as tools
 
 
-vehsplit = "Alternative Technologies"
-
-ynow = datetime.now().year
-
-def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6],
-               weights='all', techs='all', keepTempFiles=False,
-               saveFile=None,completed=None):
+def processEFT(fileName, outdir, locations, years,
+               euroClasses=[99,0,1,2,3,4,5,6],
+               vehsplit="Alternative Technologies",
+               weights='all', techs='all',
+               keepTempFiles=False, saveFile=None, completed=None):
 
   loggerM = logger.getChild('processEFT')
 
@@ -60,7 +58,6 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
   NO2FRT = tools.readNO2Factors(mode='ByRoadType')
 
 
-  # And now start the processing!
   first = True
   tempFilesCreated = [fileNameT]
 
@@ -74,7 +71,6 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
     weights.insert(0, 99)
   else:
     weights = [99]
-  #vehiclesToSkipStandard = vehiclesToSkip.copy()
 
   vehsToSkipSt5 = ['Rigid HGV', 'Artic HGV', 'Bus and Coach',
                    'B100 Rigid HGV', 'B100 Artic HGV', 'B100 Bus',
@@ -86,40 +82,56 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
     subprocess.Popen([tools.ahk_exepath, ahk_ahkpathG])
   wb = excel.Workbooks.Open(fileNameT)
   excel.Visible = True
-  tools.checkEuroClassesValid(wb, details['vehRowStartsMC'], details['vehRowEndsMC'], tools.EuroClassNameColumnsMC, Type=1, logger=loggerM)
-  tools.checkEuroClassesValid(wb, details['vehRowStartsHB'], details['vehRowEndsHB'], tools.EuroClassNameColumnsMC, Type=2, logger=loggerM)
-  tools.checkEuroClassesValid(wb, details['vehRowStarts'], details['vehRowEnds'], tools.EuroClassNameColumns, Type=0, logger=loggerM)
+  tools.checkEuroClassesValid(wb, details['vehRowStartsMC'], details['vehRowEndsMC'],
+                              tools.EuroClassNameColumnsMC, Type=1, logger=loggerM)
+  tools.checkEuroClassesValid(wb, details['vehRowStartsHB'], details['vehRowEndsHB'],
+                              tools.EuroClassNameColumnsMC, Type=2, logger=loggerM)
+  tools.checkEuroClassesValid(wb, details['vehRowStarts'], details['vehRowEnds'],
+                              tools.EuroClassNameColumns, Type=0, logger=loggerM)
   wb.Close(True)
 
-  #inputData = tools.createEFTInput(vBreakdown=vehsplit, roadTypes='all', vehiclesToSkip=vehiclesToSkip)
   for loci, location in enumerate(locations):
-    loggerM.info('{:02d}             Beginning processing for location {} of {}: "{}".'.format(loci+1, loci+1, len(locations), location))
+    loggerM.info(('{:02d}             Beginning processing for location {} of '
+                  '{}: "{}".').format(loci+1, loci+1, len(locations), location))
     for yeari, year in enumerate(years):
-      loggerM.info('{:02d} {:02d}          Beginning processing for year {} of {}: "{}".'.format(loci+1, yeari+1, yeari+1, len(years), year))
-      #busCoachSplit = pd.DataFrame(columns=['year', 'area', 'version', 'type', 'Buses', 'Coaches'])
-      #busCoachDone = False
+      loggerM.info(('{:02d} {:02d}          Beginning processing for year {} of '
+                    '{}: "{}".').format(loci+1, yeari+1, yeari+1, len(years), year))
       for euroi, euroClass in enumerate(euroClasses):
-        loggerM.info('{:02d} {:02d} {:02d}       Beginning processing for euroclass {} of {}: "{}".'.format(loci+1, yeari+1, euroi+1, euroi+1, len(euroClasses), euroClass))
+        loggerM.info(('{:02d} {:02d} {:02d}       Beginning processing for '
+                      'euroclass {} of {}: "{}".').format(loci+1, yeari+1, euroi+1,
+                                                          euroi+1, len(euroClasses),
+                                                          euroClass))
         if euroClass == 99:
           # Euro class of euro 99 means use default mix, and default mix of tech.
-          loggerM.info('{:02d} {:02d} {:02d}       Euro class of 99 specifies using default euro mix, and default tech.'.format(loci+1, yeari+1, euroi+1))
+          loggerM.info(('{:02d} {:02d} {:02d}       Euro class of 99 specifies using '
+                        'default euro mix, and default tech.').format(loci+1, yeari+1, euroi+1))
           techs = ['All']
         else:
           techs = techOptions
         for techi, tech in enumerate(techs):
 
-          loggerM.info('{:02d} {:02d} {:02d} {:02d}    Beginning processing for technology {} of {}: "{}".'.format(loci+1, yeari+1, euroi+1, techi+1, techi+1, len(techs), tech))
+          loggerM.info(('{:02d} {:02d} {:02d} {:02d}    Beginning processing for technology '
+                        '{} of {}: "{}".').format(loci+1, yeari+1, euroi+1, techi+1,
+                                                  techi+1, len(techs), tech))
 
           # See if this is already completed.
-          matchingRow = completed[(completed['area'] == location) & (completed['year'] == year) & (completed['euro'] == euroClass) & (completed['tech'] == tech)].index.tolist()
+          matchingRow = completed[(completed['area'] == location) &
+                                  (completed['year'] == year) &
+                                  (completed['euro'] == euroClass) &
+                                  (completed['tech'] == tech)].index.tolist()
           if len(matchingRow) > 0:
             completedfile = completed.loc[matchingRow[0]]['saveloc']
             if completedfile == 'No File':
-              loggerM.info('{:02d} {:02d} {:02d} {:02d}    Processing for these specifications has previously been skipped.'.format(loci+1, yeari+1, euroi+1, techi+1, completedfile))
+              loggerM.info(('{:02d} {:02d} {:02d} {:02d}    Processing for these '
+                            'specifications has previously been skipped.').format(
+                                 loci+1, yeari+1, euroi+1, techi+1, completedfile))
             else:
               [oP, FNC] = path.split(completedfile)
-              loggerM.info('{:02d} {:02d} {:02d} {:02d}    Processing for these specifications has already been completed.'.format(loci+1, yeari+1, euroi+1, techi+1))
-              loggerM.info('{:02d} {:02d} {:02d} {:02d}    Results saved in {}.'.format(loci+1, yeari+1, euroi+1, techi+1, FNC))
+              loggerM.info(('{:02d} {:02d} {:02d} {:02d}    Processing for these '
+                            'specifications has already been completed.').format(
+                                               loci+1, yeari+1, euroi+1, techi+1))
+              loggerM.info(('{:02d} {:02d} {:02d} {:02d}    Results saved in {}.').format(
+                                                   loci+1, yeari+1, euroi+1, techi+1, FNC))
             continue
 
           # Assign save locations.
@@ -157,6 +169,7 @@ def processEFT(fileName, outdir, locations, years, euroClasses=[99,0,1,2,3,4,5,6
                 vehs2Skip = ['Taxi (black cab)']
                 if (euroClass in [5]) and (tech == 'Standard'):
                   vehs2Skip = vehs2Skip + vehsToSkipSt5
+                print(vehsplit)
                 excel, newSavedFile, b, k, weightclassnames, gotTechs = tools.prepareAndRun(
                        fileNameT, vehsplit, details, location, year, euroClass,
                        tools.ahk_exepath, ahk_ahkpathG, versionForOutPut,
@@ -365,7 +378,7 @@ def parseArgs():
                       help=("The areas to be processed. One or more of '{}'. "
                             "Default 'Scotland'.").format("', '".join(tools.availableAreas)))
   parser.add_argument('-y', metavar='year',
-                      type=int, nargs='*', default=ynow,
+                      type=int, nargs='*', default=datetime.now().year,
                       choices=range(2008, 2031),
                       help="The year or years to be processed. Default current year.")
   euroChoices = [99]
@@ -397,6 +410,13 @@ def parseArgs():
                             "of different euro classes to reduce emission "
                             "factors, e.g. DPF for diesel vehicles, and "
                             "technology 'c' and 'd' for euro class 6. Default 'all'."))
+  allowedVehSplits = tools.allowedVehSplits
+  allowedVehSplits.remove('Basic Split')
+  parser.add_argument('-b', metavar='vehicle breakdown',
+                      type=str, nargs=1, default='Alternative Technologies',
+                      choices=allowedVehSplits,
+                      help=(("The vehicle breakdown to use. One of '{}'. "
+                             "Default 'Alternative Technologies'.").format("', '".join(allowedVehSplits))))
   parser.add_argument('--keeptemp',
                       type=bool,  nargs='?', default=False,
                       help=("Whether to keep or delete temporary files. "
@@ -413,6 +433,8 @@ def main():
 
   # Parse the input arguments.
   pargs = parseArgs()
+  if isinstance(pargs.b, list):
+    pargs.b = pargs.b[0]
   #tools.combineFiles(pargs.outputdir)
 
   # Get the assigned directory and prepare temporary directories and log files.
@@ -434,7 +456,8 @@ def main():
   # Run the processing routine.
   processEFT(pargs.inputfile, pargs.outputdir, pargs.a, pargs.y,
              euroClasses=pargs.e, weights=pargs.w, techs=pargs.t,
-             keepTempFiles=pargs.keeptemp, completed=completed)
+             keepTempFiles=pargs.keeptemp, completed=completed,
+             vehsplit=pargs.b)
 
 
 
