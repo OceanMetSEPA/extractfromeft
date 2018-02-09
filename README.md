@@ -6,6 +6,9 @@ A suite of tools for interacting with and extracting data from the
 
 See https://oceanmet.atlassian.net/wiki/display/airmod/Updates+to+EFT+-+v7.4# for details.
 
+The EFT files themselves are macro-infested binary excel files, python uses the win32com client 
+to open and manipulate the files, so unfortunately this code will only work on a machine
+running Windows.
 
 ## extractEFT.py ##
 This group of functions is used to extract single vehicle emission factors from the EFT.
