@@ -69,23 +69,58 @@ versionDetails[7.0]['vehRowStarts'] = [69, 79, 100, 110, 123, 139, 155, 170]
 versionDetails[7.0]['vehRowEnds']   = [75, 87, 106, 119, 134, 150, 166, 181]
 versionDetails[7.0]['vehRowStartsMC'] = [186, 192, 198, 204, 210, 216]
 versionDetails[7.0]['vehRowEndsMC']   = [191, 197, 203, 209, 215, 221]
+versionDetails[7.0]['vehRowStartsHB'] = [377,381,385] # Hybrid buses
+versionDetails[7.0]['vehRowEndsHB']   = [380,384,388]
 versionDetails[7.0]['busCoachRow']   = [482, 483]
 versionDetails[7.0]['SourceNameName'] = 'Source Name'
 versionDetails[7.0]['AllLDVName'] = 'All LDVs (g/km)'
 versionDetails[7.0]['AllHDVName'] = 'All HDVs (g/km)'
 versionDetails[7.0]['AllVehName'] = 'All Vehicles (g/km)'
 versionDetails[7.0]['PolName'] = 'Pollutant Name'
+versionDetails[7.0]['weightRowStarts'] = [435, 440, 445, 450, 455, 465, 489,
+                                          494, 499, 510, 515, 520, 525, 536,
+                                          541, 546, 556]
+versionDetails[7.0]['weightRowEnds'] =   [437, 442, 447, 452, 462, 469, 491,
+                                          496, 501, 512, 517, 522, 527, 538,
+                                          543, 553, 560]
+versionDetails[7.0]['weightRowNames'] = ['Car', 'Car', 'LGV', 'LGV',
+                                         'Rigid HGV', 'Artic HGV',  'Car',
+                                         'Car', 'Car', 'Car', 'Car', 'LGV',
+                                         'LGV', 'LGV', 'LGV', 'Rigid HGV',
+                                         'Artic HGV']
+versionDetails[7.0]['weightRowStartsBus'] = [472, 478, 565, 585, 590]
+versionDetails[7.0]['weightRowEndsBus'] =   [474, 479, 567, 587, 591]
+versionDetails[7.0]['weightRowNamesBus'] = ['Bus', 'Coach', 'Bus', 'Bus',
+                                            'Coach']
 versionDetails[6.0] = {}
 versionDetails[6.0]['vehRowStarts'] = [69, 79, 100, 110, 123, 139, 155, 170]
 versionDetails[6.0]['vehRowEnds'] = [75, 87, 106, 119, 134, 150, 166, 181]
 versionDetails[6.0]['vehRowStartsMC'] = [186, 192, 198, 204, 210, 216]
 versionDetails[6.0]['vehRowEndsMC']   = [191, 197, 203, 209, 215, 221]
+versionDetails[6.0]['vehRowStartsHB'] = [377,381,385] # Hybrid buses
+versionDetails[6.0]['vehRowEndsHB']   = [380,384,388]
 versionDetails[6.0]['busCoachRow']   = [482, 483]
 versionDetails[6.0]['SourceNameName'] = 'Source_Name'
 versionDetails[6.0]['AllLDVName'] = 'All LDV (g/km)'
 versionDetails[6.0]['AllHDVName'] = 'All HDV (g/km)'
 versionDetails[6.0]['AllVehName'] = 'All Vehicle (g/km)'
 versionDetails[6.0]['PolName'] = 'Pollutant_Name'
+versionDetails[6.0]['weightRowStarts'] = [435, 440, 445, 450, 455, 465, 489,
+                                          494, 499, 510, 515, 520, 525, 536,
+                                          541, 546, 556]
+versionDetails[6.0]['weightRowEnds'] =   [437, 442, 447, 452, 462, 469, 491,
+                                          496, 501, 512, 517, 522, 527, 538,
+                                          543, 553, 560]
+versionDetails[6.0]['weightRowNames'] = ['Car', 'Car', 'LGV', 'LGV',
+                                         'Rigid HGV', 'Artic HGV',  'Car',
+                                         'Car', 'Car', 'Car', 'Car', 'LGV',
+                                         'LGV', 'LGV', 'LGV', 'Rigid HGV',
+                                         'Artic HGV']
+versionDetails[6.0]['weightRowStartsBus'] = [472, 478, 565, 585, 590]
+versionDetails[6.0]['weightRowEndsBus'] =   [474, 479, 567, 587, 591]
+versionDetails[6.0]['weightRowNamesBus'] = ['Bus', 'Coach', 'Bus', 'Bus',
+                                            'Coach']
+
 availableVersions = versionDetails.keys()
 availableAreas = ['England (not London)', 'Northern Ireland',
                   'Scotland', 'Wales']
@@ -1616,6 +1651,15 @@ def combineFiles(directory):
     filenames = list(completed['saveloc'])
 
     for fni, fn in enumerate(filenames):
+      if not path.isfile(fn):
+        # This could happen if the parent directory has been changed.
+        [pathOld, fName] = path.split(fn)
+        if path.abspath(pathOld) == path.abspath(directory):
+          raise ValueError('The file {} cannot be found in directory {}.'.format(fName, directory))
+        else:
+          fn = path.join(directory, fName)
+          if not path.isfile(fn):
+            raise ValueError('The file {} cannot be found in directory {} or directory {}.'.format(fName. directory, pathOld))
       if first:
         shutil.copyfile(fn, fnew)
         first = False
