@@ -27,6 +27,8 @@ def processEFT(fileName, outdir, locations, years,
     years = [years]
   if type(locations) is not list:
     locations = [locations]
+  if type(euroClasses) is not list:
+    euroClasses = [euroClasses]
 
   if completed is None:
     completed = pd.DataFrame(columns=['area', 'year', 'euro', 'tech', 'saveloc'])
