@@ -462,7 +462,7 @@ def readNO2Factors(FactorFile='input/NAEI_NO2Extracted.xlsx', mode='Average'):
   if mode not in allowedModes:
     raise ValueError("Mode '{}' not understood, must be one of '{}'.".format(mode, "', '".join(allowedModes)))
 
-  FactorsDF = pd.read_excel(FactorFile, sheetname=sheets[mode])
+  FactorsDF = pd.read_excel(FactorFile, sheet_name=sheets[mode])
   if mode == 'Average':
     Factors = list(FactorsDF)[0]
   elif mode == 'ByYear':
@@ -758,20 +758,21 @@ def createEFTInput(vBreakdown='Detailed Option 2',
         #print('    veh - {}'.format(veh))
         if vBreakdown == 'Basic Split':
           ri += 2
-          inputDF.set_value(ri-1, 0, 'S{} - LDV - {}'.format(sp, rT))
-          inputDF.set_value(ri-1, 1, rT)
-          inputDF.set_value(ri-1, 2, 1)
-          inputDF.set_value(ri-1, 3, 0)
-          inputDF.set_value(ri-1, 4, sp)
-          inputDF.set_value(ri-1, 5, 1)
-          inputDF.set_value(ri-1, 6, 1)
-          inputDF.set_value(ri, 0, 'S{} - HDV - {}'.format(sp, rT))
-          inputDF.set_value(ri, 1, rT)
-          inputDF.set_value(ri, 2, 1)
-          inputDF.set_value(ri, 3, 100)
-          inputDF.set_value(ri, 4, sp)
-          inputDF.set_value(ri, 5, 1)
-          inputDF.set_value(ri, 6, 1)
+          #inputDF.set_value(ri-1, 0, 'S{} - LDV - {}'.format(sp, rT))
+          inputDF.iat[ri-1, 0] = 'S{} - LDV - {}'.format(sp, rT)
+          inputDF.iat[ri-1, 1] = rT
+          inputDF.iat[ri-1, 2] = 1
+          inputDF.iat[ri-1, 3] = 0
+          inputDF.iat[ri-1, 4] = sp
+          inputDF.iat[ri-1, 5] = 1
+          inputDF.iat[ri-1, 6] = 1
+          inputDF.iat[ri, 0] = 'S{} - HDV - {}'.format(sp, rT)
+          inputDF.iat[ri, 1] = rT
+          inputDF.iat[ri, 2] = 1
+          inputDF.iat[ri, 3] = 100
+          inputDF.iat[ri, 4] = sp
+          inputDF.iat[ri, 5] = 1
+          inputDF.iat[ri, 6] = 1
         else:
           if veh in vehiclesToSkip:
             logprint(loggerM, '      skipped', level='debug')
@@ -779,17 +780,17 @@ def createEFTInput(vBreakdown='Detailed Option 2',
           else:
             logprint(loggerM, '      included', level='debug')
             ri += 1
-            inputDF.set_value(ri, 0, 'S{} - {} - {}'.format(sp, veh, rT))
-            inputDF.set_value(ri, 1, rT)
-            inputDF.set_value(ri, 2, 1)
+            inputDF.iat[ri, 0] = 'S{} - {} - {}'.format(sp, veh, rT)
+            inputDF.iat[ri, 1] = rT
+            inputDF.iat[ri, 2] = 1
             for vehi, vehb in enumerate(VehSplit):
               if vehb == veh:
-                inputDF.set_value(ri, 3+vehi, 100)
+                inputDF.iat[ri, 3+vehi] = 100
               else:
-                inputDF.set_value(ri, 3+vehi, 0)
-            inputDF.set_value(ri, len(VehSplit)+3, sp)
-            inputDF.set_value(ri, len(VehSplit)+4, 1) # 1 hour. Not neccesary for g/km output.
-            inputDF.set_value(ri, len(VehSplit)+5, 1) # 1 km. Not neccesary either.
+                inputDF.iat[ri, 3+vehi] = 0
+            inputDF.iat[ri, len(VehSplit)+3] = sp
+            inputDF.iat[ri, len(VehSplit)+4] = 1 # 1 hour. Not neccesary for g/km output.
+            inputDF.iat[ri, len(VehSplit)+5] = 1 # 1 km. Not neccesary either.
   inputData = inputDF.as_matrix()
   return inputData
 
