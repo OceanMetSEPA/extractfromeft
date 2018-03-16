@@ -41,14 +41,6 @@ def processEFT(fileName, outdir, locations, years,
 
   details = tools.versionDetails[version]
 
-  # Make a temporary copy of the filename, so that we do no processing on the
-  # original. Just in case we break it. Also define temporary file names and
-  # output save locations, etc.
-  [oP, FN] = path.split(fileName)
-  tempdir = path.join(outdir, 'temp')
-  fileNameT = path.join(tempdir, FN)
-  shutil.copyfile(fileName, fileNameT)
-
   # Create the Excel Application object.
   try:
     excel = win32.gencache.EnsureDispatch('Excel.Application')
@@ -56,6 +48,34 @@ def processEFT(fileName, outdir, locations, years,
     time.sleep(5)
     excel = win32.gencache.EnsureDispatch('Excel.Application')
   excel.DisplayAlerts = False
+
+  # Make a temporary copy of the filename, so that we do no processing on the
+  # original. Just in case we break it. Also define temporary file names and
+  # output save locations, etc.
+  [oP, FN] = path.split(fileName)
+  tempdir = path.join(outdir, 'temp')
+  fileNameT = path.join(tempdir, FN)
+  try:
+    shutil.copyfile(fileName, fileNameT)
+  except PermissionError as err:
+    # File already exists and is open. Probably because process was cancelled
+    # or failed without closing it. Check with the user and then close the
+    # excel application.
+    QuitExcel = input(('It looks like the required excel document is already '
+                       'open. Would you like python to quit all excel documents '
+                       'and proceed?'))
+    if QuitExcel.lower() in ['yes', 'y']:
+      excel.Quit()
+      # Reopen it.
+      time.sleep(5)
+      excel = win32.gencache.EnsureDispatch('Excel.Application')
+      excel.DisplayAlerts = False
+    else:
+      raise err
+
+
+
+
   NO2FEU = tools.readNO2Factors(mode='ByEuro')
   NO2FRT = tools.readNO2Factors(mode='ByRoadType')
 
@@ -66,7 +86,7 @@ def processEFT(fileName, outdir, locations, years,
   BusesOptions = [True, False]
 
   techOptions = ['All']
-  if techs =='all':
+  if techs == 'all':
     techOptions.extend(tools.euroClassTechnologies)
   if weights == 'all':
     weights = list(range(max(np.array(details['weightRowEnds']) - np.array(details['weightRowStarts'])) + 1))
@@ -110,6 +130,7 @@ def processEFT(fileName, outdir, locations, years,
           techs = ['All']
         else:
           techs = techOptions
+
         for techi, tech in enumerate(techs):
 
           loggerM.info(('{:02d} {:02d} {:02d} {:02d}    Beginning processing for technology '
@@ -455,7 +476,7 @@ def main():
   # and tech have already been completed.
   completed = tools.getCompletedFromLog(logfilename, mode='both')
 
-  # Run the processing routine.
+
   processEFT(pargs.inputfile, pargs.outputdir, pargs.a, pargs.y,
              euroClasses=pargs.e, weights=pargs.w, techs=pargs.t,
              keepTempFiles=pargs.keeptemp, completed=completed,

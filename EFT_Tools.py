@@ -716,7 +716,7 @@ def createEFTInput(vBreakdown='Detailed Option 2',
   logprint(loggerM, 'Creating EFT input.', level='debug')
   logprint(loggerM, 'Initial vehiclesToSkip: {}'.format(', '.join(vehiclesToSkip)), level='debug')
   logprint(loggerM, 'Initial vehiclesToInclude: {}'.format(', '.join(vehiclesToInclude)), level='debug')
-  VehSplit = VehSplits[vBreakdown]
+  VehSplit = list(set(VehSplits[vBreakdown]))
   logprint(loggerM, 'VehSplit: {}'.format(', '.join(VehSplit)), level='debug')
 
   if vehiclesToInclude is not None:
@@ -732,7 +732,7 @@ def createEFTInput(vBreakdown='Detailed Option 2',
     for veh in VehSplit:
       if veh not in techVehs[tech]:
         vehiclesToSkip.append(veh)
-
+  vehiclesToSkip = list(set(vehiclesToSkip))
   logprint(loggerM, 'Final vehiclesToSkip: {}'.format(', '.join(vehiclesToSkip)), level='debug')
 
   if type(roadTypes) is str:
@@ -746,6 +746,7 @@ def createEFTInput(vBreakdown='Detailed Option 2',
   else:
     numRows = len(roadTypes)*len(speeds)*(len(VehSplit)-len(vehiclesToSkip))
   numCols = 6 + len(VehSplit)
+
   inputDF = pd.DataFrame(index=range(numRows), columns=range(numCols))
   ri = -1
 
@@ -778,7 +779,7 @@ def createEFTInput(vBreakdown='Detailed Option 2',
             logprint(loggerM, '      skipped', level='debug')
             pass
           else:
-            logprint(loggerM, '      included', level='debug')
+            logprint(loggerM, '      including', level='debug')
             ri += 1
             inputDF.iat[ri, 0] = 'S{} - {} - {}'.format(sp, veh, rT)
             inputDF.iat[ri, 1] = rT
@@ -791,18 +792,12 @@ def createEFTInput(vBreakdown='Detailed Option 2',
             inputDF.iat[ri, len(VehSplit)+3] = sp
             inputDF.iat[ri, len(VehSplit)+4] = 1 # 1 hour. Not neccesary for g/km output.
             inputDF.iat[ri, len(VehSplit)+5] = 1 # 1 km. Not neccesary either.
-  inputData = inputDF.as_matrix()
-  return inputData
+            logprint(loggerM, '        done', level='debug')
 
-def logprint(logger, string, level='info'):
-  if level.lower() == 'info':
-    logfunc = lambda x: logger.info(x)
-  elif level.lower() == 'debug':
-    logfunc = lambda x: logger.debug(x)
-  if logger is not None:
-    logfunc(string)
-  else:
-    print(string)
+  inputData = inputDF.as_matrix()
+  inputShape = np.shape(inputData)
+  logprint(loggerM, 'input created with dimensions {} by {}.'.format(inputShape[0], inputShape[1]), level='debug')
+  return inputData
 
 def checkEuroClassesValid(workBook, vehRowStarts, vehRowEnds, EuroClassNameColumns, Type=99, logger=None):
   """
@@ -1160,6 +1155,16 @@ def compareArgsEqual(newargs, logfilename):
       pass
     else:
       exit()
+
+def logprint(logger, string, level='info'):
+  if level.lower() == 'info':
+    logfunc = lambda x: logger.info(x)
+  elif level.lower() == 'debug':
+    logfunc = lambda x: logger.debug(x)
+  if logger is not None:
+    logfunc(string)
+  else:
+    print(string)
 
 def prepareLogger(loggerName, logfilename, pargs, inString):
   loggerName = __name__
