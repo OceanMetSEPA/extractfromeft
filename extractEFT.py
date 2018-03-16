@@ -73,12 +73,8 @@ def processEFT(fileName, outdir, locations, years,
     else:
       raise err
 
-
-
-
   NO2FEU = tools.readNO2Factors(mode='ByEuro')
   NO2FRT = tools.readNO2Factors(mode='ByRoadType')
-
 
   first = True
   tempFilesCreated = [fileNameT]
