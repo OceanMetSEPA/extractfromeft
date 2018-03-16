@@ -277,12 +277,26 @@ def processEFT(fileName, outdir, locations, years,
               output['vehicle type'] = output.apply(lambda row: tools.VehDetails[row['vehicle']]['Veh'], axis=1)
               output['tech'] = output.apply(lambda row: tools.VehDetails[row['vehicle']]['Tech'], axis=1)
 
-              if euroClass == 99:
-                output['NOx2NO2'] = output.apply(lambda row: NO2FRT[row['type']][tools.VehDetails[row['vehicle']]['Veh']][row['year']], axis=1)
+              # Get the NOx to NO2 factor, and calculate the emitted NO2 for each line.
+              getfNO2 = True
+              if version >= 8:
+                # See if the factor is already there.
+                if 'f-NO2' not in list(output):
+                  loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Column f-NO2 is not available, even though version is 8 or more.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                  getfNO2 = True
+                else:
+                  getfNO2 = False
+              if getfNO2:
+                # In older EFT versions we have to use the NAEI factors.
+                loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Reading f-NO2 from bulk NAEI files.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                if euroClass == 99:
+                  output['f-NO2'] = output.apply(lambda row: NO2FRT[row['type']][tools.VehDetails[row['vehicle']]['Veh']][row['year']], axis=1)
+                else:
+                  output['f-NO2'] = output.apply(lambda row: NO2FEU[tools.VehDetails[row['vehicle']]['NOxVeh']][row['euro']], axis=1)
               else:
-                output['NOx2NO2'] = output.apply(lambda row: NO2FEU[tools.VehDetails[row['vehicle']]['NOxVeh']][row['euro']], axis=1)
+                loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Using f-NO2 from EFT output.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
 
-              output['NO2 (g/km/veh)'] = output['NOx (g/km/veh)']*output['NOx2NO2']
+              output['NO2 (g/km/veh)'] = output['NOx (g/km/veh)']*output['f-NO2']
               output = output.sort_values(['year', 'area', 'type', 'euro', 'speed', 'vehicle type', 'fuel', 'vehicle', 'weight'])
               loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Writing {} rows to file.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1, output.shape[0]))
               if first:

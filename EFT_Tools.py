@@ -396,28 +396,6 @@ def splitSourceNameT(row, SourceName='Source Name'):
   s, v, t = s.split(' - ')
   return t
 
-#def readLGVFuelSplit(File='input/NAEI_FuelSplitExtracted.xlsx'):
-#  """
-#  Function that reads the#
-#
-#  """
-#  FactorsDF = pd.read_excel(File, sheetname='LGV')
-#  Factors = {}
-#  Years = list(FactorsDF)
-#  Years.remove('Road type')
-#  Years.remove('Fuel')
-#  RoadTypes = FactorsDF['Road type'].unique()
-#  Fuels = FactorsDF['Fuel'].unique()
-#  for rt in RoadTypes:
-#    Factors[rt] = {}
-#    FFs = FactorsDF[FactorsDF['Road type'] == rt]
-#    for Fuel in Fuels:
-#      for Y in Years:
-#        Factors[rt][Y] = {}
-#        Factors[rt][Y]['Petrol'] = float(FFs[FFs['Fuel'] == 'Petrol'][Y])
-#        Factors[rt][Y]['Diesel'] = float(FFs[FFs['Fuel'] == 'Diesel'][Y])
-#  return Factors
-
 def readNO2Factors(FactorFile='input/NAEI_NO2Extracted.xlsx', mode='Average'):
   """
   Function that reads the contents of the NOxFactorFile.
@@ -535,7 +513,7 @@ def addNO2(dataframe, Factors='input/NAEI_NO2Extracted.xlsx', mode='Average'):
   The original data frame must have one column called 'NOx (g/km/veh)',
   one column called 'year', and one column called 'vehicle'.
   """
-
+  raise Exception("I don't think this function is needed any more. Is it?")
   # Is Factors a string?
   if isinstance(Factors, str):
     Factors = readNO2Factors(Factors, mode=mode)
@@ -716,7 +694,7 @@ def createEFTInput(vBreakdown='Detailed Option 2',
   logprint(loggerM, 'Creating EFT input.', level='debug')
   logprint(loggerM, 'Initial vehiclesToSkip: {}'.format(', '.join(vehiclesToSkip)), level='debug')
   logprint(loggerM, 'Initial vehiclesToInclude: {}'.format(', '.join(vehiclesToInclude)), level='debug')
-  VehSplit = list(set(VehSplits[vBreakdown]))
+  VehSplit = VehSplits[vBreakdown]
   logprint(loggerM, 'VehSplit: {}'.format(', '.join(VehSplit)), level='debug')
 
   if vehiclesToInclude is not None:
@@ -1070,6 +1048,7 @@ def prepareToExtract(fileNames, locations):
 def extractOutput(fileName, versionForOutPut, year, location, euroClass, details, techDetails=[None, None]):
   ex = pd.ExcelFile(fileName)
   output = ex.parse("Output")
+
   # Add some other columns to the dataframe.
   output['version'] = versionForOutPut
   output['year'] = year
@@ -1079,7 +1058,7 @@ def extractOutput(fileName, versionForOutPut, year, location, euroClass, details
   output['euro'] = euroClass
   output['speed'] = output.apply(splitSourceNameS, SourceName=details['SourceNameName'], axis=1)
   # Drop columns that are not required anymore.
-  output = output.drop(details['SourceNameName'], 1)
+  #output = output.drop(details['SourceNameName'], 1)
   output = output.drop(details['AllLDVName'], 1)
   output = output.drop(details['AllHDVName'], 1)
   tech = 'Default Mix'
@@ -1114,8 +1093,9 @@ def extractOutput(fileName, versionForOutPut, year, location, euroClass, details
   # Rename, because after the pivot the 'column' name will become the
   # index name.
   output = output.rename(columns={details['PolName']: 'RowIndex'})
-  output = output.pivot_table(index=['year', 'area', 'euro', 'version',
-                                     'speed', 'vehicle', 'type', 'mitigation tech'],
+  output = output.pivot_table(index=[details['SourceNameName'], 'year', 'area',
+                                     'euro', 'version', 'speed', 'vehicle',
+                                     'type', 'mitigation tech'],
                                     columns='RowIndex',
                                     values=details['AllVehName'])
   output = output.reset_index()
@@ -1129,7 +1109,26 @@ def extractOutput(fileName, versionForOutPut, year, location, euroClass, details
       Pol_ = Pol
     renames[Pol] = '{} (g/km/veh)'.format(Pol_)
   output = output.rename(columns=renames)
+
+  # See if the f-NO2 output sheet is available (only available in version 8,
+  # and if requested).
+  if 'Output_f-NO2' in ex.sheet_names:
+    output_f_NO2 = ex.parse('Output_f-NO2')
+    if not output_f_NO2.empty:
+      # The data's there. join it to our output, but remove a couple of columns first.
+      colnames = list(output_f_NO2)
+      # drop unneccesary columns.
+      for colname in colnames:
+        if colname not in [details['SourceNameName'], 'f-NO2 Value']:
+          output_f_NO2 = output_f_NO2.drop(colname, axis=1)
+      output = pd.merge(output, output_f_NO2, how='inner',
+                        left_on=details['SourceNameName'],
+                        right_on=details['SourceNameName'])
+      # Rename the f-NO2 Column
+      output = output.rename(columns={'f-NO2 Value': 'f-NO2'})
+  output = output.drop(details['SourceNameName'], 1)
   return output
+
 
 def compareArgsEqual(newargs, logfilename):
   searchStr = 'Input arguments parsed as: '
