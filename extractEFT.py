@@ -4,15 +4,55 @@ import sys
 from os import path
 import argparse
 import subprocess
-import logging
+#import logging
+import threading
 import time
 from datetime import datetime
 import shutil
 import numpy as np
 import pandas as pd
 import win32com.client as win32
+import pythoncom
+
+from file_read_backwards import FileReadBackwards
 
 import EFT_Tools as tools
+
+class processEFTThread(threading.Thread):
+  def __init__(self, fileName, outdir, locations, years,
+               euroClasses=[99,0,1,2,3,4,5,6],
+               vehsplit="Alternative Technologies",
+               weights='all', techs='all',
+               keepTempFiles=False, saveFile=None, completed=None):
+    """The threading class for processEFT."""
+
+    threading.Thread.__init__(self)
+    self.fileName = fileName
+    self.outdir = outdir
+    self.locations = locations
+    self.years = years
+    self.euroClasses = euroClasses
+    self.vehsplit = vehsplit
+    self.weights = weights
+    self.techs = techs
+    self.keepTempFiles = keepTempFiles
+    self.saveFile = saveFile
+    self.completed = completed
+
+  def run(self):
+    pythoncom.CoInitialize()
+    try:
+      processEFT(self.fileName, self.outdir, self.locations, self.years,
+               euroClasses=self.euroClasses,
+               vehsplit=self.vehsplit,
+               weights=self.weights,
+               techs=self.techs,
+               keepTempFiles=self.keepTempFiles,
+               saveFile=self.saveFile,
+               completed=self.completed)
+    except:
+      sys.excepthook(*sys.exc_info())
+
 
 
 def processEFT(fileName, outdir, locations, years,
@@ -132,7 +172,7 @@ def processEFT(fileName, outdir, locations, years,
           loggerM.info(('{:02d} {:02d} {:02d} {:02d}    Beginning processing for technology '
                         '{} of {}: "{}".').format(loci+1, yeari+1, euroi+1, techi+1,
                                                   techi+1, len(techs), tech))
-
+          checkkill(excel)
           # See if this is already completed.
           matchingRow = completed[(completed['area'] == location) &
                                   (completed['year'] == year) &
@@ -180,6 +220,7 @@ def processEFT(fileName, outdir, locations, years,
 
             for weighti, weight in enumerate(weights):
               loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Beginning processing for weight row {} of {}.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1, weighti+1, len(weights)))
+              checkkill(excel)
               if weight == 99:
                 loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Weight row 99 specifies using the default weight mix.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
               if doBus is None:
@@ -188,12 +229,12 @@ def processEFT(fileName, outdir, locations, years,
                 vehs2Skip = ['Taxi (black cab)']
                 if (euroClass in [5]) and (tech == 'Standard'):
                   vehs2Skip = vehs2Skip + vehsToSkipSt5
-                print(vehsplit)
                 excel, newSavedFile, b, k, weightclassnames, gotTechs = tools.prepareAndRun(
                        fileNameT, vehsplit, details, location, year, euroClass,
                        tools.ahk_exepath, ahk_ahkpathG, versionForOutPut,
                        tech=tech, sizeRow=weight, DoHybridBus=True, DoBusCoach=True,
                        excel=excel, vehiclesToSkip=vehs2Skip, logger=loggerM)
+                checkkill(excel)
                 if newSavedFile is None:
                   output = None
                 else:
@@ -212,6 +253,7 @@ def processEFT(fileName, outdir, locations, years,
                        tools.ahk_exepath, ahk_ahkpathG, versionForOutPut,
                        tech=tech, sizeRow=weight, DoHybridBus=False, DoBusCoach=False,
                        excel=excel, vehiclesToSkip=vehs2Skip, logger=loggerM)
+                checkkill(excel)
                 if newSavedFile is None:
                   output = None
                 else:
@@ -232,6 +274,7 @@ def processEFT(fileName, outdir, locations, years,
                       tools.ahk_exepath, ahk_ahkpathG, versionForOutPut,
                       tech=tech, sizeRow=weight, DoHybridBus=True, DoBusCoach=True,
                       DoMCycles=False, excel=excel, busCoach='bus', logger=loggerM)
+                checkkill(excel)
                 if newSavedFileBus is None:
                   gotBus = False
                   loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} No buses for this weight class.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
@@ -248,6 +291,7 @@ def processEFT(fileName, outdir, locations, years,
                       tools.ahk_exepath, ahk_ahkpathG, versionForOutPut,
                       tech=tech, sizeRow=weight, DoHybridBus=False, DoBusCoach=True,
                       DoMCycles=False, excel=excel, busCoach='coach', logger=loggerM)
+                checkkill(excel)
                 if newSavedFileCoa is None:
                   gotCoach = False
                   loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} No coaches for this weight class.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
@@ -327,6 +371,16 @@ def processEFT(fileName, outdir, locations, years,
   loggerM.info('Process Complete.')
   excel.Quit()
   del(excel)
+
+
+def checkkill(excel):
+  if kill:
+    if hanging:
+      excel.Quit()
+      del(excel)
+      raise ValueError('Thread killed using kill flag, due to hanging.')
+    else:
+      raise ValueError('Thread killed using kill flag.')
 
 def prepareDir(outputDirP):
 
@@ -461,8 +515,18 @@ def parseArgs():
 
   return parser.parse_args()
 
+
+def logging_exception_handler(type, value, tb):
+  logger.exception("Uncaught exception: {0}".format(str(value)))
+
+
 def main():
-  global logger
+  global logger, kill, hanging
+  kill = False
+  hanging = False
+
+  # Ensure that exceptions are written to the log file.
+  sys.excepthook = logging_exception_handler
 
   # Parse the input arguments.
   pargs = parseArgs()
@@ -487,10 +551,80 @@ def main():
   completed = tools.getCompletedFromLog(logfilename, mode='both')
 
 
-  processEFT(pargs.inputfile, pargs.outputdir, pargs.a, pargs.y,
-             euroClasses=pargs.e, weights=pargs.w, techs=pargs.t,
-             keepTempFiles=pargs.keeptemp, completed=completed,
-             vehsplit=pargs.b)
+  # start processEFT as a thread.
+  logger.info('THREAD - Creating thread')
+  thread = processEFTThread(pargs.inputfile, pargs.outputdir, pargs.a,
+                            pargs.y, euroClasses=pargs.e, weights=pargs.w,
+                            techs=pargs.t, keepTempFiles=pargs.keeptemp,
+                            completed=completed, vehsplit=pargs.b)
+  logger.info('THREAD - Starting thread')
+  thread.start()
+
+  #processEFT(pargs.inputfile, pargs.outputdir, pargs.a, pargs.y,
+  #           euroClasses=pargs.e, weights=pargs.w, techs=pargs.t,
+  #           keepTempFiles=pargs.keeptemp, completed=completed,
+  #           vehsplit=pargs.b)
+
+  # Now that the process has started, we want to monitor it.
+  checkInterval = 5 # check every 5 seconds.
+  checkHung = 12 # check to see if process has hung once every 12 iterations.
+  checkHungTime = 10*60 # assume process is hanging if log file has not been
+                    # modified in 10 minutes.
+  try:
+    squarp = 0
+    while True:
+      squarp += 1
+      time.sleep(checkInterval)
+      # Is it still alive?
+      if not thread.is_alive():
+        # It is not. An exception must have been raised within the thread,
+        # break out of the while loop and therefore end the programme.
+        logger.info('THREAD - Thread has died!')
+        break
+      else:
+        # The thread is alive!
+        if squarp%checkHung == 0:
+          # Read the last line of the log file.
+          # This is required because just checking the file modified date fails,
+          # because windows does not update the modification date unless the file
+          # is closed, apparently!
+          with FileReadBackwards(logfilename) as frb:
+            for last_line in frb:
+              # we only need the first line.
+              break
+            last_line = last_line.split(' - ')[0]
+            lf_mtime = datetime.strptime(last_line, '%Y-%m-%d %H:%M:%S,%f')
+          # How old is the log file.
+          #lf_stats = os.stat(logfilename)
+          #lf_mtime = lf_stats.st_mtime
+          #lf_mtime = datetime.fromtimestamp(lf_mtime)
+          logger.info('THREAD - log file modification time {}.'.format(lf_mtime))
+          lf_age = datetime.now() - lf_mtime
+          lf_age = lf_age.total_seconds()
+          if lf_age > checkHungTime:
+            # The log file is older than our checkHung interval.
+            logger.info('THREAD - Thread lives but has hung!')
+            logger.info('THREAD - No modification to log file in {} seconds.'.format(lf_age))
+            logger.info('THREAD - Killing thread.')
+            hanging = True
+            kill = True
+            thread.join() # join the thread and wait for the kill switch to be triggered.
+            time.sleep(5)
+            kill = False
+            hanging = False
+            # restart the process.
+            logger.info('THREAD - Recreating thread')
+            thread = processEFTThread(pargs.inputfile, pargs.outputdir, pargs.a,
+                              pargs.y, euroClasses=pargs.e, weights=pargs.w,
+                              techs=pargs.t, keepTempFiles=pargs.keeptemp,
+                              completed=completed, vehsplit=pargs.b)
+            logger.info('THREAD - Restarting thread')
+            thread.start()
+  except KeyboardInterrupt:
+    # User has ctrl-c, but this info isn't passed down to the threads!
+    logger.info('Keyboard Interrup triggered.')
+    kill = True
+    thread.join()
 
 
 
