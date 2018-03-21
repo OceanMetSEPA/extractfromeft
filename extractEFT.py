@@ -598,7 +598,7 @@ def main():
           #lf_stats = os.stat(logfilename)
           #lf_mtime = lf_stats.st_mtime
           #lf_mtime = datetime.fromtimestamp(lf_mtime)
-          logger.info('THREAD - log file modification time {}.'.format(lf_mtime))
+          logger.debug('THREAD - log file modification time {}.'.format(lf_mtime))
           lf_age = datetime.now() - lf_mtime
           lf_age = lf_age.total_seconds()
           if lf_age > checkHungTime:
