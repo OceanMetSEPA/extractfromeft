@@ -451,6 +451,9 @@ def checkkill(excel):
     if hanging:
       excel.Quit()
       del(excel)
+      os.system("taskkill /f /im  EXCEL.EXE")
+      # This can leave a "Microsoft Excel has stopped working" message box,
+      # so it's not very tidy, but otherwise it appears to work.
       raise ValueError('Thread killed using kill flag, due to hanging.')
     else:
       raise ValueError('Thread killed using kill flag.')
