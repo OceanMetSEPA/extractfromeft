@@ -1685,34 +1685,38 @@ def getCompletedFromLog(logfilename, mode='completed'):
   """
 
   CompletedSearchStr = 'COMPLETED (area, year, euro, tech, saveloc): '
+  CompletedSearchStrV2 = 'COMPLETED (area, year, euro, tech, saveloc, bus, weight): '
   SkippedSearchStr = 'SKIPPED (area, year, euro, tech, saveloc): '
   ProportionsSearchStr = 'COMPLETED (area, year): '
   if mode == 'completed':
-    SearchStrs = [CompletedSearchStr]
+    SearchStrs = [CompletedSearchStr, CompletedSearchStrV2]
   elif mode == 'skipped':
     SearchStrs = [SkippedSearchStr]
   elif mode == 'both':
-    SearchStrs = [CompletedSearchStr, SkippedSearchStr]
+    SearchStrs = [CompletedSearchStr, CompletedSearchStrV2, SkippedSearchStr]
   elif mode == 'proportions':
     SearchStrs = [ProportionsSearchStr]
   else:
     raise ValueError("mode '{}' is not understood.".format(mode))
 
-
-  completed = pd.DataFrame(columns=['area', 'year', 'euro', 'tech', 'saveloc'])
+  completed = pd.DataFrame(columns=['area', 'year', 'euro', 'tech', 'saveloc', 'busmode', 'weight'])
   ci = 0
   with open(logfilename, 'r') as logf:
     for line in logf:
-
-
       for SearchStr in SearchStrs:
         if SearchStr in line:
           ci += 1
           info = line[line.find(SearchStr)+len(SearchStr):-2]
           infosplt = info.split(',')
-          completed.loc[ci] = [infosplt[0].strip(), int(infosplt[1].strip()),
-                               int(infosplt[2].strip()), infosplt[3].strip(),
-                               infosplt[4].strip()]
+          try:
+            completed.loc[ci] = [infosplt[0].strip(), int(infosplt[1].strip()),
+                                 int(infosplt[2].strip()), infosplt[3].strip(),
+                                 infosplt[4].strip(), infosplt[5].strip(),
+                                 int(infosplt[6].strip())]
+          except IndexError:
+            completed.loc[ci] = [infosplt[0].strip(), int(infosplt[1].strip()),
+                                 int(infosplt[2].strip()), infosplt[3].strip(),
+                                 infosplt[4].strip(), 'NA', -9]
           break
   return completed
 

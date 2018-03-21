@@ -71,7 +71,7 @@ def processEFT(fileName, outdir, locations, years,
     euroClasses = [euroClasses]
 
   if completed is None:
-    completed = pd.DataFrame(columns=['area', 'year', 'euro', 'tech', 'saveloc'])
+    completed = pd.DataFrame(columns=['area', 'year', 'euro', 'tech', 'saveloc', 'busmode', 'weight'])
 
   # Get the files are ready for processing.
   ahk_ahkpathG, fileNames, versions, versionsForOutput = tools.prepareToExtract(fileName, locations)
@@ -116,7 +116,7 @@ def processEFT(fileName, outdir, locations, years,
   NO2FEU = tools.readNO2Factors(mode='ByEuro')
   NO2FRT = tools.readNO2Factors(mode='ByRoadType')
 
-  first = True
+  #first = True
   tempFilesCreated = [fileNameT]
 
   BusesOptions = [True, False]
@@ -149,19 +149,56 @@ def processEFT(fileName, outdir, locations, years,
   wb.Close(True)
 
   for loci, location in enumerate(locations):
-    loggerM.info(('{:02d}             Beginning processing for location {} of '
+    loggerM.info(('{:02d}                Beginning processing for location {} of '
                   '{}: "{}".').format(loci+1, loci+1, len(locations), location))
+    matchingRow = completed[(completed['area'] == location) &
+                            (completed['year'] == -9) &
+                            (completed['euro'] == -9) &
+                            (completed['tech'] == 'NA') &
+                            (completed['busmode'] == 'NA') &
+                            (completed['weight'] == -9)].index.tolist()
+    if len(matchingRow) > 0:
+      loggerM.info(('{:02d}                 Processing for these '
+                    'specifications has already been completed.').format(
+                                                          loci+1))
+      continue
     for yeari, year in enumerate(years):
-      loggerM.info(('{:02d} {:02d}          Beginning processing for year {} of '
+      loggerM.info(('{:02d} {:02d}             Beginning processing for year {} of '
                     '{}: "{}".').format(loci+1, yeari+1, yeari+1, len(years), year))
+      # See if this is already completed.
+      matchingRow = completed[(completed['area'] == location) &
+                              (completed['year'] == year) &
+                              (completed['euro'] == -9) &
+                              (completed['tech'] == 'NA') &
+                              (completed['busmode'] == 'NA') &
+                              (completed['weight'] == -9)].index.tolist()
+      if len(matchingRow) > 0:
+        loggerM.info(('{:02d} {:02d}              Processing for these '
+                      'specifications has already been completed.').format(
+                                                  loci+1, yeari+1))
+        continue
       for euroi, euroClass in enumerate(euroClasses):
-        loggerM.info(('{:02d} {:02d} {:02d}       Beginning processing for '
+        loggerM.info(('{:02d} {:02d} {:02d}          Beginning processing for '
                       'euroclass {} of {}: "{}".').format(loci+1, yeari+1, euroi+1,
                                                           euroi+1, len(euroClasses),
                                                           euroClass))
+
+        # See if this is already completed.
+        matchingRow = completed[(completed['area'] == location) &
+                                (completed['year'] == year) &
+                                (completed['euro'] == euroClass) &
+                                (completed['tech'] == 'NA') &
+                                (completed['busmode'] == 'NA') &
+                                (completed['weight'] == -9)].index.tolist()
+        if len(matchingRow) > 0:
+          loggerM.info(('{:02d} {:02d} {:02d}           Processing for these '
+                        'specifications has already been completed.').format(
+                                           loci+1, yeari+1, euroi+1))
+          continue
+
         if euroClass == 99:
           # Euro class of euro 99 means use default mix, and default mix of tech.
-          loggerM.info(('{:02d} {:02d} {:02d}       Euro class of 99 specifies using '
+          loggerM.info(('{:02d} {:02d} {:02d}          Euro class of 99 specifies using '
                         'default euro mix, and default tech.').format(loci+1, yeari+1, euroi+1))
           techs = ['All']
         else:
@@ -169,7 +206,7 @@ def processEFT(fileName, outdir, locations, years,
 
         for techi, tech in enumerate(techs):
 
-          loggerM.info(('{:02d} {:02d} {:02d} {:02d}    Beginning processing for technology '
+          loggerM.info(('{:02d} {:02d} {:02d} {:02d}       Beginning processing for technology '
                         '{} of {}: "{}".').format(loci+1, yeari+1, euroi+1, techi+1,
                                                   techi+1, len(techs), tech))
           checkkill(excel)
@@ -177,52 +214,84 @@ def processEFT(fileName, outdir, locations, years,
           matchingRow = completed[(completed['area'] == location) &
                                   (completed['year'] == year) &
                                   (completed['euro'] == euroClass) &
-                                  (completed['tech'] == tech)].index.tolist()
+                                  (completed['tech'] == tech) &
+                                  (completed['busmode'] == 'NA') &
+                                  (completed['weight'] == -9)].index.tolist()
           if len(matchingRow) > 0:
             completedfile = completed.loc[matchingRow[0]]['saveloc']
             if completedfile == 'No File':
-              loggerM.info(('{:02d} {:02d} {:02d} {:02d}    Processing for these '
+              loggerM.info(('{:02d} {:02d} {:02d} {:02d}       Processing for these '
                             'specifications has previously been skipped.').format(
-                                 loci+1, yeari+1, euroi+1, techi+1, completedfile))
+                                 loci+1, yeari+1, euroi+1, techi+1))
+            elif completedfile == 'MULTI':
+              loggerM.info(('{:02d} {:02d} {:02d} {:02d}       Processing for these '
+                            'specifications has already been completed.').format(
+                                 loci+1, yeari+1, euroi+1, techi+1))
+              loggerM.info(('{:02d} {:02d} {:02d} {:02d}       Results saved in multiple files.').format(
+                                                   loci+1, yeari+1, euroi+1, techi+1))
             else:
               [oP, FNC] = path.split(completedfile)
-              loggerM.info(('{:02d} {:02d} {:02d} {:02d}    Processing for these '
+              loggerM.info(('{:02d} {:02d} {:02d} {:02d}       Processing for these '
                             'specifications has already been completed.').format(
                                                loci+1, yeari+1, euroi+1, techi+1))
-              loggerM.info(('{:02d} {:02d} {:02d} {:02d}    Results saved in {}.').format(
+              loggerM.info(('{:02d} {:02d} {:02d} {:02d}       Results saved in {}.').format(
                                                    loci+1, yeari+1, euroi+1, techi+1, FNC))
             continue
 
           # Assign save locations.
-          outputFileCSVinPrep = path.join(tempdir, '{}_{:04d}_{:02d}_{}_InPrep.csv'.format(location, year, euroClass, tech))
-          outputFileCSV = path.join(outdir, '{}_{:04d}_{:02d}_{}.csv'.format(location, year, euroClass, tech))
-          first = True
+          #outputFileCSVinPrep = path.join(tempdir, '{}_{:04d}_{:02d}_{}_InPrep.csv'.format(location, year, euroClass, tech))
+          #outputFileCSV = path.join(outdir, '{}_{:04d}_{:02d}_{}.csv'.format(location, year, euroClass, tech))
+          #first = True
 
           # Check to see if this technology is available for this euro class.
           if tech not in tools.euroClassNameVariations[euroClass].keys():
-            loggerM.info('{:02d} {:02d} {:02d} {:02d}    Not available for this euro class.'.format(loci+1, yeari+1, euroi+1, techi+1))
-            loggerM.info('{:02d} {:02d} {:02d} {:02d}    SKIPPED (area, year, euro, tech, saveloc): {}, {}, {}, {}, {}.'.format(loci+1, yeari+1, euroi+1, techi+1, location, year, euroClass, tech, 'No File'))
+            loggerM.info('{:02d} {:02d} {:02d} {:02d}       Not available for this euro class.'.format(loci+1, yeari+1, euroi+1, techi+1))
+            loggerM.info('{:02d} {:02d} {:02d} {:02d}       SKIPPED (area, year, euro, tech, saveloc): {}, {}, {}, {}, {}.'.format(loci+1, yeari+1, euroi+1, techi+1, location, year, euroClass, tech, 'No File'))
             continue
 
           for doBus in BusesOptions:
             if doBus is None:
+              BC = '--'
               pass
             elif doBus:
-              loggerM.info('{:02d} {:02d} {:02d} {:02d}    Buses and coaches.'.format(loci+1, yeari+1, euroi+1, techi+1))
+              BC = 'BC'
+              loggerM.info('{:02d} {:02d} {:02d} {:02d} {}    Buses and coaches.'.format(loci+1, yeari+1, euroi+1, techi+1, BC))
               if tech in ['c', 'd']:
-                loggerM.info('{:02d} {:02d} {:02d} {:02d}    Not available for technology {}.'.format(loci+1, yeari+1, euroi+1, techi+1, tech))
+                loggerM.info('{:02d} {:02d} {:02d} {:02d} {}     Not available for technology {}.'.format(loci+1, yeari+1, euroi+1, techi+1, tech, BC))
                 continue
               elif (euroClass in [5]) and (tech == 'Standard'):
-                loggerM.info('{:02d} {:02d} {:02d} {:02d}    Not applicable for technology {} for euro class {}.'.format(loci+1, yeari+1, euroi+1, techi+1, tech, euroClass))
+                loggerM.info('{:02d} {:02d} {:02d} {:02d} {}     Not applicable for technology {} for euro class {}.'.format(loci+1, yeari+1, euroi+1, techi+1, tech, euroClass, BC))
                 continue
             else:
-              loggerM.info('{:02d} {:02d} {:02d} {:02d}    All vehicles except buses and coaches.'.format(loci+1, yeari+1, euroi+1, techi+1))
+              BC = 'NB'
+              loggerM.info('{:02d} {:02d} {:02d} {:02d} {}     All vehicles except buses and coaches.'.format(loci+1, yeari+1, euroi+1, techi+1, BC))
 
             for weighti, weight in enumerate(weights):
-              loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Beginning processing for weight row {} of {}.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1, weighti+1, len(weights)))
+              loggerM.info('{:02d} {:02d} {:02d} {:02d} {} {:02d} Beginning processing for weight row {} of {}.'.format(loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1, weighti+1, len(weights)))
+
+
+
+              # See if this is already completed.
+              matchingRow = completed[(completed['area'] == location) &
+                                      (completed['year'] == year) &
+                                      (completed['euro'] == euroClass) &
+                                      (completed['tech'] == tech) &
+                                      (completed['busmode'] == BC) &
+                                      (completed['weight'] == weighti+1)].index.tolist()
+              if len(matchingRow) > 0:
+                completedfile = completed.loc[matchingRow[0]]['saveloc']
+                [oP, FNC] = path.split(completedfile)
+                loggerM.info(('{:02d} {:02d} {:02d} {:02d} {} {:02d} Processing for these '
+                              'specifications has already been completed.').format(
+                                                 loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1))
+                loggerM.info(('{:02d} {:02d} {:02d} {:02d} {} {:02d} Results saved in {}.').format(
+                                                   loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1, FNC))
+                continue
+
+              outputFileCSV = path.join(outdir, '{}_{:04d}_{:02d}_{}_{}_{}.csv'.format(location, year, euroClass, tech, BC, weighti))
               checkkill(excel)
               if weight == 99:
-                loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Weight row 99 specifies using the default weight mix.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                loggerM.info('{:02d} {:02d} {:02d} {:02d} {} {:02d} Weight row 99 specifies using the default weight mix.'.format(loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1))
               if doBus is None:
                 # Extract buses and coaches together, i.e. extract them, along
                 # with all other vehicles and don't treat them any differenctly.
@@ -267,7 +336,7 @@ def processEFT(fileName, outdir, locations, years,
                       output.loc[output.vehicle == vehclass2, 'weight'] = '{} - {}'.format(vehclass, wcn)
               else:
                 # Extract only buses and coaches, and split them.
-                loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Buses...'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                loggerM.info('{:02d} {:02d} {:02d} {:02d} {} {:02d} Buses...'.format(loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1))
 
                 excel, newSavedFileBus, b, busCoachRatio, weightclassnames, gotTechsB = tools.prepareAndRun(
                       fileNameT, vehsplit, details, location, year, euroClass,
@@ -277,7 +346,7 @@ def processEFT(fileName, outdir, locations, years,
                 checkkill(excel)
                 if newSavedFileBus is None:
                   gotBus = False
-                  loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} No buses for this weight class.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                  loggerM.info('{:02d} {:02d} {:02d} {:02d} {} {:02d} No buses for this weight class.'.format(loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1))
                 else:
                   tempFilesCreated.append(newSavedFileBus)
                   outputBus = tools.extractOutput(newSavedFileBus, versionForOutPut, year, location, euroClass, details, techDetails=[tech, gotTechsB])
@@ -285,7 +354,7 @@ def processEFT(fileName, outdir, locations, years,
                   outputBus.loc[outputBus.vehicle == 'Bus and Coach', 'vehicle'] = 'Bus'
                   outputBus['weight'] = 'Bus - {}'.format(weightclassnames['Bus'])
                   gotBus = True
-                loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Coaches...'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                loggerM.info('{:02d} {:02d} {:02d} {:02d} {} {:02d} Coaches...'.format(loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1))
                 excel, newSavedFileCoa, b, busCoachRatio, weightclassnames, gotTechsC = tools.prepareAndRun(
                       fileNameT, vehsplit, details, location, year, euroClass,
                       tools.ahk_exepath, ahk_ahkpathG, versionForOutPut,
@@ -294,7 +363,7 @@ def processEFT(fileName, outdir, locations, years,
                 checkkill(excel)
                 if newSavedFileCoa is None:
                   gotCoach = False
-                  loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} No coaches for this weight class.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                  loggerM.info('{:02d} {:02d} {:02d} {:02d} {} {:02d} No coaches for this weight class.'.format(loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1))
                 else:
                   tempFilesCreated.append(newSavedFileCoa)
                   outputCoa = tools.extractOutput(newSavedFileCoa, versionForOutPut, year, location, euroClass, details, techDetails=[tech, gotTechsC])
@@ -313,7 +382,7 @@ def processEFT(fileName, outdir, locations, years,
 
               if output is None:
                 # No output for this weightclass, there'll be none for any higher either.
-                loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} No output for this weight class. Skipping any higher weight classes.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                loggerM.info('{:02d} {:02d} {:02d} {:02d} {} {:02d} No output for this weight class. Skipping any higher weight classes.'.format(loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1))
                 break
               # Now add fuel information, etc.
               output['fuel'] = output.apply(lambda row: tools.VehDetails[row['vehicle']]['Fuel'], axis=1)
@@ -326,48 +395,52 @@ def processEFT(fileName, outdir, locations, years,
               if version >= 8:
                 # See if the factor is already there.
                 if 'f-NO2' not in list(output):
-                  loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Column f-NO2 is not available, even though version is 8 or more.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                  loggerM.info('{:02d} {:02d} {:02d} {:02d} {} {:02d} Column f-NO2 is not available, even though version is 8 or more.'.format(loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1))
                   getfNO2 = True
                 else:
                   getfNO2 = False
               if getfNO2:
                 # In older EFT versions we have to use the NAEI factors.
-                loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Reading f-NO2 from bulk NAEI files.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                loggerM.info('{:02d} {:02d} {:02d} {:02d} {} {:02d} Reading f-NO2 from bulk NAEI files.'.format(loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1))
                 if euroClass == 99:
                   output['f-NO2'] = output.apply(lambda row: NO2FRT[row['type']][tools.VehDetails[row['vehicle']]['Veh']][row['year']], axis=1)
                 else:
                   output['f-NO2'] = output.apply(lambda row: NO2FEU[tools.VehDetails[row['vehicle']]['NOxVeh']][row['euro']], axis=1)
               else:
-                loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Using f-NO2 from EFT output.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+                loggerM.info('{:02d} {:02d} {:02d} {:02d} {} {:02d} Using f-NO2 from EFT output.'.format(loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1))
 
               output['NO2 (g/km/veh)'] = output['NOx (g/km/veh)']*output['f-NO2']
               output = output.sort_values(['year', 'area', 'type', 'euro', 'speed', 'vehicle type', 'fuel', 'vehicle', 'weight'])
-              loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Writing {} rows to file.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1, output.shape[0]))
-              if first:
-                # Save to a new csv file.
-                output.to_csv(outputFileCSVinPrep, index=False)
-                #defaultProportions.to_csv(fileNameDefaultProportionsNotComplete, index=False)
-                first = False
-              else:
-                # Append to the csv file.
-                output.to_csv(outputFileCSVinPrep, mode='a', header=False, index=False)
-                #defaultProportions.to_csv(fileNameDefaultProportionsNotComplete, mode='a', header=False, index=False)
-              loggerM.info('{:02d} {:02d} {:02d} {:02d} {:02d} Processing complete for weight row {} of {}.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1, weighti+1, len(weights)))
+              loggerM.info('{:02d} {:02d} {:02d} {:02d} {} {:02d} Writing {} rows to file.'.format(loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1, output.shape[0]))
+              output.to_csv(outputFileCSV, index=False)
+              #if first:
+              #  # Save to a new csv file.
+              #  output.to_csv(outputFileCSVinPrep, index=False)
+              #  #defaultProportions.to_csv(fileNameDefaultProportionsNotComplete, index=False)
+              #  first = False
+              #else:
+              #  # Append to the csv file.
+              #  output.to_csv(outputFileCSVinPrep, mode='a', header=False, index=False)
+              #  #defaultProportions.to_csv(fileNameDefaultProportionsNotComplete, mode='a', header=False, index=False)
+              loggerM.info('{:02d} {:02d} {:02d} {:02d} {} {:02d} Processing complete for weight row {} of {}.'.format(loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1, weighti+1, len(weights)))
+              loggerM.info('{:02d} {:02d} {:02d} {:02d} {} {:02d} Results saved in {}.'.format(loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1, outputFileCSV))
+              loggerM.info('{:02d} {:02d} {:02d} {:02d} {} {:02d} COMPLETED (area, year, euro, tech, saveloc, bus, weight): {}, {}, {}, {}, {}, {}, {}.'.format(loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1, location, year, euroClass, tech, outputFileCSV, BC, weighti+1))
 
             if doBus is None:
               pass
             elif doBus:
-              loggerM.info('{:02d} {:02d} {:02d} {:02d}    Processing for Buses and Coaches complete.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+              loggerM.info('{:02d} {:02d} {:02d} {:02d} {}    Processing for Buses and Coaches complete.'.format(loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1))
             else:
-              loggerM.info('{:02d} {:02d} {:02d} {:02d}    Processing for non-Buses complete.'.format(loci+1, yeari+1, euroi+1, techi+1, weighti+1))
+              loggerM.info('{:02d} {:02d} {:02d} {:02d} {}    Processing for non-Buses complete.'.format(loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1))
 
-          loggerM.info('{:02d} {:02d} {:02d} {:02d}    Processing complete for technology {} of {}: "{}".'.format(loci+1, yeari+1, euroi+1, techi+1, techi+1, len(techs), tech))
-          loggerM.info('{:02d} {:02d} {:02d} {:02d}    Results saved in {}.'.format(loci+1, yeari+1, euroi+1, techi+1, outputFileCSV))
-          loggerM.info('{:02d} {:02d} {:02d} {:02d}    COMPLETED (area, year, euro, tech, saveloc): {}, {}, {}, {}, {}.'.format(loci+1, yeari+1, euroi+1, techi+1, location, year, euroClass, tech, outputFileCSV))
-          shutil.move(outputFileCSVinPrep, outputFileCSV)
+          loggerM.info('{:02d} {:02d} {:02d} {:02d}       Processing complete for technology {} of {}: "{}".'.format(loci+1, yeari+1, euroi+1, techi+1, techi+1, len(techs), tech))
+          loggerM.info('{:02d} {:02d} {:02d} {:02d}       COMPLETED (area, year, euro, tech, saveloc, bus, weight): {}, {}, {}, {}, MULTI, NA, -9.'.format(loci+1, yeari+1, euroi+1, techi+1, location, year, euroClass, tech))
         loggerM.info('{:02d} {:02d} {:02d}       Processing complete for euroclass {} of {}: "{}".'.format(loci+1, yeari+1, euroi+1, euroi+1, len(euroClasses), euroClass))
+        loggerM.info('{:02d} {:02d} {:02d}          COMPLETED (area, year, euro, tech, saveloc, bus, weight): {}, {}, {}, NA, MULTI, NA, -9.'.format(loci+1, yeari+1, euroi+1, location, year, euroClass))
       loggerM.info('{:02d} {:02d}          Processing complete for year {} of {}: "{}".'.format(loci+1, yeari+1, yeari+1, len(years), year))
+      loggerM.info('{:02d} {:02d}             COMPLETED (area, year, euro, tech, saveloc, bus, weight): {}, {}, -9, NA, MULTI, NA, -9.'.format(loci+1, yeari+1, location, year))
     loggerM.info('{:02d}             Processing complete for location {} of {}: "{}".'.format(loci+1, loci+1, len(locations), location))
+    loggerM.info('{:02d}                COMPLETED (area, year, euro, tech, saveloc, bus, weight): {}, -9, -9, NA, MULTI, NA, -9.'.format(loci+1, location))
   loggerM.info('Process Complete.')
   excel.Quit()
   del(excel)
@@ -525,8 +598,7 @@ def main():
   kill = False
   hanging = False
 
-  # Ensure that exceptions are written to the log file.
-  sys.excepthook = logging_exception_handler
+
 
   # Parse the input arguments.
   pargs = parseArgs()
@@ -548,8 +620,14 @@ def main():
 
   # Read the log file to see if any combination of location, year, euroclass,
   # and tech have already been completed.
+  print('a')
   completed = tools.getCompletedFromLog(logfilename, mode='both')
+  #print(completed)
+  print('b')
+  #raise Exception('aaa')
 
+  # Ensure that exceptions are written to the log file.
+  sys.excepthook = logging_exception_handler
 
   # start processEFT as a thread.
   logger.info('THREAD - Creating thread')
