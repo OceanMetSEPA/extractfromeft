@@ -1623,12 +1623,57 @@ def prepareAndRun(fileName, vehSplit, details, location, year, euroClass,
     del(excelObj) # Make sure it's gone. Apparently some people have found this neccesary.
   return excel, tempSaveName, defaultProportions, busCoachProportions, weightclassnames, gotTechs
 
+def compressLog(directory):
+  # Does the directory exist?
+  if not path.isdir(directory):
+    raise ValueError('Directory cannot be found.')
+  # Search for the log file.
+  contents = os.listdir(directory)
+  if len(contents) == 0:
+    raise ValueError('Directory is empty.')
+  go = False
+  for content in contents:
+    if content[-4:] == '.log':
+      logfilename = path.join(directory, content)
+      yn = input(('Compress log file '
+                  '{}? [y/n]'.format(logfilename)))
+      if yn.upper() != 'Y':
+        continue
+      else:
+        go = True
+        break
+
+  if not go:
+    return
+
+  # First save the logfile to a new name.
+  [nn, ee] = path.splitext(logfilename)
+  fold = nn + 'Z_AsOf_{}'.format(datetime.datetime.strftime(datetime.datetime.now(), '%y%m%d%H%M%S')) + ee
+  shutil.move(logfilename, fold)
+
+  KeepLines = ['COMPLETED (area, year, euro, tech',
+               'SKIPPED (area, year, euro,']
+  KeepLast = ['Input arguments parsed as:']
+  LastLines = ['']
+  with open(fold, 'r') as orig:
+    with open(logfilename, 'w') as new:
+      new.write('Log file compressed from {}'.format(fold))
+      for line in orig:
+        for kl in KeepLines:
+          if kl in line:
+            new.write(line)
+        for ki, kl in enumerate(KeepLast):
+          if kl in line:
+            LastLines[ki] = line
+
+      for ll in LastLines:
+        new.write(ll)
+
 def combineFiles(directory):
   """
   Combine the created files within a directory. It works by reading the
   directory's log file and reads those files that have been completed.
   """
-
   # Does the directory exist?
   if not path.isdir(directory):
     raise ValueError('Directory cannot be found.')
