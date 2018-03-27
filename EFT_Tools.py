@@ -1709,7 +1709,7 @@ def combineFiles(directory):
         else:
           fn = path.join(directory, fName)
           if not path.isfile(fn):
-            raise ValueError('The file {} cannot be found in directory {} or directory {}.'.format(fName. directory, pathOld))
+            raise ValueError('The file {} cannot be found in directory {} or directory {}.'.format(fName, directory, pathOld))
       if first:
         shutil.copyfile(fn, fnew)
         first = False
