@@ -1657,7 +1657,7 @@ def compressLog(directory):
   LastLines = ['']
   with open(fold, 'r') as orig:
     with open(logfilename, 'w') as new:
-      new.write('Log file compressed from {}'.format(fold))
+      new.write('Log file compressed from {}.\n'.format(fold))
       for line in orig:
         for kl in KeepLines:
           if kl in line:

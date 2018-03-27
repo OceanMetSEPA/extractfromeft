@@ -448,15 +448,9 @@ def processEFT(fileName, outdir, locations, years,
 
 def checkkill(excel):
   if kill:
-    if hanging:
-      excel.Quit()
-      del(excel)
-      os.system("taskkill /f /im  EXCEL.EXE")
-      # This can leave a "Microsoft Excel has stopped working" message box,
-      # so it's not very tidy, but otherwise it appears to work.
-      raise ValueError('Thread killed using kill flag, due to hanging.')
-    else:
-      raise ValueError('Thread killed using kill flag.')
+    excel.Quit()
+    del(excel)
+    raise ValueError('Thread killed using kill flag.')
 
 def prepareDir(outputDirP):
 
@@ -597,11 +591,8 @@ def logging_exception_handler(type, value, tb):
 
 
 def main():
-  global logger, kill, hanging
+  global logger, kill
   kill = False
-  hanging = False
-
-
 
   # Parse the input arguments.
   pargs = parseArgs()
@@ -623,11 +614,7 @@ def main():
 
   # Read the log file to see if any combination of location, year, euroclass,
   # and tech have already been completed.
-  print('a')
   completed = tools.getCompletedFromLog(logfilename, mode='both')
-  #print(completed)
-  print('b')
-  #raise Exception('aaa')
 
   # Ensure that exceptions are written to the log file.
   sys.excepthook = logging_exception_handler
@@ -686,15 +673,15 @@ def main():
             # The log file is older than our checkHung interval.
             logger.info('THREAD - Thread lives but has hung!')
             logger.info('THREAD - No modification to log file in {} seconds.'.format(lf_age))
-            logger.info('THREAD - Killing thread.')
-            hanging = True
+            logger.info('THREAD - Killing thread and killing excel.')
             kill = True
+            os.system("taskkill /f /im  EXCEL.EXE")
             thread.join() # join the thread and wait for the kill switch to be triggered.
             time.sleep(5)
             kill = False
-            hanging = False
             # restart the process.
             logger.info('THREAD - Recreating thread')
+            completed = tools.getCompletedFromLog(logfilename, mode='both')
             thread = processEFTThread(pargs.inputfile, pargs.outputdir, pargs.a,
                               pargs.y, euroClasses=pargs.e, weights=pargs.w,
                               techs=pargs.t, keepTempFiles=pargs.keeptemp,
