@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Functions that allow the traffic counts within a shape file to be fed into the
+Functions that reads traffic counts within a shape file to be fed into the
 EFT.
 """
 from __future__ import print_function
@@ -99,7 +99,8 @@ def getEFTFile(version, directory='input'):
   # return the absolute paths.
   return os.path.abspath(fname)
 
-def doEFT(data, fName, area, year, vehBreakdown, no2file, excel='Create', keeptemp=False, saveloc=os.getcwd(), version=7.0):
+def doEFT(data, fName, area, year, vehBreakdown, no2file, fleetProportions={},
+          excel='Create', keeptemp=False, saveloc=os.getcwd(), version=7.0):
 
   """
   Function that adds data to the EFT, runs the EFT, and then extracts the data.
@@ -157,6 +158,13 @@ def doEFT(data, fName, area, year, vehBreakdown, no2file, excel='Create', keepte
   ws_input.Range("B5").Value = year
   ws_input.Range("B6").Value = vehBreakdown
   ws_input.Range("A10:L{}".format(numRows_+9)).Value = outData.values.tolist()
+
+  # Change the fleet proportions, if required.
+  if bool(fleetProportions):
+    ws_euro = wb.Worksheets("UserEuro")
+    for key, value in fleetProportions.items():
+      ws_euro.Range(key).Value = value
+  ws_input.Select()
 
   # Run the macro.
   excel.Application.Run("RunEfTRoutine")
@@ -267,8 +275,6 @@ def doEFT(data, fName, area, year, vehBreakdown, no2file, excel='Create', keepte
       colstodo.append(rename)
     output = output.rename(columns=renames)
 
-
-    print(list(data))
     if 'NOx' in pollutants:
       outputNO2 = ex.parse("Output_f-NO2")
       # Check that source name is in the same order as in output.
@@ -282,12 +288,10 @@ def doEFT(data, fName, area, year, vehBreakdown, no2file, excel='Create', keepte
       colstodo.extend(['E_f-NO2', 'E_NO2'])
       pollutants.append('NO2')
 
+    data = data.copy()
     for col in colstodo: #.loc
-      print(col)
       data[col] = list(output[col])
 
-
-  print(list(data))
   # remove the temporary files.
   if keeptemp:
     os.remove(tempeftfile)
@@ -299,12 +303,26 @@ def doEFT(data, fName, area, year, vehBreakdown, no2file, excel='Create', keepte
   if excelCreated:
     excel.Quit()
     del(excelObj) # Make sure it's gone. Apparently some people have found this neccesary.
-  return data
+
+  # Calculate total emission masses for each road.
+  #data['LengthKM'] = data.length/1000.
+  #data = data.copy()
+  for pol in pollutants:
+    pol_ = pol.replace('.', '')
+    data['T_{}'.format(pol_)] = data['E_{}'.format(pol_)] * data.length/1000.#['LengthKM']
+
+
+  #print(data.head())
+
+
+
+  return data, pollutants
 
 
 
 def processNetwork(shapefile, eftfile, no2file=None, saveloc=None,
                    year=datetime.now().year, area='Scotland', keepTemp=False,
+                   fleetProportions={},
                    vehFieldNames=defaultVehClasses,
                    vehBreakdown=defaultVehBreakdown,
                    speedFieldName='SPEED',
@@ -375,7 +393,6 @@ def processNetwork(shapefile, eftfile, no2file=None, saveloc=None,
   # Now open the copied version of the EFT, and fill in the data.
   # Create the Excel Application object.
   excelObj = win32.gencache.EnsureDispatch('Excel.Application')
-  print(type(excelObj))
 
   # And start adding the data to the EFT, block by block.
   Start = 0
@@ -386,7 +403,7 @@ def processNetwork(shapefile, eftfile, no2file=None, saveloc=None,
     print('Processing row {} to {}.'.format(Start, End))
     DataSlice = Data.iloc[Start:End]
     count += len(DataSlice.index)
-    outData = doEFT(DataSlice, eftfile, area, year, vehBreakdown, no2file, excel=excelObj, keeptemp=keeptemp, saveloc=saveloc, version=version)
+    outData, _ = doEFT(DataSlice, eftfile, area, year, vehBreakdown, no2file, excel=excelObj, keeptemp=keeptemp, saveloc=saveloc, version=version, fleetProportions=fleetProportions)
     if First:
       outDataAll = outData
       First = False
@@ -399,7 +416,7 @@ def processNetwork(shapefile, eftfile, no2file=None, saveloc=None,
   print('Processing row {} to {}.'.format(Start, End))
   DataSlice = Data.iloc[Start:End]
   count += len(DataSlice.index)
-  outData = doEFT(DataSlice, eftfile, area, year, vehBreakdown, no2file, keeptemp=keeptemp, saveloc=saveloc, excel=excelObj, version=version)
+  outData, pols = doEFT(DataSlice, eftfile, area, year, vehBreakdown, no2file, keeptemp=keeptemp, saveloc=saveloc, excel=excelObj, version=version, fleetProportions=fleetProportions)
   if First:
     outDataAll = outData
   else:
@@ -410,13 +427,19 @@ def processNetwork(shapefile, eftfile, no2file=None, saveloc=None,
   excelObj.Quit()
   del(excelObj) # Make sure it's gone. Apparently some people have found this neccesary.
 
+  print('Processing complete.')
+  print('Total emission masses are as follows:')
+  for pol in pols:
+    pol_ = pol.replace('.', '')
+    print('{:6}: {:9.0f} kg'.format(pol, Data['T_{}'.format(pol_)].sum()))
+
   print('Saving output shape file to {}.'.format(OutputShapefile))
   # Save the updated data file as a shapefile again.
   Data.to_file(OutputShapefile, driver='ESRI Shapefile', crs_wkt=crs_wkt)
-  print('Processing complete.')
+  print('Done.')
 
 if __name__ == '__main__':
-  ShapefileDescription = ("This programme is designed to work with shape files "
+  ShapefileDescription = ("This programme will take is designed to work with shape files "
                           "produced for the traffic noise modelling project. "
                           "See details below.")
 
@@ -424,9 +447,14 @@ if __name__ == '__main__':
                                    "shape file through the Emission Factor "
                                    "Toolkit (EFT).")
   parser.add_argument('shapefile', type=str,
-                      help="The shapefile to be processed. "+ShapefileDescription)
+                      help="The shapefile to be processed.")# "+ShapefileDescription)
   parser.add_argument('eftfile', type=str,
                       help="The EFT file to use.")
+  parser.add_argument('--vehFleetSplit', metavar='Vehicle euro class and weight split file.',
+                      type=str, nargs='?', default=None,
+                      help=("A euro split and weight split proportions file. A "
+                            "template is available in the 'input' directory of "
+                            "the repository."))
   parser.add_argument('--vehCountNames', metavar='Vehicle count field names',
                       type=str, nargs='?', default=defaultVehClasses,
                       help=("The shapefile field names for the vehicles "
@@ -471,17 +499,24 @@ if __name__ == '__main__':
 
   shapefile = args.shapefile
   eftfile = args.eftfile
+  propfile = args.vehFleetSplit
   no2file = args.no2file
   saveloc = args.saveloc
   #combine = args.combine_coalligned
   year = args.y
   keeptemp = args.keeptemp
   version, versionblah = tools.extractVersion(eftfile)
-  if not os.path.exists(shapefile):
-    raise ValueError('Shape file cannot be found at {}.'.format(shapefile))
-  if not os.path.exists(eftfile):
-    raise ValueError('EFT file cannot be found at {}.'.format(eftfile))
-
+  files2check = ((shapefile, 'Shape file'),
+                 (eftfile, 'EFT file'),
+                 (propfile, 'Fleet proportions file'),
+                 (no2file, 'NO2 conversion file'))
+  for f2c in files2check:
+    fpath = f2c[0]
+    print(fpath)
+    if fpath is not None:
+      # It won't matter if it is None, the parser will have caught required files.
+      if not os.path.exists(f2c[0]):
+        raise ValueError('{} cannot be found at {}.'.format(f2c[1], f2c[0]))
 
   ## Get the NOx to NO2 file, if relevent, and other version dependent stuff.
   if version == 8.0:
@@ -503,7 +538,8 @@ if __name__ == '__main__':
   if year not in availableYears:
     raise ValueError('Year {} is not allowed for EFT version {}.'.format(year, version))
 
-
+  ## Read the Fleet proportions file, if set.
+  fleetprops = tools.readFleetProps(propfile)
 
   ## see if all the vehicle classes make sense.
   vehs = args.vehCountNames
@@ -534,6 +570,7 @@ if __name__ == '__main__':
                  saveloc=saveloc,
                  year=year,
                  area=args.a,
+                 fleetProportions=fleetprops,
                  vehFieldNames=vehs,
                  vehBreakdown=vehBreakdown,
                  speedFieldName=args.speedFieldName,

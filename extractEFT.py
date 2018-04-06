@@ -288,7 +288,7 @@ def processEFT(fileName, outdir, locations, years,
                                                    loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1, FNC))
                 continue
 
-              outputFileCSV = path.join(outdir, '{}_{:04d}_{:02d}_{}_{}_{}.csv'.format(location, year, euroClass, tech, BC, weighti))
+              outputFileCSV = path.join(outdir, '{}_{:04d}_{:02d}_{}_{}_{}.csv'.format(location, year, euroClass, tech.replace(' ', '_'), BC, weighti))
               checkkill(excel)
               if weight == 99:
                 loggerM.info('{:02d} {:02d} {:02d} {:02d} {} {:02d} Weight row 99 specifies using the default weight mix.'.format(loci+1, yeari+1, euroi+1, techi+1, BC, weighti+1))

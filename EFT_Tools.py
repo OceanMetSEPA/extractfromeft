@@ -13,6 +13,7 @@ import string
 import subprocess
 import win32com.client as win32
 import pywintypes
+import xlrd
 #from fuzzywuzzy import process as fuzzyprocess
 
 #homeDir = path.expanduser("~")
@@ -1657,7 +1658,7 @@ def compressLog(directory):
   LastLines = ['']
   with open(fold, 'r') as orig:
     with open(logfilename, 'w') as new:
-      new.write('Log file compressed from {}.\n'.format(fold))
+      new.write('Log file compressed from {}.\r\n'.format(fold))
       for line in orig:
         for kl in KeepLines:
           if kl in line:
@@ -1697,18 +1698,21 @@ def combineFiles(directory):
   if go:
     [fname, ext] = os.path.splitext(logfilename)
     fnew = fname+'_combined.csv'
-    completed = getCompletedFromLog(logfilename)
+    completed = getCompletedFromLog(logfilename, mode='completed_file_only')
     filenames = list(completed['saveloc'])
 
     for fni, fn in enumerate(filenames):
+      [pathOld, fName] = path.split(fn)
+      print('File {:04d} of {:4d}: {}'.format(fni, len(filenames), fName))
       if not path.isfile(fn):
         # This could happen if the parent directory has been changed.
-        [pathOld, fName] = path.split(fn)
         if path.abspath(pathOld) == path.abspath(directory):
           raise ValueError('The file {} cannot be found in directory {}.'.format(fName, directory))
         else:
           fn = path.join(directory, fName)
           if not path.isfile(fn):
+            #if fName == 'MULTI':
+            #  continue
             raise ValueError('The file {} cannot be found in directory {} or directory {}.'.format(fName, directory, pathOld))
       if first:
         shutil.copyfile(fn, fnew)
@@ -1718,6 +1722,29 @@ def combineFiles(directory):
         df.to_csv(fnew, mode='a', header=False, index=False)
   return fnew
 
+def readFleetProps(fname):
+  """
+  Read the fleet proportion file and return a dictionary with cell references
+  and proportions to set.
+  """
+  props = {}
+  if fname is None:
+    return props
+  workbook = xlrd.open_workbook(fname)
+  sheet = workbook.sheet_by_index(0)
+  Collect = False
+  for rowID in range(sheet.nrows):
+    # Find the "Default?" cells.
+    if (sheet.row(rowID)[1].value == 'Default?') and (sheet.row(rowID)[2].value == 'No'):
+      Collect = True
+    elif sheet.row(rowID)[1].value == '':
+      Collect = False
+    if Collect:
+      if sheet.row(rowID)[6].value != '':
+        props[sheet.row(rowID)[6].value] = sheet.row(rowID)[1].value
+      if sheet.row(rowID)[7].value != '':
+        props[sheet.row(rowID)[7].value] = sheet.row(rowID)[4].value
+  return props
 
 def getCompletedFromLog(logfilename, mode='completed'):
   """
@@ -1726,14 +1753,14 @@ def getCompletedFromLog(logfilename, mode='completed'):
   pandas dataframe. Can also return combinations marked as skipped.
 
   logfilename should be the path to a log file created by extractEFT.py
-  mode can be 'completed', 'skipped', or 'both'.
+  mode can be 'completed', 'skipped', 'both' or 'completed_file_only'.
   """
 
   CompletedSearchStr = 'COMPLETED (area, year, euro, tech, saveloc): '
   CompletedSearchStrV2 = 'COMPLETED (area, year, euro, tech, saveloc, bus, weight): '
   SkippedSearchStr = 'SKIPPED (area, year, euro, tech, saveloc): '
   ProportionsSearchStr = 'COMPLETED (area, year): '
-  if mode == 'completed':
+  if mode in ['completed', 'completed_file_only']:
     SearchStrs = [CompletedSearchStr, CompletedSearchStrV2]
   elif mode == 'skipped':
     SearchStrs = [SkippedSearchStr]
@@ -1753,6 +1780,9 @@ def getCompletedFromLog(logfilename, mode='completed'):
           ci += 1
           info = line[line.find(SearchStr)+len(SearchStr):-2]
           infosplt = info.split(',')
+          if mode == 'completed_file_only':
+            if infosplt[4].strip() == 'MULTI':
+              continue
           try:
             completed.loc[ci] = [infosplt[0].strip(), int(infosplt[1].strip()),
                                  int(infosplt[2].strip()), infosplt[3].strip(),
