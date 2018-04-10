@@ -337,6 +337,7 @@ euroClassTechnologies.sort()
 EuroClassNameColumns = ["A", "H"]
 DefaultEuroColumns = ["B", "I"]
 UserDefinedEuroColumns = ["D", "K"]
+UserDefinedEuroColumnsMC = ["D", "K"]
 EuroClassNameColumnsMC = ["B", "H"]
 EuroClassNameColumnsHB = EuroClassNameColumnsMC
 DefaultEuroColumnsMC = ["C", "I"]
@@ -347,6 +348,7 @@ DefaultBusColumn = ["B"]
 DefaultBusMWColumn = ["C"]
 NameWeightColumn = "A"
 DefaultWeightColumn = "B"
+UserDefinedWeightColumn = "D"
 
 VehDetails = {'Petrol Car': {'Fuel': 'Petrol', 'Veh': 'Car', 'Tech': 'Internal Combustion', 'NOxVeh': 'Petrol Car'},
               'Diesel Car': {'Fuel': 'Diesel', 'Veh': 'Car', 'Tech': 'Internal Combustion', 'NOxVeh': 'Diesel Car'},
@@ -1226,7 +1228,6 @@ def readProportions(fileName, details, location, year,
 
   ws_euro = wb.Worksheets("UserEuro")
 
-  # Euro split!
   logprint(loggerM, 'Extracting default euro split proportions.', level='info')
 
   startrows = ['vehRowStarts', 'vehRowStartsMC', 'vehRowStartsHB']
@@ -1238,15 +1239,23 @@ def readProportions(fileName, details, location, year,
   DefaultEuroColumnsDict = {'Most Vehicles': DefaultEuroColumns,
                             'Motorcycles': DefaultEuroColumnsMC,
                             'Hybrid Buses': DefaultEuroColumnsHB}
+  #UserEuroColumnsDict = {'Most Vehicles': UserDefinedEuroColumns,
+  #                       'Motorcycles': UserDefinedEuroColumnsMC,
+  #                       'Hybrid Buses': UserDefinedBusColumn}
+
   first = True
   for ci, poltype in enumerate(['NOx', 'PM']):
     for ri in range(len(startrows)):
       logprint(loggerM, '  Dealing with euro proportions for {} - {}.'.format(vehtypes[ri], poltype), level='info')
+      #print(ri, ci)
+      #print(vehtypes[ri])
+      #print(UserEuroColumnsDict[vehtypes[ri]])
       ColName = EuroClassNameColumnsDict[vehtypes[ri]][ci]
       ColProp = DefaultEuroColumnsDict[vehtypes[ri]][ci]
+      ColUser = UserDefinedEuroColumns[ci]
       vehRowStarts = details[startrows[ri]]
       vehRowEnds = details[endrows[ri]]
-      propdf = getProportions(ws_euro, ColName, ColProp, vehRowStarts,
+      propdf = getProportions(ws_euro, ColName, ColProp, ColUser, vehRowStarts,
                               vehRowEnds, mode=vehtypes[ri], logger=loggerM)
       propdf['poltype'] = poltype
       if first:
@@ -1270,9 +1279,10 @@ def readProportions(fileName, details, location, year,
     logprint(loggerM, '  Dealing with weight proportions for {}.'.format(vehtypes[ri]), level='info')
     ColName = NameWeightColumn
     ColProp = DefaultWeightColumn
+    ColUser = UserDefinedWeightColumn
     vehRowStarts = details[startrows[ri]]
     vehRowEnds = details[endrows[ri]]
-    propdf = getProportions(ws_euro, ColName, ColProp, vehRowStarts,
+    propdf = getProportions(ws_euro, ColName, ColProp, ColUser, vehRowStarts,
                             vehRowEnds, mode='Weights', logger=loggerM)
     if first:
       df = propdf
@@ -1313,18 +1323,17 @@ def readProportions(fileName, details, location, year,
   df['year'] = year
   df['area'] = location
   df_consEuros = df
-
   return df_allEuros, df_weights, df_consEuros
 
-def getProportions(ws, ColName, ColProp, vehRowStarts,
+def getProportions(ws, ColName, ColProp, ColUser, vehRowStarts,
                    vehRowEnds, mode='Most Vehicles', logger=None):
 
-    # Get the logging details.
+  # Get the logging details.
   loggerM = getLogger(logger, 'getProportions')
 
   # Start a pandas dateframe.
-  df = pd.DataFrame(columns=['vehicle', 'euroname',
-                             'euroclass', 'technology', 'proportion'])
+  df = pd.DataFrame(columns=['vehicle', 'euroname', 'euroclass', 'technology',
+                             'proportion', 'sourceCell', 'userCell'])
   for vehi in range(len(vehRowStarts)):
     starow = vehRowStarts[vehi]
     endrow = vehRowEnds[vehi]
@@ -1352,12 +1361,15 @@ def getProportions(ws, ColName, ColProp, vehRowStarts,
     for row in range(starow, endrow+1):
       euroName = ws.Range("{}{}".format(ColName, row)).Value
       if euroName is not None:
-        proportion = ws.Range("{}{}".format(ColProp, row)).Value
+        sourceCell = "{}{}".format(ColProp, row)
+        userCell = "{}{}".format(ColUser, row)
+        proportion = ws.Range(sourceCell).Value
         if not isinstance(proportion, float):
           logprint(loggerM, 'Bad proportion value "{}" for veh {}, euro {}.'.format(proportion, vehName, euroName), level='info')
-          proportion = ws.Range("D{}".format(row)).Value
+          sourceCell = "{}{}".format(ColUser, row)
+          proportion = ws.Range(sourceCell).Value
           if not isinstance(proportion, float):
-            print(proportion)
+            #print(proportion)
             raise ValueError('Proportion must be a float.')
           else:
             logprint(loggerM, 'Fixed. Proportion value {}.'.format(proportion), level='info')
@@ -1365,9 +1377,9 @@ def getProportions(ws, ColName, ColProp, vehRowStarts,
         got = False
         if mode == 'Weights':
           euroName = weightClassNameVariations[euroName]
-          df1 = pd.DataFrame([[vehName, euroName, -99, '--', proportion]],
-                               columns=['vehicle', 'euroname',
-                                        'euroclass', 'technology', 'proportion'])
+          df1 = pd.DataFrame([[vehName, euroName, -99, '--', proportion, sourceCell, userCell]],
+                               columns=['vehicle', 'euroname', 'euroclass',
+                                        'technology', 'proportion', 'sourceCell', 'userCell'])
           df = df.append(df1, 1)
           continue
         for euroI, euronames in euroClassNameVariations.items():
@@ -1382,9 +1394,9 @@ def getProportions(ws, ColName, ColProp, vehRowStarts,
               if euroName in euronamestechs:
                 tech = techname
                 break
-            df1 = pd.DataFrame([[vehName, euroName, euroI, tech, proportion]],
-                               columns=['vehicle', 'euroname',
-                                        'euroclass', 'technology', 'proportion'])
+            df1 = pd.DataFrame([[vehName, euroName, euroI, tech, proportion, sourceCell, userCell]],
+                               columns=['vehicle', 'euroname', 'euroclass',
+                                        'technology', 'proportion', 'sourceCell', 'userCell'])
             df = df.append(df1, 1)
 
         if not got:
@@ -1393,6 +1405,7 @@ def getProportions(ws, ColName, ColProp, vehRowStarts,
     df = df.rename(columns={'euroname': 'weightclass'})
     df = df.drop('euroclass', 1)
     df = df.drop('technology', 1)
+  #print(df.head())
   return df
 
 

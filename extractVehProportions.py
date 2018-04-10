@@ -45,6 +45,7 @@ def extractVehProps(fileName, outdir, locations, years,
   # Make a temporary copy of the filename, so that we do no processing on the
   # original. Just in case we break it. Also define temporary file names and
   # output save locations, etc.
+  outdir = os.path.abspath(outdir)
   [oP, FN] = path.split(fileName)
   tempdir = path.join(outdir, 'temp')
   [FN, FEXT] = path.splitext(FN)
@@ -61,16 +62,17 @@ def extractVehProps(fileName, outdir, locations, years,
   excel.DisplayAlerts = False
 
   # And now start the processing!
-  first = True
-  tempFilesCreated = [fileNameT]
-
-  vehsToSkipSt5 = ['Rigid HGV', 'Artic HGV', 'Bus and Coach',
-                   'B100 Rigid HGV', 'B100 Artic HGV', 'B100 Bus',
-                   'Hybrid Bus', 'B100 Coach']
+  #first = True
+  #tempFilesCreated = [fileNameT]
+  #
+  #vehsToSkipSt5 = ['Rigid HGV', 'Artic HGV', 'Bus and Coach',
+  #                 'B100 Rigid HGV', 'B100 Artic HGV', 'B100 Bus',
+  #                 'Hybrid Bus', 'B100 Coach']
 
   # Check that all euro class names are understood.
   if path.isfile(tools.ahk_exepath):
     subprocess.Popen([tools.ahk_exepath, ahk_ahkpathG])
+  print(fileNameT)
   wb = excel.Workbooks.Open(fileNameT)
   excel.Visible = True
   tools.checkEuroClassesValid(wb, details['vehRowStartsMC'], details['vehRowEndsMC'], tools.EuroClassNameColumnsMC, Type=1, logger=loggerM)
@@ -108,6 +110,7 @@ def extractVehProps(fileName, outdir, locations, years,
       loggerM.info('{:02d} {:02d}          {}'.format(loci+1, yeari+1, EuroAllFN))
       loggerM.info('{:02d} {:02d}          {}'.format(loci+1, yeari+1, EuroConsFN))
       loggerM.info('{:02d} {:02d}          {}'.format(loci+1, yeari+1, WeightFN))
+      #print(df_allEuros.head())
       df_allEuros.to_csv(EuroAllFN, index=False)
       df_weights.to_csv(WeightFN, index=False)
       df_consEuros.to_csv(EuroConsFN, index=False)
