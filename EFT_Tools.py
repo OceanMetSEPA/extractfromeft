@@ -1743,20 +1743,34 @@ def readFleetProps(fname):
   props = {}
   if fname is None:
     return props
-  workbook = xlrd.open_workbook(fname)
-  sheet = workbook.sheet_by_index(0)
+  try:
+    workbook = xlrd.open_workbook(fname)
+    sheet = workbook.sheet_by_index(0)
+    mode = 1
+  except xlrd.biffh.XLRDError:
+    # Is it a csv?
+    sheet = pd.read_csv(fname) # Will raise an error if that fails.
+    mode = 0
+
   Collect = False
-  for rowID in range(sheet.nrows):
-    # Find the "Default?" cells.
-    if (sheet.row(rowID)[1].value == 'Default?') and (sheet.row(rowID)[2].value == 'No'):
-      Collect = True
-    elif sheet.row(rowID)[1].value == '':
-      Collect = False
-    if Collect:
-      if sheet.row(rowID)[6].value != '':
-        props[sheet.row(rowID)[6].value] = sheet.row(rowID)[1].value
-      if sheet.row(rowID)[7].value != '':
-        props[sheet.row(rowID)[7].value] = sheet.row(rowID)[4].value
+
+  if mode == 0:
+    regstr = r'^\w\d+$'
+    for index, row in sheet.iterrows():
+      if bool(re.search(regstr, row[1].strip())):
+        props[row[1].strip()] = row[2]
+  elif mode == 1:
+    for rowID in range(sheet.nrows):
+      # Find the "Default?" cells.
+      if (sheet.row(rowID)[1].value == 'Default?') and (sheet.row(rowID)[2].value == 'No'):
+        Collect = True
+      elif sheet.row(rowID)[1].value == '':
+        Collect = False
+      if Collect:
+        if sheet.row(rowID)[6].value != '':
+          props[sheet.row(rowID)[6].value] = sheet.row(rowID)[1].value
+        if sheet.row(rowID)[7].value != '':
+          props[sheet.row(rowID)[7].value] = sheet.row(rowID)[4].value
   return props
 
 def getCompletedFromLog(logfilename, mode='completed'):
