@@ -30,6 +30,7 @@ def writeChanges(changes, saveloc):
 
 
 def mergeVDicts(D):
+  # Merge by adding
   D_ = {}
   TotVehs = 0
   for Di in D:
@@ -46,6 +47,18 @@ def mergeVDicts(D):
     D_[key]['normFract'] = vvv
     #print(key, vvv)
   return D_
+
+def getchangesLGV(LGVD):
+  changes = {}
+  # LGV fuel control was added in EFT v8.0. Just hardcode the cells in here for now.
+  Cols = ['E', 'F', 'G']
+  Rows= {'PETROL': 542, 'HEAVY OIL': 543, 'ELECTRICITY': 544}
+  for Col in Cols:
+    for Fuel, D in LGVD.items():
+      changes['{}{}'.format(Col, Rows[Fuel])] = D['fraction']
+  return changes
+
+
 
 def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
   changes = {}
@@ -154,11 +167,11 @@ def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
       print(propTot)
       raise ValueError("Doesn't sum to 1!")
     print('Adjusting Weight Nums')
-    print(propTot)
-    print(diff)
-    print(changes[lastCellName])
+    #print(propTot)
+    #print(diff)
+    #print(changes[lastCellName])
     changes[lastCellName] = round(changes[lastCellName] + diff, 8)
-    print(changes[lastCellName])
+    #print(changes[lastCellName])
 
   return changes
 
@@ -187,6 +200,44 @@ def getFromEFT(year, area, euroProportionsFile='default', weightProportionsFile=
   WData = WData[WData.year == year]
 
   return EData, WData
+
+def getFuelBreakdown(data, colF, verbose=False, vehName='', allowedFuels=['HEAVY OIL', 'PETROL', 'ELECTRICITY']):
+
+  if verbose:
+    print('')
+    if vehName:
+      print(vehName)
+      print('-'*len(vehName))
+
+  removeFuels = [x for x in data.Fuel.unique() if x not in allowedFuels]
+  for rf in removeFuels:
+    data = data[data.Fuel != rf]
+
+  D = {}
+  numTot = len(data.index)
+  dataFuels = data.groupby([colF])
+  propTot = 0.0
+  for Fuel, group in dataFuels:
+    numvehs = len(group.index)
+    fraction = round(numvehs/numTot, 8)
+    propTot += fraction
+    D[Fuel] = {'num': numvehs, 'fraction': fraction}
+    if verbose:
+      print('Fuel   {:>20s}: {:6d} vehs, {:9.6f}%'.format(Fuel, D[Fuel]['num'], 100.*D[Fuel]['fraction']))
+
+  diff = 1.0 - propTot
+  if abs(diff) > 1e-15:
+    if abs(diff) > 1e-7:
+      print(propTot)
+      raise ValueError("Doesn't sum to 1!")
+    print('Adjusting Fuel Nums')
+    changes[Fuel][fraction] = round(fraction + diff, 8)
+
+  for aF in allowedFuels:
+    if aF not in D.keys():
+      D[aF] = {'num': 0, 'fraction': 0}
+
+  return D
 
 def getBreakdown(data, colE, colW, verbose=False, vehName=''):
   """
@@ -238,6 +289,9 @@ def getBreakdown(data, colE, colW, verbose=False, vehName=''):
       if verbose:
         print('Weight {:>20s}: {:6d} vehs, {:9.6f}%, normalized to {:9.6f}%.'.format(
               weight, WD['num'], 100.*WD['fraction'], 100.*WD['normFract']))
+
+  # Get LGV fuel breakdown.
+
 
   return euroDict, weightDict
 
@@ -324,6 +378,11 @@ if __name__ == '__main__':
 
   # LGVs
   data_lgvs = data[data[colV] == '4. LGV']
+  # Get the proportion of LGVs by fuel type.
+  vehName = 'LGV Fuel Type'
+  LGVD = getFuelBreakdown(data_lgvs, colF, verbose=True, vehName=vehName)
+  changes[vehName] = getchangesLGV(LGVD)
+
   # Diesel LGVs
   vehName='Diesel LGV'
   data_veh = data_lgvs[data_lgvs[colF] == 'HEAVY OIL']
@@ -334,12 +393,12 @@ if __name__ == '__main__':
 
   # Petrol LGVs
   vehName='Petrol LGV'
-  data_veh = data_lgvs[data_lgvs[colF] == 'HEAVY OIL']
+  data_veh = data_lgvs[data_lgvs[colF] == 'PETROL']
   eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName]
   eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehName]
   ED, WD = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
   changes[vehName] = getchanges(ED, WD, eftE_veh, eftW_veh)
-  print(changes[vehName])
+
   # Buses
   vehName='Bus'
   vehName2 = 'Buses'
