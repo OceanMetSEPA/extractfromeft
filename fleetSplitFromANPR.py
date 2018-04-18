@@ -9,25 +9,25 @@ import os
 import argparse
 import numpy as np
 import pandas as pd
-from datetime import datetime
-
+#from datetime import datetime
 
 #import EFT_Tools as tools
 WeightClasses = {}
 
 
 def writeChanges(changes, saveloc):
-  print("Saving changes to '{}'.".format(saveloc))
-  with open(saveloc, 'w') as f:
-    f.write('Created Using, fleetSplitFromANPR, -\n')
-    f.write('Created On, {}, -\n'.format(datetime.now()))
-    f.write('Vehicle Class, Cell, Proportion\n')
-    for vehClass, PropsAll in changes.items():
-      for cell, Propsin in PropsAll.items():
-        WStr = '{}, {}, {}\n'.format(vehClass, cell, Propsin)
-        #print(WStr)
-        f.write(WStr)
 
+  print("Saving changes to '{}'.".format(saveloc))
+  changes.to_csv(saveloc, index=False)
+  #with open(saveloc, 'w') as f:
+  #  f.write('Created Using, fleetSplitFromANPR, -\n')
+  #  f.write('Created On, {}, -\n'.format(datetime.now()))
+  #  f.write('Vehicle Class, Cell, Proportion\n')
+  #  for vehClass, PropsAll in changes.items():
+  #    for cell, Propsin in PropsAll.items():
+  #      WStr = '{}, {}, {}\n'.format(vehClass, cell, Propsin)
+  #      #print(WStr)
+  #      f.write(WStr)
 
 def mergeVDicts(D):
   # Merge by adding
@@ -49,20 +49,21 @@ def mergeVDicts(D):
   return D_
 
 def getchangesLGV(LGVD):
-  changes = {}
+  changes = pd.DataFrame(columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion'])
   # LGV fuel control was added in EFT v8.0. Just hardcode the cells in here for now.
   Cols = ['E', 'F', 'G']
   Rows= {'PETROL': 542, 'HEAVY OIL': 543, 'ELECTRICITY': 544}
   for Col in Cols:
     for Fuel, D in LGVD.items():
-      changes['{}{}'.format(Col, Rows[Fuel])] = D['fraction']
+      change = pd.DataFrame([['LGV', 'Fuel', Fuel, 0, '{}{}'.format(Col, Rows[Fuel]), D['fraction']]],
+                             columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion'])
+      changes = changes.append(change)
   return changes
 
 
 
 def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
-  changes = {}
-
+  changes = pd.DataFrame(columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion'])
   if verbose:
     print('')
     if vehName:
@@ -87,7 +88,7 @@ def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
               weight, WDD['num'], 100.*WDD['normFract']))
 
   propTot = np.zeros_like(EFTPolTypes)
-  lastCellName = ['-']*len(EFTPolTypes)
+  lastLocation = np.zeros_like(EFTPolTypes)
   for Euro in range(7):
     if Euro in ED.keys():
       V = ED[Euro]
@@ -103,9 +104,12 @@ def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
       if len(eft_cells) == 1:
         # Just one value to fill.
         vvvv = round(V['normFract'], 8)
-        changes[eft_cells[0]] = vvvv
+        change = pd.DataFrame([[vehName, 'Euro Class - {}'.format(polType), Euro, 0, eft_cells[0], vvvv]],
+                              columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion'])
+        changes = changes.append(change)
+        #changes[eft_cells[0]] = vvvv
         propTot[polI] += vvvv
-        lastCellName[polI] = eft_cells[0]
+        lastLocation[polI] = changes.tail(1).index.item()
       else:
         # A few cells to fill, so split the proportion we have between these
         # cells, weighted by the default split.
@@ -116,10 +120,11 @@ def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
           eft_props_norm = eft_props / sum(eft_props)
         for ei, ec in enumerate(eft_cells):
           vvvv = round(eft_props_norm[ei] * V['normFract'], 8)
+          change = pd.DataFrame([[vehName, 'Euro Class - {}'.format(polType), Euro, ei+1, ec, vvvv]],
+                                 columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion'])
+          changes = changes.append(change)
           propTot[polI] += vvvv
-          changes[ec] = vvvv
-          lastCellName[polI] = ec
-
+          lastLocation[polI] = changes.tail(1).index.item()
   # Adjust the values to ensure they sum to 1.
   for pi, pt in enumerate(propTot):
     diff = 1.0 - pt
@@ -128,7 +133,7 @@ def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
         print(pt)
         raise ValueError("Doesn't sum to 1!")
       print('Adjusting Euro Nums')
-      changes[lastCellName[pi]] = round(changes[lastCellName[pi]] + diff, 8)
+      changes.loc[lastLocation[pi], 'Proportion'] = round(changes.loc[lastLocation[pi], 'Proportion'] + diff, 8)
 
 
   # Weight
@@ -136,7 +141,7 @@ def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
   Weights = list(WD.keys())
   WeightsGot = dict.fromkeys(Weights, False)
   propTot = 0.0
-  lastCellName = ''
+  lastLocation = 0
   for EFTWeight in EFTWeights:
     # Get the default values from the EFT.
     eft_veh_weight = eftW_veh[eftW_veh['weightclass'] == EFTWeight]
@@ -145,16 +150,17 @@ def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
 
     # Assume 0 initially.
     #for eft_cell in eft_cells:
-    changes[eft_cells[0]] = 0.0
+    #changes[eft_cells[0]] = 0.0
     # Now add the values from the ANPR.
     if EFTWeight in Weights:
       V = WD[EFTWeight]
       # Just one value to fill for all weight classes.
       vvvv = round(V['normFract'], 8)
-      #print(vvvv)
-      changes[eft_cells[0]] = vvvv
+      change = pd.DataFrame([[vehName, 'Weight Class', EFTWeight, 0, eft_cells[0], vvvv]],
+                             columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion'])
+      changes = changes.append(change)
+      lastLocation = changes.tail(1).index.item()
       propTot += vvvv
-      lastCellName = eft_cells[0]
       WeightsGot[EFTWeight] = True
 
   for W, B in WeightsGot.items():
@@ -167,10 +173,8 @@ def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
       print(propTot)
       raise ValueError("Doesn't sum to 1!")
     print('Adjusting Weight Nums')
-    #print(propTot)
-    #print(diff)
-    #print(changes[lastCellName])
-    changes[lastCellName] = round(changes[lastCellName] + diff, 8)
+    changes.loc[lastLocation, 'Proportion'] = round(changes.loc[lastLocation, 'Proportion'] + diff, 8)
+    #changes[lastCellName] = round(changes[lastCellName] + diff, 8)
     #print(changes[lastCellName])
 
   return changes
@@ -354,7 +358,7 @@ if __name__ == '__main__':
   print(EFTEuroDefault['vehicle'].unique())
   print(EFTWeightDefault['vehicle'].unique())
 
-  changes = {}
+
 
   # Cars
   data_cars = data[data[colV] == '2. CAR']
@@ -364,7 +368,7 @@ if __name__ == '__main__':
   eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName]
   eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehName]
   ED, WD = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
-  changes[vehName] = getchanges(ED, WD, eftE_veh, eftW_veh)
+  changes = getchanges(ED, WD, eftE_veh, eftW_veh, vehName=vehName)
 
   # Petrol Cars
   vehName = 'Petrol Car'
@@ -373,7 +377,7 @@ if __name__ == '__main__':
   eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName]
   eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehNameW]
   ED, WD = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
-  changes[vehName] = getchanges(ED, WD, eftE_veh, eftW_veh)
+  changes = changes.append(getchanges(ED, WD, eftE_veh, eftW_veh, vehName=vehName))
 
 
   # LGVs
@@ -381,7 +385,7 @@ if __name__ == '__main__':
   # Get the proportion of LGVs by fuel type.
   vehName = 'LGV Fuel Type'
   LGVD = getFuelBreakdown(data_lgvs, colF, verbose=True, vehName=vehName)
-  changes[vehName] = getchangesLGV(LGVD)
+  changes = changes.append(getchangesLGV(LGVD))
 
   # Diesel LGVs
   vehName='Diesel LGV'
@@ -389,7 +393,7 @@ if __name__ == '__main__':
   eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName]
   eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehName]
   ED, WD = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
-  changes[vehName] = getchanges(ED, WD, eftE_veh, eftW_veh)
+  changes = changes.append(getchanges(ED, WD, eftE_veh, eftW_veh, vehName=vehName))
 
   # Petrol LGVs
   vehName='Petrol LGV'
@@ -397,7 +401,7 @@ if __name__ == '__main__':
   eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName]
   eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehName]
   ED, WD = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
-  changes[vehName] = getchanges(ED, WD, eftE_veh, eftW_veh)
+  changes = changes.append(getchanges(ED, WD, eftE_veh, eftW_veh, vehName=vehName))
 
   # Buses
   vehName='Bus'
@@ -408,7 +412,7 @@ if __name__ == '__main__':
   #print(eftE_veh)
   eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehName2]
   ED, WD = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
-  changes[vehName] = getchanges(ED, WD, eftE_veh, eftW_veh)
+  changes = changes.append(getchanges(ED, WD, eftE_veh, eftW_veh, vehName=vehName))
 
   # RHGV 2X
   vehName='Rigid HGV 2 Axle'
@@ -429,8 +433,8 @@ if __name__ == '__main__':
   vehName2 = 'Rigid HGV'
   eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName2]
   eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehName2]
-  changes[vehName] = getchanges([ED2, ED3, ED4], [WD2, WD3, WD4], eftE_veh, eftW_veh,
-                                verbose=True, vehName=vehName2)
+  changes = changes.append(getchanges([ED2, ED3, ED4], [WD2, WD3, WD4], eftE_veh, eftW_veh,
+                                verbose=True, vehName=vehName2))
 
   # AHGV 34X
   vehName='Artic HGV 3&4 Axle'
@@ -451,8 +455,8 @@ if __name__ == '__main__':
   vehName2 = 'Artic HGV'
   eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName2]
   eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehName2]
-  changes[vehName] = getchanges([ED3, ED5, ED6], [WD3, WD5, WD6], eftE_veh, eftW_veh,
-                                verbose=True, vehName=vehName2)
+  changes = changes.append(getchanges([ED3, ED5, ED6], [WD3, WD5, WD6], eftE_veh, eftW_veh,
+                                verbose=True, vehName=vehName2))
 
 
   print()
