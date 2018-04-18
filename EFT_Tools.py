@@ -1744,6 +1744,7 @@ def readFleetProps(fname):
   if fname is None:
     return props
   try:
+    # Assume excel document like the template.
     workbook = xlrd.open_workbook(fname)
     sheet = workbook.sheet_by_index(0)
     mode = 1
@@ -1755,10 +1756,10 @@ def readFleetProps(fname):
   Collect = False
 
   if mode == 0:
-    regstr = r'^\w\d+$'
-    for index, row in sheet.iterrows():
-      if bool(re.search(regstr, row[1].strip())):
-        props[row[1].strip()] = row[2]
+    csv_df = pd.read_csv(fname)
+    for ii, row in csv_df.iter_rows():
+      if row['Cell'] != '---':
+        props[row['Cell']] = row['Proportion']
   elif mode == 1:
     for rowID in range(sheet.nrows):
       # Find the "Default?" cells.

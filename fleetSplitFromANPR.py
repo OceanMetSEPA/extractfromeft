@@ -33,19 +33,23 @@ def mergeVDicts(D):
   # Merge by adding
   D_ = {}
   TotVehs = 0
+  TotVehsAll = 0
   for Di in D:
     for key, value in Di.items():
-      if key == 'Unknown':
-        continue
-      TotVehs += value['num']
+      if key not in [-9, 'Unknown']:
+        TotVehs += value['num']
+      TotVehsAll += value['num']
       try :
         D_[key]['num'] += value['num']
       except KeyError:
         D_[key] = {'num': value['num']}
   for key, value in D_.items():
-    vvv = D_[key]['num']/TotVehs
-    D_[key]['normFract'] = vvv
-    #print(key, vvv)
+    if key not in [-9, 'Unknown']:
+      vvv = D_[key]['num']/TotVehs
+      D_[key]['normFract'] = vvv
+    else:
+      vvv = D_[key]['num']/TotVehsAll
+      D_[key]['fraction'] = vvv
   return D_
 
 def getchangesLGV(LGVD):
@@ -55,12 +59,15 @@ def getchangesLGV(LGVD):
   Rows= {'PETROL': 542, 'HEAVY OIL': 543, 'ELECTRICITY': 544}
   for Col in Cols:
     for Fuel, D in LGVD.items():
-      change = pd.DataFrame([['LGV', 'Fuel', Fuel, 0, '{}{}'.format(Col, Rows[Fuel]), D['fraction']]],
-                             columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion'])
-      changes = changes.append(change)
+      if Fuel in Rows.keys():
+        change = pd.DataFrame([['LGV', 'Fuel', Fuel, 0, '{}{}'.format(Col, Rows[Fuel]), D['fraction']]],
+                               columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion'])
+        changes = changes.append(change)
+  changes = changes.append(pd.DataFrame([['LGV', 'Fuel', 'Other', 0, '---', LGVD['Other']['fraction']]],
+                               columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
+  changes = changes.append(pd.DataFrame([['LGV', 'Fuel', 'Unknown', 0, '---', LGVD['Unknown']['fraction']]],
+                               columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
   return changes
-
-
 
 def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
   changes = pd.DataFrame(columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion'])
@@ -75,7 +82,11 @@ def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
     ED = mergeVDicts(ED)
     if verbose:
       for euro, EDD in ED.items():
-        print('Euro   {:20.0f}: {:6d} vehs, {:9.6f}%'.format(
+        if euro == -9:
+          print('Unknown Euro               : {:6d} vehs, {:9.6f}%'.format(
+            EDD['num'], 100.*EDD['fraction']))
+        else:
+          print('Euro   {:20.0f}: {:6d} vehs, {:9.6f}%'.format(
             euro, EDD['num'], 100.*EDD['normFract']))
 
   if isinstance(WD, list):
@@ -83,9 +94,30 @@ def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
     WD = mergeVDicts(WD)
     if verbose:
       for weight, WDD in WD.items():
-        if weight != 'Unknown':
+        if weight == 'Unknown':
+          print('Unknown Weight             : {:6d} vehs, {:9.6f}%.'.format(
+              WDD['num'], 100.*WDD['fraction']))
+        else:
           print('Weight {:>20s}: {:6d} vehs, {:9.6f}%.'.format(
               weight, WDD['num'], 100.*WDD['normFract']))
+
+  # Add unknown euro proportions.
+  if -9 in ED.keys():
+    vvvv = round(ED[-9]['fraction'], 8)
+  else:
+    vvvv = 0.0
+  for polI, polType in enumerate(EFTPolTypes):
+    change = pd.DataFrame([[vehName, 'Euro Class - {}'.format(polType), -9, 0, '---', vvvv]],
+                          columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion'])
+    changes = changes.append(change)
+  # And unknown weight.
+  if 'Unknown' in WD.keys():
+    vvvv = round(WD['Unknown']['fraction'], 8)
+  else:
+    vvvv = 0.0
+  change = pd.DataFrame([[vehName, 'Weight Class', 'Unknown', 0, '---', vvvv]],
+                          columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion'])
+  changes = changes.append(change)
 
   propTot = np.zeros_like(EFTPolTypes)
   lastLocation = np.zeros_like(EFTPolTypes)
@@ -100,7 +132,6 @@ def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
       eft_veh_euro_p = eft_veh_euro[eft_veh_euro['poltype']==polType]
       eft_props = np.array(eft_veh_euro_p['proportion'])
       eft_cells = list(eft_veh_euro_p['userCell'])
-
       if len(eft_cells) == 1:
         # Just one value to fill.
         vvvv = round(V['normFract'], 8)
@@ -213,21 +244,36 @@ def getFuelBreakdown(data, colF, verbose=False, vehName='', allowedFuels=['HEAVY
       print(vehName)
       print('-'*len(vehName))
 
-  removeFuels = [x for x in data.Fuel.unique() if x not in allowedFuels]
-  for rf in removeFuels:
-    data = data[data.Fuel != rf]
-
-  D = {}
+  #removeFuels = [x for x in data[colF].unique() if x not in allowedFuels]
+  #for rf in removeFuels:
+  #  data = data[data[colF] != rf]
+  data[colF].fillna('Unknown', inplace=True)
   numTot = len(data.index)
+  numAllow = 0
+  for aF in allowedFuels:
+    numAllow += len(data[data[colF] == aF].index)
+
+  numUnknown = len(data[data[colF] == 'Unknown'].index)
+  numOther = len(data.index) - (numAllow + numUnknown)
+  D = {}
+  UKF = round(numUnknown/numTot, 8)
+  D['Unknown'] = {'num': numUnknown, 'fraction': UKF}
+  OF = round(numOther/numTot, 8)
+  D['Other'] = {'num': numOther, 'fraction': OF}
+  if verbose:
+    print('Unknown Fuel               : {:6d} vehs, {:9.6f}%'.format(numUnknown, 100.*UKF))
+    print('Other Fuel                 : {:6d} vehs, {:9.6f}%'.format(numOther, 100.*OF))
+
   dataFuels = data.groupby([colF])
   propTot = 0.0
   for Fuel, group in dataFuels:
-    numvehs = len(group.index)
-    fraction = round(numvehs/numTot, 8)
-    propTot += fraction
-    D[Fuel] = {'num': numvehs, 'fraction': fraction}
-    if verbose:
-      print('Fuel   {:>20s}: {:6d} vehs, {:9.6f}%'.format(Fuel, D[Fuel]['num'], 100.*D[Fuel]['fraction']))
+    if Fuel in allowedFuels:
+      numvehs = len(group.index)
+      fraction = round(numvehs/numAllow, 8)
+      propTot += fraction
+      D[Fuel] = {'num': numvehs, 'fraction': fraction}
+      if verbose:
+        print('Fuel   {:>20s}: {:6d} vehs, {:9.6f}%'.format(Fuel, D[Fuel]['num'], 100.*D[Fuel]['fraction']))
 
   diff = 1.0 - propTot
   if abs(diff) > 1e-15:
@@ -256,17 +302,28 @@ def getBreakdown(data, colE, colW, verbose=False, vehName=''):
 
 
   numTot = len(data.index)
+
+  # Catch nans
+  data[colE].fillna(-9, inplace=True)
+
   # Groupby Euro class.
   eurogroups = data.groupby([colE])
   euroDict = {}
+
   fractions = np.array([])
   for euro, group in eurogroups:
     numvehs = len(group.index)
     fraction = numvehs/numTot
     euroDict[euro] = {'num': numvehs, 'fraction': fraction}
-    fractions = np.append(fractions, [fraction])
+    if euro != -9:
+      fractions = np.append(fractions, [fraction])
+    else:
+      if verbose:
+        print('Unknown Euro               : {:6d} vehs, {:9.6f}%'.format(numvehs, 100.*fraction))
   fractionsS = sum(fractions)
   for ei, euro in enumerate(euroDict.keys()):
+    if euro == -9:
+      continue
     ED = euroDict[euro]
     normFrac = np.round(ED['fraction']/fractionsS, 8)
     ED['normFract'] = normFrac
@@ -284,19 +341,18 @@ def getBreakdown(data, colE, colW, verbose=False, vehName=''):
     weightDict[weight] = {'num': numvehs, 'fraction': fraction}
     if weight != 'Unknown':
       fractions = np.append(fractions, [fraction])
+    else:
+      if verbose:
+        print('Unknown Weight             : {:6d} vehs, {:9.6f}%.'.format(numvehs, 100.*fraction))
   fractionsS = sum(fractions)
-
   for weight in weightDict.keys():
+    if weight == 'Unknown':
+      continue
     WD = weightDict[weight]
     WD['normFract'] = WD['fraction']/fractionsS
-    if weight != 'Unknown':
-      if verbose:
-        print('Weight {:>20s}: {:6d} vehs, {:9.6f}%, normalized to {:9.6f}%.'.format(
-              weight, WD['num'], 100.*WD['fraction'], 100.*WD['normFract']))
-
-  # Get LGV fuel breakdown.
-
-
+    if verbose:
+      print('Weight {:>20s}: {:6d} vehs, {:9.6f}%, normalized to {:9.6f}%.'.format(
+          weight, WD['num'], 100.*WD['fraction'], 100.*WD['normFract']))
   return euroDict, weightDict
 
 if __name__ == '__main__':
@@ -342,9 +398,9 @@ if __name__ == '__main__':
   EFTEuroDefault, EFTWeightDefault = getFromEFT(2018, 'Scotland')
   EFTPolTypes = EFTEuroDefault['poltype'].unique()
 
-  # Read the file into pandas, but only keep the Euro class and the weight class
-  # columns.
+  # Read the file into pandas.
   data = pd.read_csv(anprfile, encoding = "ISO-8859-1")
+  totRows = len(data.index)
 
   colnames = list(data)
   for q in reqCols:
@@ -354,26 +410,50 @@ if __name__ == '__main__':
     if col not in reqCols:
       data = data.drop(col, 1)
 
-  print(data[colV].unique())
-  print(EFTEuroDefault['vehicle'].unique())
-  print(EFTWeightDefault['vehicle'].unique())
+  print('Unique vehicle names:')
+  print(', '.join(data[colV].unique()))
+  print('Unique euro classes:')
+  print(', '.join([str(x) for x in data[colE].unique()]))
+  print('Unique weight classes:')
+  print(', '.join(data[colW].unique()))
+  #print('Unique euro classes:')
+  #print(', '.join(data[colE].unique()))
+  #print(EFTEuroDefault['vehicle'].unique())
+  #print(EFTWeightDefault['vehicle'].unique())
 
+
+  changes = pd.DataFrame(columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion'])
+
+  # Catch unknown vehicles.
+  data_unknown = data[data[colV] == 'Unknown']
+  num_veh = len(data_unknown.index)
+  changes = changes.append(pd.DataFrame([['Unknown', 'Vehicle Type', 'Unknown', 0, '---', round(num_veh/totRows, 8)]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
 
 
   # Cars
   data_cars = data[data[colV] == '2. CAR']
+  num_veh = len(data_cars.index)
+  changes = changes.append(pd.DataFrame([['Car', 'Vehicle Type', 'Car', 0, '---', round(num_veh/totRows, 8)]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
   # Diesel Cars
   vehName = 'Diesel Car'
   data_veh = data_cars[data_cars[colF] == 'HEAVY OIL']
+  num_veh = len(data_veh.index)
+  changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
   eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName]
   eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehName]
   ED, WD = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
-  changes = getchanges(ED, WD, eftE_veh, eftW_veh, vehName=vehName)
+  changes = changes.append(getchanges(ED, WD, eftE_veh, eftW_veh, vehName=vehName))
 
   # Petrol Cars
   vehName = 'Petrol Car'
   vehNameW = 'Petrol car'
   data_veh = data_cars[data_cars[colF] == 'PETROL']
+  num_veh = len(data_veh.index)
+  changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
   eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName]
   eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehNameW]
   ED, WD = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
@@ -382,6 +462,9 @@ if __name__ == '__main__':
 
   # LGVs
   data_lgvs = data[data[colV] == '4. LGV']
+  num_veh = len(data_cars.index)
+  changes = changes.append(pd.DataFrame([['LGV', 'Vehicle Type', 'LGV', 0, '---', round(num_veh/totRows, 8)]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
   # Get the proportion of LGVs by fuel type.
   vehName = 'LGV Fuel Type'
   LGVD = getFuelBreakdown(data_lgvs, colF, verbose=True, vehName=vehName)
@@ -390,6 +473,9 @@ if __name__ == '__main__':
   # Diesel LGVs
   vehName='Diesel LGV'
   data_veh = data_lgvs[data_lgvs[colF] == 'HEAVY OIL']
+  num_veh = len(data_veh.index)
+  changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
   eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName]
   eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehName]
   ED, WD = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
@@ -398,6 +484,9 @@ if __name__ == '__main__':
   # Petrol LGVs
   vehName='Petrol LGV'
   data_veh = data_lgvs[data_lgvs[colF] == 'PETROL']
+  num_veh = len(data_veh.index)
+  changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
   eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName]
   eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehName]
   ED, WD = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
@@ -407,14 +496,14 @@ if __name__ == '__main__':
   vehName='Bus'
   vehName2 = 'Buses'
   data_veh = data[data[colV] == '5. BUS']
-  #print(data_veh)
+  num_veh = len(data_veh.index)
+  changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))#print(data_veh)
   eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName2]
-  #print(eftE_veh)
   eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehName2]
   ED, WD = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
   changes = changes.append(getchanges(ED, WD, eftE_veh, eftW_veh, vehName=vehName))
 
-  # RHGV 2X
   vehName='Rigid HGV 2 Axle'
   data_veh = data[data[colV] == '6a. RHGV_2X']
   ED2, WD2 = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
@@ -422,11 +511,17 @@ if __name__ == '__main__':
   # RHGV 3X
   vehName='Rigid HGV 3 Axle'
   data_veh = data[data[colV] == '6b. RHGV_3X']
+  num_veh = len(data_veh.index)
+  changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))#print(data_veh)
   ED3, WD3 = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
 
   # RHGV 4X
   vehName='Rigid HGV 4 Axle'
   data_veh = data[data[colV] == '6c. RHGV_4X']
+  num_veh = len(data_veh.index)
+  changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))#print(data_veh)
   ED4, WD4 = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
 
   # Get changes for Rigid HGVs
@@ -439,16 +534,25 @@ if __name__ == '__main__':
   # AHGV 34X
   vehName='Artic HGV 3&4 Axle'
   data_veh = data[data[colV] == '7a. AHGV_34X']
+  num_veh = len(data_veh.index)
+  changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))#print(data_veh)
   ED3, WD3 = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
 
   # AHGV 5X
   vehName='Artic HGV 5 Axle'
   data_veh = data[data[colV] == '7b. AHGV_5X']
+  num_veh = len(data_veh.index)
+  changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))#print(data_veh)
   ED5, WD5 = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
 
   # AHGV 6X
   vehName='Artic HGV 6 Axle'
   data_veh = data[data[colV] == '7c. AHGV_6X']
+  num_veh = len(data_veh.index)
+  changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))#print(data_veh)
   ED6, WD6 = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
 
   # Get changes for Artic HGVs
