@@ -9,6 +9,7 @@ import os
 import argparse
 import numpy as np
 import pandas as pd
+from fuzzywuzzy import process
 #from datetime import datetime
 
 #import EFT_Tools as tools
@@ -247,6 +248,7 @@ def getFuelBreakdown(data, colF, verbose=False, vehName='', allowedFuels=['HEAVY
   #removeFuels = [x for x in data[colF].unique() if x not in allowedFuels]
   #for rf in removeFuels:
   #  data = data[data[colF] != rf]
+  data = data.copy()
   data[colF].fillna('Unknown', inplace=True)
   numTot = len(data.index)
   numAllow = 0
@@ -304,12 +306,11 @@ def getBreakdown(data, colE, colW, verbose=False, vehName=''):
   numTot = len(data.index)
 
   # Catch nans
+  data = data.copy()
   data[colE].fillna(-9, inplace=True)
-
   # Groupby Euro class.
   eurogroups = data.groupby([colE])
   euroDict = {}
-
   fractions = np.array([])
   for euro, group in eurogroups:
     numvehs = len(group.index)
@@ -355,6 +356,36 @@ def getBreakdown(data, colE, colW, verbose=False, vehName=''):
           weight, WD['num'], 100.*WD['fraction'], 100.*WD['normFract']))
   return euroDict, weightDict
 
+def assignEuro(euro, year, notAll):
+  if notAll:
+    if euro in [1,2,3,4,5,6]:
+      return euro
+    else:
+      return euroFromYear(year)
+  else:
+    return euroFromYear(year)
+
+def euroFromYear(year):
+  try:
+    if year >= 2014:
+      return 6
+    elif year >= 2008:
+      return 5
+    elif year >= 2005:
+      return 4
+    elif year >= 2000:
+      return 3
+    elif year >= 1996:
+      return 2
+    elif year >= 1992:
+      return 1
+    else:
+      return 0
+  except TypeError as E:
+    print(year)
+    print(type(year))
+    raise E
+
 if __name__ == '__main__':
   ProgDesc = ("Creates a vehFleetSplit file of the type used by shp2EFT using "
               "the contents of an ANPR data file.")
@@ -375,11 +406,26 @@ if __name__ == '__main__':
                       type=str, nargs='?', default='WeightClassEFT',
                       help="The column name for the vehicle weight class.")
   parser.add_argument('--euroColumnName', metavar='euro class column name',
-                      type=str, nargs='?', default='EuroClass',
+                      type=str, nargs='?', default='Euro Class',
                       help="The column name for the vehicle euro class.")
   parser.add_argument('--fuelColumnName', metavar='fuel column name',
                       type=str, nargs='?', default='Fuel',
                       help="The column name for the vehicle fuel.")
+  parser.add_argument('--yearColumnName', metavar='manufacture year column name',
+                      type=str, nargs='?', default='Manufacture Year',
+                      help=("The column name for the vehicle manufacture year. "
+                            "Only used if flag --reassignEuro is used."))
+  parser.add_argument('--reassignEuro', metavar='Reassign Euro',
+                      type=int, nargs='?', default=2,
+                      help=("If 0, euro values provided in the source ANPR file "
+                            "will be ignored and will instead be based on the "
+                            "manufacture date. If 1, then vehicles with either "
+                            "no specified euro class, or an assigned euroclass "
+                            "of 0, will be reassigned based on manufacture date. "
+                            "If 2, then the euro class will not be adjusted. "
+                            "The manufacture date is an imperfect proxy "
+                            "for euro class, but can be better than no estimate "
+                            "if the euro class is missing from many records. Default 2."))
 
   args = parser.parse_args()
   anprfile = args.anprfile
@@ -387,8 +433,14 @@ if __name__ == '__main__':
   colW = args.weightColumnName
   colE = args.euroColumnName
   colF = args.fuelColumnName
+  colY = args.yearColumnName
+  reassignEuro = args.reassignEuro
   saveloc = args.saveloc
+  reqColNames = ['--vehColumnName', '--weightColumnName', '--euroColumnName', '--fuelColumnName']
   reqCols = [colV, colW, colE, colF]
+  if reassignEuro != 2:
+    reqColNames.append('--yearColumnName')
+    reqCols.append(colY)
 
   # Check that the anpr file exists.
   if not os.path.exists(anprfile):
@@ -403,12 +455,21 @@ if __name__ == '__main__':
   totRows = len(data.index)
 
   colnames = list(data)
-  for q in reqCols:
+  for qi, q in enumerate(reqCols):
     if q not in colnames:
-      raise ValueError('Column {} does not exist in file.'.format(q))
+      bestOptions = process.extract(q, colnames, limit=5)
+      posNames = '", "'.join([x[0] for x in bestOptions])
+      raise ValueError(('Column {} does not exist in file, specify another '
+                        'column using the {} flag. Perhaps one of the following is '
+                        'appropriate: "{}".').format(q, reqColNames[qi], posNames))
   for col in colnames:
     if col not in reqCols:
       data = data.drop(col, 1)
+
+
+  if reassignEuro != 2:
+    data[colY] = pd.to_numeric(data[colY])
+    data[colE] = data.apply(lambda row: assignEuro(row[colE], row[colY], reassignEuro), axis=1)
 
   print('Unique vehicle names:')
   print(', '.join(data[colV].unique()))
@@ -416,6 +477,8 @@ if __name__ == '__main__':
   print(', '.join([str(x) for x in data[colE].unique()]))
   print('Unique weight classes:')
   print(', '.join(data[colW].unique()))
+
+
   #print('Unique euro classes:')
   #print(', '.join(data[colE].unique()))
   #print(EFTEuroDefault['vehicle'].unique())
@@ -430,7 +493,6 @@ if __name__ == '__main__':
   changes = changes.append(pd.DataFrame([['Unknown', 'Vehicle Type', 'Unknown', 0, '---', round(num_veh/totRows, 8)]],
                         columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
 
-
   # Cars
   data_cars = data[data[colV] == '2. CAR']
   num_veh = len(data_cars.index)
@@ -440,6 +502,7 @@ if __name__ == '__main__':
   vehName = 'Diesel Car'
   data_veh = data_cars[data_cars[colF] == 'HEAVY OIL']
   num_veh = len(data_veh.index)
+
   changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
                         columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
   eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName]

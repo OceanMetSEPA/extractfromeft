@@ -1757,7 +1757,7 @@ def readFleetProps(fname):
 
   if mode == 0:
     csv_df = pd.read_csv(fname)
-    for ii, row in csv_df.iter_rows():
+    for ii, row in csv_df.iterrows():
       if row['Cell'] != '---':
         props[row['Cell']] = row['Proportion']
   elif mode == 1:
