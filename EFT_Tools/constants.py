@@ -50,6 +50,7 @@ versionDetails[8.0]['weightRowStartsBus'] = [419, 425, 512, 532, 537]
 versionDetails[8.0]['weightRowEndsBus'] =   [421, 426, 514, 534, 538]
 versionDetails[8.0]['weightRowNamesBus'] = ['Bus', 'Coach', 'Bus', 'Bus',
                                             'Coach']
+versionDetails[8.0]['lgvFuelRows'] = [542, 543, 544]
 versionDetails[7.0] = {}
 versionDetails[7.0]['vehRowStarts'] = [69, 79, 100, 110, 123, 139, 155, 170]
 versionDetails[7.0]['vehRowEnds']   = [75, 87, 106, 119, 134, 150, 166, 181]
@@ -323,6 +324,7 @@ EuroClassNameColumns = ["A", "H"]
 DefaultEuroColumns = ["B", "I"]
 UserDefinedEuroColumns = ["D", "K"]
 UserDefinedEuroColumnsMC = ["D", "K"]
+UserDefinedEuroColumnsHB = UserDefinedEuroColumnsMC
 EuroClassNameColumnsMC = ["B", "H"]
 EuroClassNameColumnsHB = EuroClassNameColumnsMC
 DefaultEuroColumnsMC = ["C", "I"]
@@ -334,6 +336,8 @@ DefaultBusMWColumn = ["C"]
 NameWeightColumn = "A"
 DefaultWeightColumn = "B"
 UserDefinedWeightColumn = "D"
+DefaultLGVFuelColumns = ["B", "C", "D"]
+UserDefinedLGVFuelColumns = ["E", "F", "G"]
 
 VehDetails = {'Petrol Car': {'Fuel': 'Petrol', 'Veh': 'Car', 'Tech': 'Internal Combustion', 'NOxVeh': 'Petrol Car'},
               'Diesel Car': {'Fuel': 'Diesel', 'Veh': 'Car', 'Tech': 'Internal Combustion', 'NOxVeh': 'Diesel Car'},

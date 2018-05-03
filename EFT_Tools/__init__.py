@@ -28,4 +28,5 @@ from EFT_Tools.EFT_Input import (checkEuroClassesValid,
                                  SpecifyWeight)
 from EFT_Tools.EFT_Extract import (extractOutput,
                                    readProportions)
-from EFT_Tools.prepareAndRun import prepareAndRun
+from EFT_Tools.prepareAndRun import (pasteDefaultEuroProportions,
+                                     prepareAndRun)

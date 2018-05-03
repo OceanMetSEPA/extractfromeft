@@ -283,7 +283,8 @@ def getFuelBreakdown(data, colF, verbose=False, vehName='', allowedFuels=['HEAVY
       print(propTot)
       raise ValueError("Doesn't sum to 1!")
     print('Adjusting Fuel Nums')
-    changes[Fuel][fraction] = round(fraction + diff, 8)
+    print(D)
+    D[Fuel][fraction] = round(fraction + diff, 8)
 
   for aF in allowedFuels:
     if aF not in D.keys():
@@ -525,7 +526,7 @@ if __name__ == '__main__':
 
   # LGVs
   data_lgvs = data[data[colV] == '4. LGV']
-  num_veh = len(data_cars.index)
+  num_veh = len(data_lgvs.index)
   changes = changes.append(pd.DataFrame([['LGV', 'Vehicle Type', 'LGV', 0, '---', round(num_veh/totRows, 8)]],
                         columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
   # Get the proportion of LGVs by fuel type.

@@ -159,6 +159,14 @@ def doEFT(data, fName, area, year, vehBreakdown, no2file, fleetProportions={},
   ws_input.Range("B6").Value = vehBreakdown
   ws_input.Range("A10:L{}".format(numRows_+9)).Value = outData.values.tolist()
 
+  # Now we need to populate the UserEuro table with the defaults.
+  ws_euro = wb.Worksheets("UserEuro")
+  ws_euro.Select()
+  # There is a macro to do this, but for some reason it fails on versions 7.4
+  # and 8.0 when run on my computer. So we must do it ourselves..
+  tools.pasteDefaultEuroProportions(ws_euro, tools.versionDetails[version])
+  #excel.Application.Run("PasteDefaultEuroProportions")
+
   # Change the fleet proportions, if required.
   if bool(fleetProportions):
     ws_euro = wb.Worksheets("UserEuro")

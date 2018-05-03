@@ -13,6 +13,7 @@ import time
 import numpy as np
 import pandas as pd
 import win32com.client as win32
+import pywintypes
 
 from EFT_Tools import (checkEuroClassesValid,
                        createEFTInput,
@@ -21,6 +22,8 @@ from EFT_Tools import (checkEuroClassesValid,
                        DefaultEuroColumns,
                        DefaultEuroColumnsHB,
                        DefaultEuroColumnsMC,
+                       DefaultLGVFuelColumns,
+                       DefaultWeightColumn,
                        EuroClassNameColumns,
                        EuroClassNameColumnsHB,
                        EuroClassNameColumnsMC,
@@ -34,7 +37,112 @@ from EFT_Tools import (checkEuroClassesValid,
                        techVehs,
                        UserDefinedBusColumn,
                        UserDefinedBusMWColumn,
-                       UserDefinedEuroColumns)
+                       UserDefinedEuroColumns,
+                       UserDefinedEuroColumnsHB,
+                       UserDefinedEuroColumnsMC,
+                       UserDefinedLGVFuelColumns,
+                       UserDefinedWeightColumn,
+                       )
+
+def pasteDefaultEuroProportions(ws, details, logger=None):
+  # Get the logging details.
+  loggerM = getLogger(logger, 'pasteDefaultEuroProportions')
+  logprint(loggerM, '               Pasting default euro proportions.', level='info')
+
+  # Bus vs Coach
+  DefaultRange = '{colstart}{rowstart}:{colend}{rowend}'.format(
+                                           colstart=DefaultBusColumn[0],
+                                           colend=DefaultBusMWColumn[0],
+                                           rowstart=details['busCoachRow'][0],
+                                           rowend=details['busCoachRow'][1])
+  UserRange = '{colstart}{rowstart}:{colend}{rowend}'.format(
+                                           colstart=UserDefinedBusColumn[0],
+                                           colend=UserDefinedBusMWColumn[0],
+                                           rowstart=details['busCoachRow'][0],
+                                           rowend=details['busCoachRow'][1])
+  logprint(loggerM, '{} - {}'.format(DefaultRange, UserRange), level='debug')
+  ws.Range(UserRange).Value = ws.Range(DefaultRange).Value
+
+  # LGV Fule Types
+  if 'lgvFuelRows' in details.keys():
+    DefaultRange = '{colstart}{rowstart}:{colend}{rowend}'.format(
+                                            colstart=DefaultLGVFuelColumns[0],
+                                            colend=DefaultLGVFuelColumns[-1],
+                                            rowstart=details['lgvFuelRows'][0],
+                                            rowend=details['lgvFuelRows'][-1])
+    UserRange = '{colstart}{rowstart}:{colend}{rowend}'.format(
+                                            colstart=UserDefinedLGVFuelColumns[0],
+                                            colend=UserDefinedLGVFuelColumns[-1],
+                                            rowstart=details['lgvFuelRows'][0],
+                                            rowend=details['lgvFuelRows'][-1])
+    logprint(loggerM, '{} - {}'.format(DefaultRange, UserRange), level='debug')
+    ws.Range(UserRange).Value = ws.Range(DefaultRange).Value
+
+  # Sizes
+  for rs, re in zip(details['weightRowStarts'], details['weightRowEnds']):
+    DefaultRange = '{col}{rowstart}:{col}{rowend}'.format(col=DefaultWeightColumn, rowstart=rs, rowend=re)
+    UserRange = '{col}{rowstart}:{col}{rowend}'.format(col=UserDefinedWeightColumn, rowstart=rs, rowend=re)
+    #print('{} - {}'.format(DefaultRange, UserRange))
+    ws.Range(UserRange).Value = ws.Range(DefaultRange).Value
+
+  # Sizes Buses
+  for rs, re in zip(details['weightRowStartsBus'], details['weightRowEndsBus']):
+    if rs == 512: # Grumble grumbe grumble
+      cd = 'C'
+    else:
+      cd = DefaultWeightColumn
+    DefaultRange = '{col}{rowstart}:{col}{rowend}'.format(col=cd, rowstart=rs, rowend=re)
+    UserRange = '{col}{rowstart}:{col}{rowend}'.format(col=UserDefinedWeightColumn, rowstart=rs, rowend=re)
+    logprint(loggerM, '{} - {}'.format(DefaultRange, UserRange), level='debug')
+    ws.Range(UserRange).Value = ws.Range(DefaultRange).Value
+
+  # Hybrids
+  for rs, re in zip(details['vehRowStartsHB'], details['vehRowEndsHB']):
+    for qq, (d, u) in enumerate(zip(DefaultEuroColumnsHB, UserDefinedEuroColumnsHB)):
+      DefaultRange = '{col}{rowstart}:{col}{rowend}'.format(col=d, rowstart=rs+qq, rowend=re+qq)
+      UserRange = '{col}{rowstart}:{col}{rowend}'.format(col=u, rowstart=rs+qq, rowend=re+qq)
+      logprint(loggerM, '{} - {}'.format(DefaultRange, UserRange), level='debug')
+      ws.Range(UserRange).Value = ws.Range(DefaultRange).Value
+
+  # Motorcycles
+  for rs, re in zip(details['vehRowStartsMC'], details['vehRowEndsMC']):
+    for d, u in zip(DefaultEuroColumnsMC, UserDefinedEuroColumnsMC):
+      DefaultRange = '{col}{rowstart}:{col}{rowend}'.format(col=d, rowstart=rs, rowend=re)
+      UserRange = '{col}{rowstart}:{col}{rowend}'.format(col=u, rowstart=rs, rowend=re)
+      logprint(loggerM, '{} - {}'.format(DefaultRange, UserRange), level='debug')
+      ws.Range(UserRange).Value = ws.Range(DefaultRange).Value
+
+  # Standard euro class
+  for rs, re in zip(details['vehRowStarts'], details['vehRowEnds']):
+
+    for d, u in zip(DefaultEuroColumns, UserDefinedEuroColumns):
+      DefaultRange = '{col}{rowstart}:{col}{rowend}'.format(col=d, rowstart=rs, rowend=re)
+      UserRange = '{col}{rowstart}:{col}{rowend}'.format(col=u, rowstart=rs, rowend=re)
+      logprint(loggerM, '{} - {}'.format(DefaultRange, UserRange), level='debug')
+      try: # Nested tries, messy but works.
+        ws.Range(UserRange).Value = ws.Range(DefaultRange).Value
+      except pywintypes.com_error:
+        # Try skipping the last row. This is neccesary with a few vehicle types.
+        logprint(loggerM, 'skip Last', level='debug')
+        DefaultRange = '{col}{rowstart}:{col}{rowend}'.format(col=d, rowstart=rs, rowend=re-1)
+        UserRange = '{col}{rowstart}:{col}{rowend}'.format(col=u, rowstart=rs, rowend=re-1)
+        try:
+          ws.Range(UserRange).Value = ws.Range(DefaultRange).Value
+        except pywintypes.com_error:
+          # Try skipping the first row.
+          # This is neccesary for the NOx column for B100 Rigid HGVs
+          logprint(loggerM, 'skip First', level='debug')
+          DefaultRange = '{col}{rowstart}:{col}{rowend}'.format(col=d, rowstart=rs+1, rowend=re)
+          UserRange = '{col}{rowstart}:{col}{rowend}'.format(col=u, rowstart=rs+1, rowend=re)
+          try:
+            ws.Range(UserRange).Value = ws.Range(DefaultRange).Value
+          except pywintypes.com_error:
+            # Try skipping the first two row.
+            # This is neccesary for the PM column for biodeiesel buses.
+            logprint(loggerM, 'skip First Two', level='debug')
+            DefaultRange = '{col}{rowstart}:{col}{rowend}'.format(col=d, rowstart=rs+2, rowend=re)
+            UserRange = '{col}{rowstart}:{col}{rowend}'.format(col=u, rowstart=rs+2, rowend=re)
+            ws.Range(UserRange).Value = ws.Range(DefaultRange).Value
 
 def prepareAndRun(fileName, vehSplit, details, location, year, euroClass,
                   ahk_exepath, ahk_ahkpathG, versionForOutPut, excel=None,
@@ -164,7 +272,11 @@ def prepareAndRun(fileName, vehSplit, details, location, year, euroClass,
   # Now we need to populate the UserEuro table with the defaults. Probably
   # only need to do this once per year, per area, but will do it every time
   # just in case.
-  wb.Worksheets("UserEuro").Select()
+  ws_euro = wb.Worksheets("UserEuro")
+  ws_euro.Select()
+  # There is a macro to do this, but for some reason it fails on versions 7.4
+  # and 8.0 when run on my computer. So we must do it ourselves..
+  pasteDefaultEuroProportions(ws_euro, details, logger=loggerM)
   #excel.Application.Run("PasteDefaultEuroProportions")
 
   # Now specify that we only want the specified euro class, by turning the
