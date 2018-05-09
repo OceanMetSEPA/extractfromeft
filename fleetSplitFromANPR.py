@@ -53,21 +53,35 @@ def mergeVDicts(D):
       D_[key]['fraction'] = vvv
   return D_
 
-def getchangesLGV(LGVD):
+def getchangesLGV(LGVD, veh, withCells=False):
   changes = pd.DataFrame(columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion'])
   # LGV fuel control was added in EFT v8.0. Just hardcode the cells in here for now.
   Cols = ['E', 'F', 'G']
   Rows= {'PETROL': 542, 'HEAVY OIL': 543, 'ELECTRICITY': 544}
-  for Col in Cols:
+
+
+  if withCells:
+    for ColI, Col in enumerate(Cols):
+      for Fuel, D in LGVD.items():
+        if Fuel in Rows.keys():
+          C = '{}{}'.format(Col, Rows[Fuel])
+          change = pd.DataFrame([[veh, 'Fuel', Fuel, ColI+1, C, D['fraction']]],
+                                 columns=['Vehicle Name', 'ProportionType', 'Value',
+                                          'Complication', 'Cell', 'Proportion'])
+          changes = changes.append(change)
+    changes = changes.append(pd.DataFrame([[veh, 'Fuel', 'Other', 0, '---', LGVD['Other']['fraction']]],
+                                 columns=['Vehicle Name', 'ProportionType', 'Value',
+                                          'Complication', 'Cell', 'Proportion']))
+    changes = changes.append(pd.DataFrame([[veh, 'Fuel', 'Unknown', 0, '---', LGVD['Unknown']['fraction']]],
+                               columns=['Vehicle Name', 'ProportionType', 'Value',
+                                        'Complication', 'Cell', 'Proportion']))
+  else:
     for Fuel, D in LGVD.items():
-      if Fuel in Rows.keys():
-        change = pd.DataFrame([['LGV', 'Fuel', Fuel, 0, '{}{}'.format(Col, Rows[Fuel]), D['fraction']]],
-                               columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion'])
-        changes = changes.append(change)
-  changes = changes.append(pd.DataFrame([['LGV', 'Fuel', 'Other', 0, '---', LGVD['Other']['fraction']]],
-                               columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
-  changes = changes.append(pd.DataFrame([['LGV', 'Fuel', 'Unknown', 0, '---', LGVD['Unknown']['fraction']]],
-                               columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
+      change = pd.DataFrame([[veh, 'Fuel', Fuel, 0, '---', D['fraction']]],
+                             columns=['Vehicle Name', 'ProportionType', 'Value',
+                                      'Complication', 'Cell', 'Proportion'])
+      changes = changes.append(change)
+
   return changes
 
 def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
@@ -480,11 +494,6 @@ if __name__ == '__main__':
   print(', '.join(data[colW].unique()))
 
 
-  #print('Unique euro classes:')
-  #print(', '.join(data[colE].unique()))
-  #print(EFTEuroDefault['vehicle'].unique())
-  #print(EFTWeightDefault['vehicle'].unique())
-
 
   changes = pd.DataFrame(columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion'])
 
@@ -494,11 +503,26 @@ if __name__ == '__main__':
   changes = changes.append(pd.DataFrame([['Unknown', 'Vehicle Type', 'Unknown', 0, '---', round(num_veh/totRows, 8)]],
                         columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
 
+  # And the other vehicles.
+  data_unknown = data[data[colV] == '3. TAXI']
+  num_veh = len(data_unknown.index)
+  changes = changes.append(pd.DataFrame([['Taxi', 'Vehicle Type', 'Unknown', 0, '---', round(num_veh/totRows, 8)]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
+  data_unknown = data[data[colV] == 'Other HGV']
+  num_veh = len(data_unknown.index)
+  changes = changes.append(pd.DataFrame([['Other HGV', 'Vehicle Type', 'Unknown', 0, '---', round(num_veh/totRows, 8)]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
+
   # Cars
   data_cars = data[data[colV] == '2. CAR']
   num_veh = len(data_cars.index)
   changes = changes.append(pd.DataFrame([['Car', 'Vehicle Type', 'Car', 0, '---', round(num_veh/totRows, 8)]],
                         columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
+  # Get the proportion of Cars by fuel type.
+  vehName = 'Car Fuel Type'
+  LGVD = getFuelBreakdown(data_cars, colF, verbose=True, vehName=vehName)
+  changes = changes.append(getchangesLGV(LGVD, 'Car'))
+
   # Diesel Cars
   vehName = 'Diesel Car'
   data_veh = data_cars[data_cars[colF] == 'HEAVY OIL']
@@ -532,7 +556,7 @@ if __name__ == '__main__':
   # Get the proportion of LGVs by fuel type.
   vehName = 'LGV Fuel Type'
   LGVD = getFuelBreakdown(data_lgvs, colF, verbose=True, vehName=vehName)
-  changes = changes.append(getchangesLGV(LGVD))
+  changes = changes.append(getchangesLGV(LGVD, 'LGV', withCells=True))
 
   # Diesel LGVs
   vehName='Diesel LGV'
@@ -568,8 +592,12 @@ if __name__ == '__main__':
   ED, WD = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
   changes = changes.append(getchanges(ED, WD, eftE_veh, eftW_veh, vehName=vehName))
 
+  # RHGV 2X
   vehName='Rigid HGV 2 Axle'
   data_veh = data[data[colV] == '6a. RHGV_2X']
+  num_veh = len(data_veh.index)
+  changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))#print(data_veh)
   ED2, WD2 = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
 
   # RHGV 3X
