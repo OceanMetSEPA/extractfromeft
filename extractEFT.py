@@ -639,7 +639,7 @@ def main():
   checkHungTime = 10*60 # assume process is hanging if log file has not been
                     # modified in 10 minutes.
   numExceptions = 0 # To avoid an infinite loop that goes nowhere, we will kill
-                    # the program if there are 3 consequetive exceptions.
+                    # the program if there are 3 consecutive exceptions.
   try:
     squarp = 0
     while True:
@@ -652,9 +652,11 @@ def main():
         numExceptions += 1
         if numExceptions >= 3:
           # break out of the while loop and therefore end the programme.
-          logger.info('THREAD - Thread has on 3 consequitive occasions!')
+          logger.info('THREAD - Thread has died on 3 consecutive occasions!')
           break
         else:
+          os.system("taskkill /f /im  EXCEL.EXE")
+          time.sleep(15)
           # restart the process.
           logger.info('THREAD - Recreating thread')
           completed = tools.getCompletedFromLog(logfilename, mode='both')
