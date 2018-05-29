@@ -638,6 +638,8 @@ def main():
   checkHung = 12 # check to see if process has hung once every 12 iterations.
   checkHungTime = 10*60 # assume process is hanging if log file has not been
                     # modified in 10 minutes.
+  numExceptions = 0 # To avoid an infinite loop that goes nowhere, we will kill
+                    # the program if there are 3 consequetive exceptions.
   try:
     squarp = 0
     while True:
@@ -645,10 +647,23 @@ def main():
       time.sleep(checkInterval)
       # Is it still alive?
       if not thread.is_alive():
-        # It is not. An exception must have been raised within the thread,
-        # break out of the while loop and therefore end the programme.
+        # It is not. An exception must have been raised within the thread.
         logger.info('THREAD - Thread has died!')
-        break
+        numExceptions += 1
+        if numExceptions >= 3:
+          # break out of the while loop and therefore end the programme.
+          logger.info('THREAD - Thread has on 3 consequitive occasions!')
+          break
+        else:
+          # restart the process.
+          logger.info('THREAD - Recreating thread')
+          completed = tools.getCompletedFromLog(logfilename, mode='both')
+          thread = processEFTThread(pargs.inputfile, pargs.outputdir, pargs.a,
+                              pargs.y, euroClasses=pargs.e, weights=pargs.w,
+                              techs=pargs.t, keepTempFiles=pargs.keeptemp,
+                              completed=completed, vehsplit=pargs.b)
+          logger.info('THREAD - Restarting thread')
+          thread.start()
       else:
         # The thread is alive!
         if squarp%checkHung == 0:
@@ -690,7 +705,7 @@ def main():
             thread.start()
   except KeyboardInterrupt:
     # User has ctrl-c, but this info isn't passed down to the threads!
-    logger.info('Keyboard Interrup triggered.')
+    logger.info('Keyboard Interrup triggered. Thread will be killed at next opportunity.')
     kill = True
     thread.join()
 
