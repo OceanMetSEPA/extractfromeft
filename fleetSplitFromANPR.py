@@ -141,6 +141,7 @@ def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
       V = ED[Euro]
     else:
       V = {'normFract': 0.0}
+
     eft_veh_euro = eftE_veh[eftE_veh['euroclass']==Euro]
     for polI, polType in enumerate(EFTPolTypes):
       # Get the correct values and cells for the given pollutant type'
@@ -173,7 +174,11 @@ def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
           lastLocation[polI] = changes.tail(1).index.item()
   # Adjust the values to ensure they sum to 1.
   for pi, pt in enumerate(propTot):
+    if pt == 0.0:
+      # No 'known' weights.
+      continue
     diff = 1.0 - pt
+
     if abs(diff) > 1e-15:
       if abs(diff) > 1e-7:
         print(pt)
@@ -214,7 +219,7 @@ def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
       raise ValueError("No value assigned for weight '{}'.".format(W))
 
   diff = 1.0 - propTot
-  if abs(diff) > 1e-15:
+  if (diff != 1.0) and (abs(diff) > 1e-15):
     if abs(diff) > 1e-7:
       print(propTot)
       raise ValueError("Doesn't sum to 1!")
@@ -222,7 +227,7 @@ def getchanges(ED, WD, eftE_veh, eftW_veh, verbose=False, vehName=''):
     changes.loc[lastLocation, 'Proportion'] = round(changes.loc[lastLocation, 'Proportion'] + diff, 8)
     #changes[lastCellName] = round(changes[lastCellName] + diff, 8)
     #print(changes[lastCellName])
-
+  #print(changes)
   return changes
 
 
@@ -284,6 +289,7 @@ def getFuelBreakdown(data, colF, verbose=False, vehName='', allowedFuels=['HEAVY
   propTot = 0.0
   for Fuel, group in dataFuels:
     if Fuel in allowedFuels:
+      Fuel_ = Fuel
       numvehs = len(group.index)
       fraction = round(numvehs/numAllow, 8)
       propTot += fraction
@@ -298,7 +304,7 @@ def getFuelBreakdown(data, colF, verbose=False, vehName='', allowedFuels=['HEAVY
       raise ValueError("Doesn't sum to 1!")
     print('Adjusting Fuel Nums')
     print(D)
-    D[Fuel][fraction] = round(fraction + diff, 8)
+    D[Fuel_]['fraction'] = round(D[Fuel_]['fraction'] + diff, 8)
 
   for aF in allowedFuels:
     if aF not in D.keys():
@@ -323,6 +329,7 @@ def getBreakdown(data, colE, colW, verbose=False, vehName=''):
   # Catch nans
   data = data.copy()
   data[colE].fillna(-9, inplace=True)
+  #print(data.head())
   # Groupby Euro class.
   eurogroups = data.groupby([colE])
   euroDict = {}
@@ -401,101 +408,10 @@ def euroFromYear(year):
     print(type(year))
     raise E
 
-if __name__ == '__main__':
-  ProgDesc = ("Creates a vehFleetSplit file of the type used by shp2EFT using "
-              "the contents of an ANPR data file.")
-  ANPRDesc = ("The ANPR file should be a csv file listing all vehicles "
-              "passing the ANPR counter (including double counting of vehicles "
-              "that have passed more than once). There should be a column each "
-              "for vehicle class, euro class, weight class and fuel.")
-  parser = argparse.ArgumentParser(description=ProgDesc)
-  parser.add_argument('anprfile', type=str,
-                      help="The ANPR file to be processed. "+ANPRDesc)
-  parser.add_argument('--saveloc', metavar='save location',
-                      type=str, nargs='?',
-                      help="Path where the outpt csv file should be saved.")
-  parser.add_argument('--vehColumnName', metavar='vehicle class column name',
-                      type=str, nargs='?', default='Vehicle11Split',
-                      help="The column name for the vehicle class.")
-  parser.add_argument('--weightColumnName', metavar='weight class column name',
-                      type=str, nargs='?', default='WeightClassEFT',
-                      help="The column name for the vehicle weight class.")
-  parser.add_argument('--euroColumnName', metavar='euro class column name',
-                      type=str, nargs='?', default='Euro Class',
-                      help="The column name for the vehicle euro class.")
-  parser.add_argument('--fuelColumnName', metavar='fuel column name',
-                      type=str, nargs='?', default='Fuel',
-                      help="The column name for the vehicle fuel.")
-  parser.add_argument('--yearColumnName', metavar='manufacture year column name',
-                      type=str, nargs='?', default='Manufacture Year',
-                      help=("The column name for the vehicle manufacture year. "
-                            "Only used if flag --reassignEuro is used."))
-  parser.add_argument('--reassignEuro', metavar='Reassign Euro',
-                      type=int, nargs='?', default=2,
-                      help=("If 0, euro values provided in the source ANPR file "
-                            "will be ignored and will instead be based on the "
-                            "manufacture date. If 1, then vehicles with either "
-                            "no specified euro class, or an assigned euroclass "
-                            "of 0, will be reassigned based on manufacture date. "
-                            "If 2, then the euro class will not be adjusted. "
-                            "The manufacture date is an imperfect proxy "
-                            "for euro class, but can be better than no estimate "
-                            "if the euro class is missing from many records. Default 2."))
 
-  args = parser.parse_args()
-  anprfile = args.anprfile
-  colV = args.vehColumnName
-  colW = args.weightColumnName
-  colE = args.euroColumnName
-  colF = args.fuelColumnName
-  colY = args.yearColumnName
-  reassignEuro = args.reassignEuro
-  saveloc = args.saveloc
-  reqColNames = ['--vehColumnName', '--weightColumnName', '--euroColumnName', '--fuelColumnName']
-  reqCols = [colV, colW, colE, colF]
-  if reassignEuro != 2:
-    reqColNames.append('--yearColumnName')
-    reqCols.append(colY)
+def processThroughAll(data, changes, Site, keepTaxi=False):
 
-  # Check that the anpr file exists.
-  if not os.path.exists(anprfile):
-    raise ValueError('File {} does not exist.'.format(anprfile))
-
-  # Get the default proportions.
-  EFTEuroDefault, EFTWeightDefault = getFromEFT(2018, 'Scotland')
-  EFTPolTypes = EFTEuroDefault['poltype'].unique()
-
-  # Read the file into pandas.
-  data = pd.read_csv(anprfile, encoding = "ISO-8859-1")
   totRows = len(data.index)
-
-  colnames = list(data)
-  for qi, q in enumerate(reqCols):
-    if q not in colnames:
-      bestOptions = process.extract(q, colnames, limit=5)
-      posNames = '", "'.join([x[0] for x in bestOptions])
-      raise ValueError(('Column {} does not exist in file, specify another '
-                        'column using the {} flag. Perhaps one of the following is '
-                        'appropriate: "{}".').format(q, reqColNames[qi], posNames))
-  for col in colnames:
-    if col not in reqCols:
-      data = data.drop(col, 1)
-
-
-  if reassignEuro != 2:
-    data[colY] = pd.to_numeric(data[colY])
-    data[colE] = data.apply(lambda row: assignEuro(row[colE], row[colY], reassignEuro), axis=1)
-
-  print('Unique vehicle names:')
-  print(', '.join(data[colV].unique()))
-  print('Unique euro classes:')
-  print(', '.join([str(x) for x in data[colE].unique()]))
-  print('Unique weight classes:')
-  print(', '.join(data[colW].unique()))
-
-
-
-  changes = pd.DataFrame(columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion'])
 
   # Catch unknown vehicles.
   data_unknown = data[data[colV] == 'Unknown']
@@ -503,15 +419,33 @@ if __name__ == '__main__':
   changes = changes.append(pd.DataFrame([['Unknown', 'Vehicle Type', 'Unknown', 0, '---', round(num_veh/totRows, 8)]],
                         columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
 
-  # And the other vehicles.
-  data_unknown = data[data[colV] == '3. TAXI']
-  num_veh = len(data_unknown.index)
-  changes = changes.append(pd.DataFrame([['Taxi', 'Vehicle Type', 'Unknown', 0, '---', round(num_veh/totRows, 8)]],
-                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
   data_unknown = data[data[colV] == 'Other HGV']
   num_veh = len(data_unknown.index)
   changes = changes.append(pd.DataFrame([['Other HGV', 'Vehicle Type', 'Unknown', 0, '---', round(num_veh/totRows, 8)]],
                         columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
+
+
+  # Taxi
+  if keepTaxi:
+    vehName = 'Taxi'
+    data_veh = data[data[colV] == '3. TAXI']
+    num_veh = len(data_veh.index)
+    changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
+                            columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))#print(data_veh)
+    ED, WD = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
+    for euro, vs in ED.items():
+      changes = changes.append(pd.DataFrame([['Taxi', 'Euro Class - NOx', euro, 0, '-+-', round(vs['fraction'], 8)]],
+                                            columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
+      changes = changes.append(pd.DataFrame([['Taxi', 'Euro Class - PM10', euro, 0, '-+-', round(vs['fraction'], 8)]],
+                                            columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
+    for weight, vs in WD.items():
+      changes = changes.append(pd.DataFrame([['Taxi', 'Weight Class', weight, 0, '-+-', round(vs['fraction'], 8)]],
+                                            columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
+
+  else:
+    print('Taxis assigned to cars.')
+    data.loc[data[colV] == '3. TAXI', colV] = '2. CAR'
+
 
   # Cars
   data_cars = data[data[colV] == '2. CAR']
@@ -573,17 +507,39 @@ if __name__ == '__main__':
   vehName='Petrol LGV'
   data_veh = data_lgvs[data_lgvs[colF] == 'PETROL']
   num_veh = len(data_veh.index)
-  changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
+  if num_veh > 0:
+    changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
+                          columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
+    eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName]
+    eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehName]
+    ED, WD = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
+    changes = changes.append(getchanges(ED, WD, eftE_veh, eftW_veh, vehName=vehName))
+
+  # Bus Vs Coach
+  busName = '5b. BUS'
+  data_bus = data[data[colV] == busName]
+  nb = len(data_bus.index)
+  if nb == 0:
+    busName = '5. BUS'
+    data_bus = data[data[colV] == busName]
+    nb = len(data_bus.index)
+  data_coach = data[data[colV] == '5c. COACH']
+  nc = len(data_coach.index)
+  bus_r = round(nb/(nb+nc), 8)
+  coach_r = 1.0 - bus_r
+  changes = changes.append(pd.DataFrame([['BusCoach', 'Bus Or Coach', 'Bus', 0, 'D429', bus_r]],
                         columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
-  eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName]
-  eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehName]
-  ED, WD = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
-  changes = changes.append(getchanges(ED, WD, eftE_veh, eftW_veh, vehName=vehName))
+  changes = changes.append(pd.DataFrame([['BusCoach', 'Bus Or Coach', 'Bus', 0, 'E429', bus_r]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
+  changes = changes.append(pd.DataFrame([['BusCoach', 'Bus Or Coach', 'Coach', 0, 'D430', coach_r]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
+  changes = changes.append(pd.DataFrame([['BusCoach', 'Bus Or Coach', 'Coach', 0, 'E430', coach_r]],
+                        columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))
 
   # Buses
   vehName='Bus'
   vehName2 = 'Buses'
-  data_veh = data[data[colV] == '5. BUS']
+  data_veh = data[data[colV] == busName]
   num_veh = len(data_veh.index)
   changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
                         columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))#print(data_veh)
@@ -591,6 +547,19 @@ if __name__ == '__main__':
   eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehName2]
   ED, WD = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
   changes = changes.append(getchanges(ED, WD, eftE_veh, eftW_veh, vehName=vehName))
+
+  # Coaches
+  vehName='Coach'
+  vehName2 = 'Coaches'
+  data_veh = data[data[colV] == '5c. COACH']
+  num_veh = len(data_veh.index)
+  if num_veh > 0:
+    changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
+                          columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))#print(data_veh)
+    eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName2]
+    eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehName2]
+    ED, WD = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
+    changes = changes.append(getchanges(ED, WD, eftE_veh, eftW_veh, vehName=vehName))
 
   # RHGV 2X
   vehName='Rigid HGV 2 Axle'
@@ -627,6 +596,7 @@ if __name__ == '__main__':
   vehName='Artic HGV 3&4 Axle'
   data_veh = data[data[colV] == '7a. AHGV_34X']
   num_veh = len(data_veh.index)
+  numAHGV = num_veh
   changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
                         columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))#print(data_veh)
   ED3, WD3 = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
@@ -635,6 +605,7 @@ if __name__ == '__main__':
   vehName='Artic HGV 5 Axle'
   data_veh = data[data[colV] == '7b. AHGV_5X']
   num_veh = len(data_veh.index)
+  numAHGV += num_veh
   changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
                         columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))#print(data_veh)
   ED5, WD5 = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
@@ -643,20 +614,158 @@ if __name__ == '__main__':
   vehName='Artic HGV 6 Axle'
   data_veh = data[data[colV] == '7c. AHGV_6X']
   num_veh = len(data_veh.index)
+  numAHGV += num_veh
   changes = changes.append(pd.DataFrame([[vehName, 'Vehicle Type', vehName, 0, '---', round(num_veh/totRows, 8)]],
                         columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion']))#print(data_veh)
   ED6, WD6 = getBreakdown(data_veh, colE, colW, verbose=True, vehName=vehName)
 
   # Get changes for Artic HGVs
   vehName2 = 'Artic HGV'
-  eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName2]
-  eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehName2]
-  changes = changes.append(getchanges([ED3, ED5, ED6], [WD3, WD5, WD6], eftE_veh, eftW_veh,
-                                verbose=True, vehName=vehName2))
+  if numAHGV > 0:
+    eftE_veh = EFTEuroDefault[EFTEuroDefault['vehicle'] == vehName2]
+    eftW_veh = EFTWeightDefault[EFTWeightDefault['vehicle'] == vehName2]
+    changes = changes.append(getchanges([ED3, ED5, ED6], [WD3, WD5, WD6], eftE_veh, eftW_veh,
+                                  verbose=True, vehName=vehName2))
+
+  changes['Site'] = Site
+  return changes
+
+
+
+if __name__ == '__main__':
+  ProgDesc = ("Creates a vehFleetSplit file of the type used by shp2EFT using "
+              "the contents of an ANPR data file.")
+  ANPRDesc = ("The ANPR file should be a csv file listing all vehicles "
+              "passing the ANPR counter (including double counting of vehicles "
+              "that have passed more than once). There should be a column each "
+              "for vehicle class, euro class, weight class and fuel.")
+  parser = argparse.ArgumentParser(description=ProgDesc)
+  parser.add_argument('anprfile', type=str,
+                      help="The ANPR file to be processed. "+ANPRDesc)
+  parser.add_argument('--saveloc', metavar='save location',
+                      type=str, nargs='?',
+                      help="Path where the outpt csv file should be saved.")
+  parser.add_argument('--vehColumnName', metavar='vehicle class column name',
+                      type=str, nargs='?', default='Vehicle11Split',
+                      help="The column name for the vehicle class.")
+  parser.add_argument('--weightColumnName', metavar='weight class column name',
+                      type=str, nargs='?', default='WeightClassEFT',
+                      help="The column name for the vehicle weight class.")
+  parser.add_argument('--euroColumnName', metavar='euro class column name',
+                      type=str, nargs='?', default='Euro Class',
+                      help="The column name for the vehicle euro class.")
+  parser.add_argument('--fuelColumnName', metavar='fuel column name',
+                      type=str, nargs='?', default='Fuel',
+                      help="The column name for the vehicle fuel.")
+  parser.add_argument('--yearColumnName', metavar='manufacture year column name',
+                      type=str, nargs='?', default='Manufacture Year',
+                      help=("The column name for the vehicle manufacture year. "
+                            "Only used if flag --reassignEuro is used."))
+  parser.add_argument('--splitLoc', action='store_true',
+                      help=("If set, then different proportions will be found "
+                            "for each monitoring site and direction. Default False."))
+  parser.add_argument('--siteColumnName', metavar='anpr site column name',
+                      type=str, nargs='?', default='Site Name',
+                      help=("The column name for the ANPR monitoring site name. "
+                            "Only used if flag --splitLoc is used."))
+  parser.add_argument('--directionColumnName', metavar='direction column name',
+                      type=str, nargs='?', default='Direction',
+                      help=("The column name for the ANPR monitoring site direction. "
+                            "Only used if flag --splitLoc is used."))
+  parser.add_argument('--keepTaxi',
+                      action='store_true',
+                      help=("If set, will keep taxis as a seperate category, "
+                            "otherwise taxis will be incorporated in to cars."))
+  parser.add_argument('--reassignEuro', metavar='Reassign Euro',
+                      type=int, nargs='?', default=2,
+                      help=("If 0, euro values provided in the source ANPR file "
+                            "will be ignored and will instead be based on the "
+                            "manufacture date. If 1, then vehicles with either "
+                            "no specified euro class, or an assigned euroclass "
+                            "of 0, will be reassigned based on manufacture date. "
+                            "If 2, then the euro class will not be adjusted. "
+                            "The manufacture date is an imperfect proxy "
+                            "for euro class, but can be better than no estimate "
+                            "if the euro class is missing from many records. Default 2."))
+
+  args = parser.parse_args()
+  anprfile = args.anprfile
+  splitLoc = args.splitLoc
+  colV = args.vehColumnName
+  colW = args.weightColumnName
+  colE = args.euroColumnName
+  colF = args.fuelColumnName
+  colY = args.yearColumnName
+  colS = args.siteColumnName
+  colD = args.directionColumnName
+  keepTaxi = args.keepTaxi
+  reassignEuro = args.reassignEuro
+  saveloc = args.saveloc
+  reqColNames = ['--vehColumnName', '--weightColumnName', '--euroColumnName', '--fuelColumnName']
+  reqCols = [colV, colW, colE, colF]
+  if reassignEuro != 2:
+    reqColNames.append('--yearColumnName')
+    reqCols.append(colY)
+  if splitLoc:
+    reqColNames.extend(['--siteColumnName', '--directionColumnName'])
+    reqCols.extend([colS, colD])
+
+  # Check that the anpr file exists.
+  if not os.path.exists(anprfile):
+    raise ValueError('File {} does not exist.'.format(anprfile))
+
+  # Get the default proportions.
+  EFTEuroDefault, EFTWeightDefault = getFromEFT(2018, 'Scotland')
+  EFTPolTypes = EFTEuroDefault['poltype'].unique()
+
+  # Read the file into pandas.
+  data = pd.read_csv(anprfile, encoding="ISO-8859-1")
+
+  print()
+  print(list(data))
+  print()
+
+  # Check various things.
+  colnames = list(data)
+  for qi, q in enumerate(reqCols):
+    if q not in colnames:
+      bestOptions = process.extract(q, colnames, limit=5)
+      posNames = '", "'.join([x[0] for x in bestOptions])
+      raise ValueError(('Column {} does not exist in file, specify another '
+                        'column using the {} flag. Perhaps one of the following is '
+                        'appropriate: "{}".').format(q, reqColNames[qi], posNames))
+
+
+  for col in colnames:
+    if col not in reqCols:
+      data = data.drop(col, 1)
+
+  if reassignEuro != 2:
+    data[colY] = pd.to_numeric(data[colY])
+    data[colE] = data.apply(lambda row: assignEuro(row[colE], row[colY], reassignEuro), axis=1)
+
+  print('Unique vehicle names:')
+  print(', '.join(data[colV].unique()))
+  print('Unique euro classes:')
+  print(', '.join([str(x) for x in data[colE].unique()]))
+  print('Unique weight classes:')
+  print(', '.join(data[colW].unique()))
+
+  # Start the changes dataframe.
+  changes = pd.DataFrame(columns=['Vehicle Name', 'ProportionType', 'Value', 'Complication', 'Cell', 'Proportion', 'Site'])
+
+  if splitLoc:
+    changes_ = changes.copy()
+    for a, b in data.groupby([colS, colD]):
+      Site = '{}_{}'.format(*a).replace(' ', '')
+      changesS = processThroughAll(b, changes, Site=Site)
+      changes_ = changes_.append(changesS)
+    changes = changes_
+  else:
+    changes = processThroughAll(data, changes, Site='All', keepTaxi=keepTaxi)
 
 
   print()
-
   if saveloc is None:
     saveloc = anprfile.replace('.csv', '_EFTProportionChanges.csv')
   writeChanges(changes, saveloc)
