@@ -1,0 +1,681 @@
+Vehicle sub-category,Vehicle sub-category description,Vehicle category,Vehicle cat,Vehicle,Euro Class Name,Euro Class,Weight
+EN0001,Petrol Car - Pre-Euro 1 - <1400,2. Petrol Cars,Cars,Petrol Car,Pre-Euro 1,0,<1400 cc
+EN0002,Petrol Car - Pre-Euro 1 - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Pre-Euro 1,0,1400-2000 cc
+EN0003,Petrol Car - Pre-Euro 1 - >2000,2. Petrol Cars,Cars,Petrol Car,Pre-Euro 1,0,>2000 cc
+EN0004,Petrol Car - Euro 1 - <1400,2. Petrol Cars,Cars,Petrol Car,Euro 1,1,<1400 cc
+EN0005,Petrol Car - Euro 1 - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro 1,1,1400-2000 cc
+EN0006,Petrol Car - Euro 1 - >2000,2. Petrol Cars,Cars,Petrol Car,Euro 1,1,>2000 cc
+EN0007,Petrol Car - Euro 2 - <1400,2. Petrol Cars,Cars,Petrol Car,Euro 2,2,<1400 cc
+EN0008,Petrol Car - Euro 2 - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro 2,2,1400-2000 cc
+EN0009,Petrol Car - Euro 2 - >2000,2. Petrol Cars,Cars,Petrol Car,Euro 2,2,>2000 cc
+EN0010,Petrol Car - Euro 3 - <1400,2. Petrol Cars,Cars,Petrol Car,Euro 3,3,<1400 cc
+EN0011,Petrol Car - Euro 3 - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro 3,3,1400-2000 cc
+EN0012,Petrol Car - Euro 3 - >2000,2. Petrol Cars,Cars,Petrol Car,Euro 3,3,>2000 cc
+EN0013,Petrol Car - Euro 4 - <1400,2. Petrol Cars,Cars,Petrol Car,Euro 4,4,<1400 cc
+EN0014,Petrol Car - Euro 4 - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro 4,4,1400-2000 cc
+EN0015,Petrol Car - Euro 4 - >2000,2. Petrol Cars,Cars,Petrol Car,Euro 4,4,>2000 cc
+EN0016,Petrol Car - Euro 5 - <1400,2. Petrol Cars,Cars,Petrol Car,Euro 5,5,<1400 cc
+EN0017,Petrol Car - Euro 5 - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro 5,5,1400-2000 cc
+EN0018,Petrol Car - Euro 5 - >2000,2. Petrol Cars,Cars,Petrol Car,Euro 5,5,>2000 cc
+EN0019,Petrol Car - Euro 6 - <1400,2. Petrol Cars,Cars,Petrol Car,Euro 6,6,<1400 cc
+EN0020,Petrol Car - Euro 6 - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro 6,6,1400-2000 cc
+EN0021,Petrol Car - Euro 6 - >2000,2. Petrol Cars,Cars,Petrol Car,Euro 6,6,>2000 cc
+EN0022,Petrol Car - Euro 6c - <1400,2. Petrol Cars,Cars,Petrol Car,Euro 6c,6,<1400 cc
+EN0023,Petrol Car - Euro 6c - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro 6c,6,1400-2000 cc
+EN0024,Petrol Car - Euro 6c - >2000,2. Petrol Cars,Cars,Petrol Car,Euro 6c,6,>2000 cc
+EN0025,Diesel Car - Pre-Euro 1 - <1400,3. Diesel Cars,Cars,Diesel Car,Pre-Euro 1,0,<1400 cc
+EN0026,Diesel Car - Pre-Euro 1 - 1400-2000,3. Diesel Cars,Cars,Diesel Car,Pre-Euro 1,0,1400-2000 cc
+EN0027,Diesel Car - Pre-Euro 1 - >2000,3. Diesel Cars,Cars,Diesel Car,Pre-Euro 1,0,>2000 cc
+EN0028,Diesel Car - Euro 1 - <1400,3. Diesel Cars,Cars,Diesel Car,Euro 1,1,<1400 cc
+EN0029,Diesel Car - Euro 1 - 1400-2000,3. Diesel Cars,Cars,Diesel Car,Euro 1,1,1400-2000 cc
+EN0030,Diesel Car - Euro 1 - >2000,3. Diesel Cars,Cars,Diesel Car,Euro 1,1,>2000 cc
+EN0031,Diesel Car - Euro 2 - <1400,3. Diesel Cars,Cars,Diesel Car,Euro 2,2,<1400 cc
+EN0032,Diesel Car - Euro 2 - 1400-2000,3. Diesel Cars,Cars,Diesel Car,Euro 2,2,1400-2000 cc
+EN0033,Diesel Car - Euro 2 - >2000,3. Diesel Cars,Cars,Diesel Car,Euro 2,2,>2000 cc
+EN0034,Diesel Car - Euro 3 - <1400,3. Diesel Cars,Cars,Diesel Car,Euro 3,3,<1400 cc
+EN0035,Diesel Car - Euro 3 - 1400-2000,3. Diesel Cars,Cars,Diesel Car,Euro 3,3,1400-2000 cc
+EN0036,Diesel Car - Euro 3 - >2000,3. Diesel Cars,Cars,Diesel Car,Euro 3,3,>2000 cc
+EN0037,Diesel Car - Euro 4 - <1400,3. Diesel Cars,Cars,Diesel Car,Euro 4,4,<1400 cc
+EN0038,Diesel Car - Euro 4 - 1400-2000,3. Diesel Cars,Cars,Diesel Car,Euro 4,4,1400-2000 cc
+EN0039,Diesel Car - Euro 4 - >2000,3. Diesel Cars,Cars,Diesel Car,Euro 4,4,>2000 cc
+EN0040,Diesel Car - Euro 5 - <1400,3. Diesel Cars,Cars,Diesel Car,Euro 5,5,<1400 cc
+EN0041,Diesel Car - Euro 5 - 1400-2000,3. Diesel Cars,Cars,Diesel Car,Euro 5,5,1400-2000 cc
+EN0042,Diesel Car - Euro 5 - >2000,3. Diesel Cars,Cars,Diesel Car,Euro 5,5,>2000 cc
+EN0043,Diesel Car - Euro 6 - <1400,3. Diesel Cars,Cars,Diesel Car,Euro 6,6,<1400 cc
+EN0044,Diesel Car - Euro 6 - 1400-2000,3. Diesel Cars,Cars,Diesel Car,Euro 6,6,1400-2000 cc
+EN0045,Diesel Car - Euro 6 - >2000,3. Diesel Cars,Cars,Diesel Car,Euro 6,6,>2000 cc
+EN0046,Diesel Car - Euro6c - <1400,3. Diesel Cars,Cars,Diesel Car,Euro6c,6,<1400 cc
+EN0047,Diesel Car - Euro6c - 1400-2000,3. Diesel Cars,Cars,Diesel Car,Euro6c,6,1400-2000 cc
+EN0048,Diesel Car - Euro6c - >2000,3. Diesel Cars,Cars,Diesel Car,Euro6c,6,>2000 cc
+EN0049,Diesel Car - Euro6d - <1400,3. Diesel Cars,Cars,Diesel Car,Euro6d,6,<1400 cc
+EN0050,Diesel Car - Euro6d - 1400-2000,3. Diesel Cars,Cars,Diesel Car,Euro6d,6,1400-2000 cc
+EN0051,Diesel Car - Euro6d - >2000,3. Diesel Cars,Cars,Diesel Car,Euro6d,6,>2000 cc
+EN0052,Taxi (Black Cab) London - Pre-Euro 1 - n/a,9. Taxis,Taxi,Taxi,Pre-Euro 1,0,n/a
+EN0053,Taxi (Black Cab) London - Euro 1 - n/a,9. Taxis,Taxi,Taxi,Euro 1,1,n/a
+EN0054,Taxi (Black Cab) London - Euro 2 - n/a,9. Taxis,Taxi,Taxi,Euro 2,2,n/a
+EN0055,Taxi (Black Cab) London - Euro 3 - n/a,9. Taxis,Taxi,Taxi,Euro 3,3,n/a
+EN0056,Taxi (Black Cab) London - Euro 4 - n/a,9. Taxis,Taxi,Taxi,Euro 4,4,n/a
+EN0057,Taxi (Black Cab) London - Euro 5 - n/a,9. Taxis,Taxi,Taxi,Euro 5,5,n/a
+EN0058,Taxi (Black Cab) London - Euro 6 - n/a,9. Taxis,Taxi,Taxi,Euro 6,6,n/a
+EN0059,Taxi (Black Cab) London - Euro6c - n/a,9. Taxis,Taxi,Taxi,Euro6c,6,n/a
+EN0060,Taxi (Black Cab) London - Euro6d - n/a,9. Taxis,Taxi,Taxi,Euro6d,6,n/a
+EN0061,Taxi (Black Cab) London - ZEC - n/a,9. Taxis,Taxi,Taxi,ZEC,6,n/a
+EN0062,Petrol LGV - Pre-Euro 1 - N1 (I),5. LGVs,LGVs,Petrol LGV,Pre-Euro 1,0,N1 (I)
+EN0063,Petrol LGV - Pre-Euro 1 - N1 (II),5. LGVs,LGVs,Petrol LGV,Pre-Euro 1,0,N1 (II)
+EN0064,Petrol LGV - Pre-Euro 1 - N1 (III),5. LGVs,LGVs,Petrol LGV,Pre-Euro 1,0,N1 (III)
+EN0065,Petrol LGV - Euro 1 - N1 (I),5. LGVs,LGVs,Petrol LGV,Euro 1,1,N1 (I)
+EN0066,Petrol LGV - Euro 1 - N1 (II),5. LGVs,LGVs,Petrol LGV,Euro 1,1,N1 (II)
+EN0067,Petrol LGV - Euro 1 - N1 (III),5. LGVs,LGVs,Petrol LGV,Euro 1,1,N1 (III)
+EN0068,Petrol LGV - Euro 2 - N1 (I),5. LGVs,LGVs,Petrol LGV,Euro 2,2,N1 (I)
+EN0069,Petrol LGV - Euro 2 - N1 (II),5. LGVs,LGVs,Petrol LGV,Euro 2,2,N1 (II)
+EN0070,Petrol LGV - Euro 2 - N1 (III),5. LGVs,LGVs,Petrol LGV,Euro 2,2,N1 (III)
+EN0071,Petrol LGV - Euro 3 - N1 (I),5. LGVs,LGVs,Petrol LGV,Euro 3,3,N1 (I)
+EN0072,Petrol LGV - Euro 3 - N1 (II),5. LGVs,LGVs,Petrol LGV,Euro 3,3,N1 (II)
+EN0073,Petrol LGV - Euro 3 - N1 (III),5. LGVs,LGVs,Petrol LGV,Euro 3,3,N1 (III)
+EN0074,Petrol LGV - Euro 4 - N1 (I),5. LGVs,LGVs,Petrol LGV,Euro 4,4,N1 (I)
+EN0075,Petrol LGV - Euro 4 - N1 (II),5. LGVs,LGVs,Petrol LGV,Euro 4,4,N1 (II)
+EN0076,Petrol LGV - Euro 4 - N1 (III),5. LGVs,LGVs,Petrol LGV,Euro 4,4,N1 (III)
+EN0077,Petrol LGV - Euro 5 - N1 (I),5. LGVs,LGVs,Petrol LGV,Euro 5,5,N1 (I)
+EN0078,Petrol LGV - Euro 5 - N1 (II),5. LGVs,LGVs,Petrol LGV,Euro 5,5,N1 (II)
+EN0079,Petrol LGV - Euro 5 - N1 (III),5. LGVs,LGVs,Petrol LGV,Euro 5,5,N1 (III)
+EN0080,Petrol LGV - Euro 6 - N1 (I),5. LGVs,LGVs,Petrol LGV,Euro 6,6,N1 (I)
+EN0081,Petrol LGV - Euro 6 - N1 (II),5. LGVs,LGVs,Petrol LGV,Euro 6,6,N1 (II)
+EN0082,Petrol LGV - Euro 6 - N1 (III),5. LGVs,LGVs,Petrol LGV,Euro 6,6,N1 (III)
+EN0083,Petrol LGV - Euro 6c - N1 (I),5. LGVs,LGVs,Petrol LGV,Euro 6c,6,N1 (I)
+EN0084,Petrol LGV - Euro 6c - N1 (II),5. LGVs,LGVs,Petrol LGV,Euro 6c,6,N1 (II)
+EN0085,Petrol LGV - Euro 6c - N1 (III),5. LGVs,LGVs,Petrol LGV,Euro 6c,6,N1 (III)
+EN0086,Diesel LGV - Pre-Euro 1 - N1 (I),5. LGVs,LGVs,Diesel LGV,Pre-Euro 1,0,N1 (I)
+EN0087,Diesel LGV - Pre-Euro 1 - N1 (II),5. LGVs,LGVs,Diesel LGV,Pre-Euro 1,0,N1 (II)
+EN0088,Diesel LGV - Pre-Euro 1 - N1 (III),5. LGVs,LGVs,Diesel LGV,Pre-Euro 1,0,N1 (III)
+EN0089,Diesel LGV - Euro 1 - N1 (I),5. LGVs,LGVs,Diesel LGV,Euro 1,1,N1 (I)
+EN0090,Diesel LGV - Euro 1 - N1 (II),5. LGVs,LGVs,Diesel LGV,Euro 1,1,N1 (II)
+EN0091,Diesel LGV - Euro 1 - N1 (III),5. LGVs,LGVs,Diesel LGV,Euro 1,1,N1 (III)
+EN0092,Diesel LGV - Euro 2 - N1 (I),5. LGVs,LGVs,Diesel LGV,Euro 2,2,N1 (I)
+EN0093,Diesel LGV - Euro 2 - N1 (II),5. LGVs,LGVs,Diesel LGV,Euro 2,2,N1 (II)
+EN0094,Diesel LGV - Euro 2 - N1 (III),5. LGVs,LGVs,Diesel LGV,Euro 2,2,N1 (III)
+EN0095,Diesel LGV - Euro 3 - N1 (I),5. LGVs,LGVs,Diesel LGV,Euro 3,3,N1 (I)
+EN0096,Diesel LGV - Euro 3 - N1 (II),5. LGVs,LGVs,Diesel LGV,Euro 3,3,N1 (II)
+EN0097,Diesel LGV - Euro 3 - N1 (III),5. LGVs,LGVs,Diesel LGV,Euro 3,3,N1 (III)
+EN0098,Diesel LGV - Euro 4 - N1 (I),5. LGVs,LGVs,Diesel LGV,Euro 4,4,N1 (I)
+EN0099,Diesel LGV - Euro 4 - N1 (II),5. LGVs,LGVs,Diesel LGV,Euro 4,4,N1 (II)
+EN0100,Diesel LGV - Euro 4 - N1 (III),5. LGVs,LGVs,Diesel LGV,Euro 4,4,N1 (III)
+EN0101,Diesel LGV - Euro 5 - N1 (I),5. LGVs,LGVs,Diesel LGV,Euro 5,5,N1 (I)
+EN0102,Diesel LGV - Euro 5 - N1 (II),5. LGVs,LGVs,Diesel LGV,Euro 5,5,N1 (II)
+EN0103,Diesel LGV - Euro 5 - N1 (III),5. LGVs,LGVs,Diesel LGV,Euro 5,5,N1 (III)
+EN0104,Diesel LGV - Euro 6 - N1 (I),5. LGVs,LGVs,Diesel LGV,Euro 6,6,N1 (I)
+EN0105,Diesel LGV - Euro 6 - N1 (II),5. LGVs,LGVs,Diesel LGV,Euro 6,6,N1 (II)
+EN0106,Diesel LGV - Euro 6 - N1 (III),5. LGVs,LGVs,Diesel LGV,Euro 6,6,N1 (III)
+EN0107,Diesel LGV - Euro6c - N1 (I),5. LGVs,LGVs,Diesel LGV,Euro6c,6,N1 (I)
+EN0108,Diesel LGV - Euro6c - N1 (II),5. LGVs,LGVs,Diesel LGV,Euro6c,6,N1 (II)
+EN0109,Diesel LGV - Euro6c - N1 (III),5. LGVs,LGVs,Diesel LGV,Euro6c,6,N1 (III)
+EN0110,Diesel LGV - Euro6d - N1 (I),5. LGVs,LGVs,Diesel LGV,Euro6d,6,N1 (I)
+EN0111,Diesel LGV - Euro6d - N1 (II),5. LGVs,LGVs,Diesel LGV,Euro6d,6,N1 (II)
+EN0112,Diesel LGV - Euro6d - N1 (III),5. LGVs,LGVs,Diesel LGV,Euro6d,6,N1 (III)
+EN0113,Rigid HGV - Pre-Euro I - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Pre-Euro I,0,3.5-7.5 t
+EN0114,Rigid HGV - Pre-Euro I - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Pre-Euro I,0,7.5-12 t
+EN0115,Rigid HGV - Pre-Euro I - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Pre-Euro I,0,12-14 t
+EN0116,Rigid HGV - Pre-Euro I - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Pre-Euro I,0,14-20 t
+EN0117,Rigid HGV - Pre-Euro I - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Pre-Euro I,0,20-26 t
+EN0118,Rigid HGV - Pre-Euro I - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Pre-Euro I,0,26-28 t
+EN0119,Rigid HGV - Pre-Euro I - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Pre-Euro I,0,28-32 t
+EN0120,Rigid HGV - Pre-Euro I - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Pre-Euro I,0,>32 t
+EN0121,Rigid HGV - Euro I - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro I,1,3.5-7.5 t
+EN0122,Rigid HGV - Euro I - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro I,1,7.5-12 t
+EN0123,Rigid HGV - Euro I - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro I,1,12-14 t
+EN0124,Rigid HGV - Euro I - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro I,1,14-20 t
+EN0125,Rigid HGV - Euro I - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro I,1,20-26 t
+EN0126,Rigid HGV - Euro I - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro I,1,26-28 t
+EN0127,Rigid HGV - Euro I - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro I,1,28-32 t
+EN0128,Rigid HGV - Euro I - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro I,1,>32 t
+EN0129,Rigid HGV - Euro II - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II,2,3.5-7.5 t
+EN0130,Rigid HGV - Euro II - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II,2,7.5-12 t
+EN0131,Rigid HGV - Euro II - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II,2,12-14 t
+EN0132,Rigid HGV - Euro II - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II,2,14-20 t
+EN0133,Rigid HGV - Euro II - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II,2,20-26 t
+EN0134,Rigid HGV - Euro II - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II,2,26-28 t
+EN0135,Rigid HGV - Euro II - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II,2,28-32 t
+EN0136,Rigid HGV - Euro II - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II,2,>32 t
+EN0137,Rigid HGV - Euro III - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III,3,3.5-7.5 t
+EN0138,Rigid HGV - Euro III - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III,3,7.5-12 t
+EN0139,Rigid HGV - Euro III - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III,3,12-14 t
+EN0140,Rigid HGV - Euro III - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III,3,14-20 t
+EN0141,Rigid HGV - Euro III - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III,3,20-26 t
+EN0142,Rigid HGV - Euro III - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III,3,26-28 t
+EN0143,Rigid HGV - Euro III - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III,3,28-32 t
+EN0144,Rigid HGV - Euro III - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III,3,>32 t
+EN0145,Rigid HGV - Euro IV - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV,4,3.5-7.5 t
+EN0146,Rigid HGV - Euro IV - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV,4,7.5-12 t
+EN0147,Rigid HGV - Euro IV - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV,4,12-14 t
+EN0148,Rigid HGV - Euro IV - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV,4,14-20 t
+EN0149,Rigid HGV - Euro IV - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV,4,20-26 t
+EN0150,Rigid HGV - Euro IV - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV,4,26-28 t
+EN0151,Rigid HGV - Euro IV - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV,4,28-32 t
+EN0152,Rigid HGV - Euro IV - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV,4,>32 t
+EN0153,Rigid HGV - Euro V_EGR - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_EGR,5,3.5-7.5 t
+EN0154,Rigid HGV - Euro V_EGR - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_EGR,5,7.5-12 t
+EN0155,Rigid HGV - Euro V_EGR - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_EGR,5,12-14 t
+EN0156,Rigid HGV - Euro V_EGR - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_EGR,5,14-20 t
+EN0157,Rigid HGV - Euro V_EGR - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_EGR,5,20-26 t
+EN0158,Rigid HGV - Euro V_EGR - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_EGR,5,26-28 t
+EN0159,Rigid HGV - Euro V_EGR - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_EGR,5,28-32 t
+EN0160,Rigid HGV - Euro V_EGR - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_EGR,5,>32 t
+EN0161,Rigid HGV - Euro V_SCR - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_SCR,5,3.5-7.5 t
+EN0162,Rigid HGV - Euro V_SCR - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_SCR,5,7.5-12 t
+EN0163,Rigid HGV - Euro V_SCR - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_SCR,5,12-14 t
+EN0164,Rigid HGV - Euro V_SCR - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_SCR,5,14-20 t
+EN0165,Rigid HGV - Euro V_SCR - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_SCR,5,20-26 t
+EN0166,Rigid HGV - Euro V_SCR - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_SCR,5,26-28 t
+EN0167,Rigid HGV - Euro V_SCR - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_SCR,5,28-32 t
+EN0168,Rigid HGV - Euro V_SCR - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_SCR,5,>32 t
+EN0169,Rigid HGV - Euro VI - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro VI,6,3.5-7.5 t
+EN0170,Rigid HGV - Euro VI - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro VI,6,7.5-12 t
+EN0171,Rigid HGV - Euro VI - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro VI,6,12-14 t
+EN0172,Rigid HGV - Euro VI - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro VI,6,14-20 t
+EN0173,Rigid HGV - Euro VI - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro VI,6,20-26 t
+EN0174,Rigid HGV - Euro VI - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro VI,6,26-28 t
+EN0175,Rigid HGV - Euro VI - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro VI,6,28-32 t
+EN0176,Rigid HGV - Euro VI - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro VI,6,>32 t
+EN0177,Rigid HGV - Euro II SCRRF - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II SCRRF,2,3.5-7.5 t
+EN0178,Rigid HGV - Euro II SCRRF - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II SCRRF,2,7.5-12 t
+EN0179,Rigid HGV - Euro II SCRRF - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II SCRRF,2,12-14 t
+EN0180,Rigid HGV - Euro II SCRRF - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II SCRRF,2,14-20 t
+EN0181,Rigid HGV - Euro II SCRRF - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II SCRRF,2,20-26 t
+EN0182,Rigid HGV - Euro II SCRRF - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II SCRRF,2,26-28 t
+EN0183,Rigid HGV - Euro II SCRRF - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II SCRRF,2,28-32 t
+EN0184,Rigid HGV - Euro II SCRRF - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II SCRRF,2,>32 t
+EN0185,Rigid HGV - Euro III SCRRF - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III SCRRF,3,3.5-7.5 t
+EN0186,Rigid HGV - Euro III SCRRF - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III SCRRF,3,7.5-12 t
+EN0187,Rigid HGV - Euro III SCRRF - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III SCRRF,3,12-14 t
+EN0188,Rigid HGV - Euro III SCRRF - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III SCRRF,3,14-20 t
+EN0189,Rigid HGV - Euro III SCRRF - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III SCRRF,3,20-26 t
+EN0190,Rigid HGV - Euro III SCRRF - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III SCRRF,3,26-28 t
+EN0191,Rigid HGV - Euro III SCRRF - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III SCRRF,3,28-32 t
+EN0192,Rigid HGV - Euro III SCRRF - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III SCRRF,3,>32 t
+EN0193,Rigid HGV - Euro IV SCRRF - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV SCRRF,4,3.5-7.5 t
+EN0194,Rigid HGV - Euro IV SCRRF - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV SCRRF,4,7.5-12 t
+EN0195,Rigid HGV - Euro IV SCRRF - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV SCRRF,4,12-14 t
+EN0196,Rigid HGV - Euro IV SCRRF - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV SCRRF,4,14-20 t
+EN0197,Rigid HGV - Euro IV SCRRF - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV SCRRF,4,20-26 t
+EN0198,Rigid HGV - Euro IV SCRRF - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV SCRRF,4,26-28 t
+EN0199,Rigid HGV - Euro IV SCRRF - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV SCRRF,4,28-32 t
+EN0200,Rigid HGV - Euro IV SCRRF - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV SCRRF,4,>32 t
+EN0201,Rigid HGV - Euro V EGR + SCRRF - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V EGR + SCRRF,5,3.5-7.5 t
+EN0202,Rigid HGV - Euro V EGR + SCRRF - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V EGR + SCRRF,5,7.5-12 t
+EN0203,Rigid HGV - Euro V EGR + SCRRF - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V EGR + SCRRF,5,12-14 t
+EN0204,Rigid HGV - Euro V EGR + SCRRF - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V EGR + SCRRF,5,14-20 t
+EN0205,Rigid HGV - Euro V EGR + SCRRF - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V EGR + SCRRF,5,20-26 t
+EN0206,Rigid HGV - Euro V EGR + SCRRF - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V EGR + SCRRF,5,26-28 t
+EN0207,Rigid HGV - Euro V EGR + SCRRF - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V EGR + SCRRF,5,28-32 t
+EN0208,Rigid HGV - Euro V EGR + SCRRF - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V EGR + SCRRF,5,>32 t
+EN0209,Artic HGV - Pre-Euro I - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Pre-Euro I,0,14-20 t
+EN0210,Artic HGV - Pre-Euro I - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Pre-Euro I,0,20-28 t
+EN0211,Artic HGV - Pre-Euro I - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Pre-Euro I,0,28-34 t
+EN0212,Artic HGV - Pre-Euro I - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Pre-Euro I,0,34-40 t
+EN0213,Artic HGV - Pre-Euro I - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Pre-Euro I,0,40-50 t
+EN0214,Artic HGV - Euro I - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro I,1,14-20 t
+EN0215,Artic HGV - Euro I - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro I,1,20-28 t
+EN0216,Artic HGV - Euro I - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro I,1,28-34 t
+EN0217,Artic HGV - Euro I - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro I,1,34-40 t
+EN0218,Artic HGV - Euro I - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro I,1,40-50 t
+EN0219,Artic HGV - Euro II - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro II,2,14-20 t
+EN0220,Artic HGV - Euro II - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro II,2,20-28 t
+EN0221,Artic HGV - Euro II - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro II,2,28-34 t
+EN0222,Artic HGV - Euro II - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro II,2,34-40 t
+EN0223,Artic HGV - Euro II - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro II,2,40-50 t
+EN0224,Artic HGV - Euro III - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III,3,14-20 t
+EN0225,Artic HGV - Euro III - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III,3,20-28 t
+EN0226,Artic HGV - Euro III - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III,3,28-34 t
+EN0227,Artic HGV - Euro III - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III,3,34-40 t
+EN0228,Artic HGV - Euro III - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III,3,40-50 t
+EN0229,Artic HGV - Euro IV - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV,4,14-20 t
+EN0230,Artic HGV - Euro IV - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV,4,20-28 t
+EN0231,Artic HGV - Euro IV - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV,4,28-34 t
+EN0232,Artic HGV - Euro IV - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV,4,34-40 t
+EN0233,Artic HGV - Euro IV - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV,4,40-50 t
+EN0234,Artic HGV - Euro V_EGR - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_EGR,5,14-20 t
+EN0235,Artic HGV - Euro V_EGR - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_EGR,5,20-28 t
+EN0236,Artic HGV - Euro V_EGR - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_EGR,5,28-34 t
+EN0237,Artic HGV - Euro V_EGR - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_EGR,5,34-40 t
+EN0238,Artic HGV - Euro V_EGR - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_EGR,5,40-50 t
+EN0239,Artic HGV - Euro V_SCR - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_SCR,5,14-20 t
+EN0240,Artic HGV - Euro V_SCR - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_SCR,5,20-28 t
+EN0241,Artic HGV - Euro V_SCR - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_SCR,5,28-34 t
+EN0242,Artic HGV - Euro V_SCR - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_SCR,5,34-40 t
+EN0243,Artic HGV - Euro V_SCR - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_SCR,5,40-50 t
+EN0244,Artic HGV - Euro VI - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro VI,6,14-20 t
+EN0245,Artic HGV - Euro VI - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro VI,6,20-28 t
+EN0246,Artic HGV - Euro VI - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro VI,6,28-34 t
+EN0247,Artic HGV - Euro VI - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro VI,6,34-40 t
+EN0248,Artic HGV - Euro VI - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro VI,6,40-50 t
+EN0249,Artic HGV - Euro II SCRRF - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro II SCRRF,2,14-20 t
+EN0250,Artic HGV - Euro II SCRRF - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro II SCRRF,2,20-28 t
+EN0251,Artic HGV - Euro II SCRRF - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro II SCRRF,2,28-34 t
+EN0252,Artic HGV - Euro II SCRRF - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro II SCRRF,2,34-40 t
+EN0253,Artic HGV - Euro II SCRRF - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro II SCRRF,2,40-50 t
+EN0254,Artic HGV - Euro III SCRRF - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III SCRRF,3,14-20 t
+EN0255,Artic HGV - Euro III SCRRF - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III SCRRF,3,20-28 t
+EN0256,Artic HGV - Euro III SCRRF - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III SCRRF,3,28-34 t
+EN0257,Artic HGV - Euro III SCRRF - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III SCRRF,3,34-40 t
+EN0258,Artic HGV - Euro III SCRRF - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III SCRRF,3,40-50 t
+EN0259,Artic HGV - Euro IV SCRRF - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV SCRRF,4,14-20 t
+EN0260,Artic HGV - Euro IV SCRRF - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV SCRRF,4,20-28 t
+EN0261,Artic HGV - Euro IV SCRRF - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV SCRRF,4,28-34 t
+EN0262,Artic HGV - Euro IV SCRRF - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV SCRRF,4,34-40 t
+EN0263,Artic HGV - Euro IV SCRRF - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV SCRRF,4,40-50 t
+EN0264,Artic HGV - Euro V EGR + SCRRF - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V EGR + SCRRF,5,14-20 t
+EN0265,Artic HGV - Euro V EGR + SCRRF - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V EGR + SCRRF,5,20-28 t
+EN0266,Artic HGV - Euro V EGR + SCRRF - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V EGR + SCRRF,5,28-34 t
+EN0267,Artic HGV - Euro V EGR + SCRRF - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V EGR + SCRRF,5,34-40 t
+EN0268,Artic HGV - Euro V EGR + SCRRF - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V EGR + SCRRF,5,40-50 t
+EN0312,Coach - Pre-Euro I - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Pre-Euro I,0,<=18 t
+EN0313,Coach - Pre-Euro I - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Pre-Euro I,0,>18 t
+EN0314,Coach - Euro I - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro I,1,<=18 t
+EN0315,Coach - Euro I - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro I,1,>18 t
+EN0316,Coach - Euro II - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro II,2,<=18 t
+EN0317,Coach - Euro II - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro II,2,>18 t
+EN0318,Coach - Euro III - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro III,3,<=18 t
+EN0319,Coach - Euro III - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro III,3,>18 t
+EN0320,Coach - Euro IV - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro IV,4,<=18 t
+EN0321,Coach - Euro IV - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro IV,4,>18 t
+EN0322,Coach - Euro V_EGR - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro V_EGR,5,<=18 t
+EN0323,Coach - Euro V_EGR - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro V_EGR,5,>18 t
+EN0324,Coach - Euro V_SCR - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro V_SCR,5,<=18 t
+EN0325,Coach - Euro V_SCR - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro V_SCR,5,>18 t
+EN0326,Coach - Euro VI - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro VI,6,<=18 t
+EN0327,Coach - Euro VI - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro VI,6,>18 t
+EN0328,Coach - Euro II SCRRF - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro II SCRRF,2,<=18 t
+EN0329,Coach - Euro II SCRRF - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro II SCRRF,2,>18 t
+EN0330,Coach - Euro III SCRRF - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro III SCRRF,3,<=18 t
+EN0331,Coach - Euro III SCRRF - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro III SCRRF,3,>18 t
+EN0332,Coach - Euro IV SCRRF - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro IV SCRRF,4,<=18 t
+EN0333,Coach - Euro IV SCRRF - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro IV SCRRF,4,>18 t
+EN0334,Coach - Euro V EGR + SCRRF - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro V EGR + SCRRF,5,<=18 t
+EN0335,Coach - Euro V EGR + SCRRF - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro V EGR + SCRRF,5,>18 t
+EN0336,Full Hybrid Petrol Cars - Pre-Euro 1 - <1400,2. Petrol Cars,Cars,Petrol Car,Pre-Euro 1,0,<1400 cc
+EN0337,Full Hybrid Petrol Cars - Pre-Euro 1 - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Pre-Euro 1,0,1400-2000 cc
+EN0338,Full Hybrid Petrol Cars - Pre-Euro 1 - >2000,2. Petrol Cars,Cars,Petrol Car,Pre-Euro 1,0,>2000 cc
+EN0339,Full Hybrid Petrol Cars - Euro 3 - <1400,2. Petrol Cars,Cars,Petrol Car,Euro 3,3,<1400 cc
+EN0340,Full Hybrid Petrol Cars - Euro 3 - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro 3,3,1400-2000 cc
+EN0341,Full Hybrid Petrol Cars - Euro 3 - >2000,2. Petrol Cars,Cars,Petrol Car,Euro 3,3,>2000 cc
+EN0342,Full Hybrid Petrol Cars - Euro 4 - <1400,2. Petrol Cars,Cars,Petrol Car,Euro 4,4,<1400 cc
+EN0343,Full Hybrid Petrol Cars - Euro 4 - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro 4,4,1400-2000 cc
+EN0344,Full Hybrid Petrol Cars - Euro 4 - >2000,2. Petrol Cars,Cars,Petrol Car,Euro 4,4,>2000 cc
+EN0345,Full Hybrid Petrol Cars - Euro 5 - <1400,2. Petrol Cars,Cars,Petrol Car,Euro 5,5,<1400 cc
+EN0346,Full Hybrid Petrol Cars - Euro 5 - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro 5,5,1400-2000 cc
+EN0347,Full Hybrid Petrol Cars - Euro 5 - >2000,2. Petrol Cars,Cars,Petrol Car,Euro 5,5,>2000 cc
+EN0348,Full Hybrid Petrol Cars - Euro 6 - <1400,2. Petrol Cars,Cars,Petrol Car,Euro 6,6,<1400 cc
+EN0349,Full Hybrid Petrol Cars - Euro 6 - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro 6,6,1400-2000 cc
+EN0350,Full Hybrid Petrol Cars - Euro 6 - >2000,2. Petrol Cars,Cars,Petrol Car,Euro 6,6,>2000 cc
+EN0351,Full Hybrid Petrol Cars - Euro 6c - <1400,2. Petrol Cars,Cars,Petrol Car,Euro 6c,6,<1400 cc
+EN0352,Full Hybrid Petrol Cars - Euro 6c - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro 6c,6,1400-2000 cc
+EN0353,Full Hybrid Petrol Cars - Euro 6c - >2000,2. Petrol Cars,Cars,Petrol Car,Euro 6c,6,>2000 cc
+EN0354,Plug-In Hybrid Petrol Cars - Pre-Euro 1 - <1400,2. Petrol Cars,Cars,Petrol Car,Pre-Euro 1,0,<1400 cc
+EN0355,Plug-In Hybrid Petrol Cars - Pre-Euro 1 - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Pre-Euro 1,0,1400-2000 cc
+EN0356,Plug-In Hybrid Petrol Cars - Pre-Euro 1 - >2000,2. Petrol Cars,Cars,Petrol Car,Pre-Euro 1,0,>2000 cc
+EN0357,Plug-In Hybrid Petrol Cars - Euro 5 - <1400,2. Petrol Cars,Cars,Petrol Car,Euro 5,5,<1400 cc
+EN0358,Plug-In Hybrid Petrol Cars - Euro 5 - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro 5,5,1400-2000 cc
+EN0359,Plug-In Hybrid Petrol Cars - Euro 5 - >2000,2. Petrol Cars,Cars,Petrol Car,Euro 5,5,>2000 cc
+EN0360,Plug-In Hybrid Petrol Cars - Euro 6 - <1400,2. Petrol Cars,Cars,Petrol Car,Euro 6,6,<1400 cc
+EN0361,Plug-In Hybrid Petrol Cars - Euro 6 - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro 6,6,1400-2000 cc
+EN0362,Plug-In Hybrid Petrol Cars - Euro 6 - >2000,2. Petrol Cars,Cars,Petrol Car,Euro 6,6,>2000 cc
+EN0363,Plug-In Hybrid Petrol Cars - Euro 6c - <1400,2. Petrol Cars,Cars,Petrol Car,Euro 6c,6,<1400 cc
+EN0364,Plug-In Hybrid Petrol Cars - Euro 6c - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro 6c,6,1400-2000 cc
+EN0365,Plug-In Hybrid Petrol Cars - Euro 6c - >2000,2. Petrol Cars,Cars,Petrol Car,Euro 6c,6,>2000 cc
+EN0366,Full Hybrid Diesel Cars - Euro 5 - <1400,2. Petrol Cars,Cars,Petrol Car,Euro 5,5,<1400 cc
+EN0367,Full Hybrid Diesel Cars - Euro 5 - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro 5,5,1400-2000 cc
+EN0368,Full Hybrid Diesel Cars - Euro 5 - >2000,2. Petrol Cars,Cars,Petrol Car,Euro 5,5,>2000 cc
+EN0369,Full Hybrid Diesel Cars - Euro 6 - <1400,2. Petrol Cars,Cars,Petrol Car,Euro 6,6,<1400 cc
+EN0370,Full Hybrid Diesel Cars - Euro 6 - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro 6,6,1400-2000 cc
+EN0371,Full Hybrid Diesel Cars - Euro 6 - >2000,2. Petrol Cars,Cars,Petrol Car,Euro 6,6,>2000 cc
+EN0372,Full Hybrid Diesel Cars - Euro6c - <1400,2. Petrol Cars,Cars,Petrol Car,Euro6c,6,<1400 cc
+EN0373,Full Hybrid Diesel Cars - Euro6c - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro6c,6,1400-2000 cc
+EN0374,Full Hybrid Diesel Cars - Euro6c - >2000,2. Petrol Cars,Cars,Petrol Car,Euro6c,6,>2000 cc
+EN0375,Full Hybrid Diesel Cars - Euro6d - <1400,2. Petrol Cars,Cars,Petrol Car,Euro6d,6,<1400 cc
+EN0376,Full Hybrid Diesel Cars - Euro6d - 1400-2000,2. Petrol Cars,Cars,Petrol Car,Euro6d,6,1400-2000 cc
+EN0377,Full Hybrid Diesel Cars - Euro6d - >2000,2. Petrol Cars,Cars,Petrol Car,Euro6d,6,>2000 cc
+EN0378,E85 Bioethanol Cars - Pre-Euro 1 - <1400,4. Other Cars,Cars,Other Car,Pre-Euro 1,0,<1400 cc
+EN0379,E85 Bioethanol Cars - Pre-Euro 1 - 1400-2000,4. Other Cars,Cars,Other Car,Pre-Euro 1,0,1400-2000 cc
+EN0380,E85 Bioethanol Cars - Pre-Euro 1 - >2000,4. Other Cars,Cars,Other Car,Pre-Euro 1,0,>2000 cc
+EN0381,E85 Bioethanol Cars - Euro 1 - <1400,4. Other Cars,Cars,Other Car,Euro 1,1,<1400 cc
+EN0382,E85 Bioethanol Cars - Euro 1 - 1400-2000,4. Other Cars,Cars,Other Car,Euro 1,1,1400-2000 cc
+EN0383,E85 Bioethanol Cars - Euro 1 - >2000,4. Other Cars,Cars,Other Car,Euro 1,1,>2000 cc
+EN0384,E85 Bioethanol Cars - Euro 2 - <1400,4. Other Cars,Cars,Other Car,Euro 2,2,<1400 cc
+EN0385,E85 Bioethanol Cars - Euro 2 - 1400-2000,4. Other Cars,Cars,Other Car,Euro 2,2,1400-2000 cc
+EN0386,E85 Bioethanol Cars - Euro 2 - >2000,4. Other Cars,Cars,Other Car,Euro 2,2,>2000 cc
+EN0387,E85 Bioethanol Cars - Euro 3 - <1400,4. Other Cars,Cars,Other Car,Euro 3,3,<1400 cc
+EN0388,E85 Bioethanol Cars - Euro 3 - 1400-2000,4. Other Cars,Cars,Other Car,Euro 3,3,1400-2000 cc
+EN0389,E85 Bioethanol Cars - Euro 3 - >2000,4. Other Cars,Cars,Other Car,Euro 3,3,>2000 cc
+EN0390,E85 Bioethanol Cars - Euro 4 - <1400,4. Other Cars,Cars,Other Car,Euro 4,4,<1400 cc
+EN0391,E85 Bioethanol Cars - Euro 4 - 1400-2000,4. Other Cars,Cars,Other Car,Euro 4,4,1400-2000 cc
+EN0392,E85 Bioethanol Cars - Euro 4 - >2000,4. Other Cars,Cars,Other Car,Euro 4,4,>2000 cc
+EN0393,E85 Bioethanol Cars - Euro 5 - <1400,4. Other Cars,Cars,Other Car,Euro 5,5,<1400 cc
+EN0394,E85 Bioethanol Cars - Euro 5 - 1400-2000,4. Other Cars,Cars,Other Car,Euro 5,5,1400-2000 cc
+EN0395,E85 Bioethanol Cars - Euro 5 - >2000,4. Other Cars,Cars,Other Car,Euro 5,5,>2000 cc
+EN0396,E85 Bioethanol Cars - Euro 6 - <1400,4. Other Cars,Cars,Other Car,Euro 6,6,<1400 cc
+EN0397,E85 Bioethanol Cars - Euro 6 - 1400-2000,4. Other Cars,Cars,Other Car,Euro 6,6,1400-2000 cc
+EN0398,E85 Bioethanol Cars - Euro 6 - >2000,4. Other Cars,Cars,Other Car,Euro 6,6,>2000 cc
+EN0399,E85 Bioethanol Cars - Euro 6c - <1400,4. Other Cars,Cars,Other Car,Euro 6c,6,<1400 cc
+EN0400,E85 Bioethanol Cars - Euro 6c - 1400-2000,4. Other Cars,Cars,Other Car,Euro 6c,6,1400-2000 cc
+EN0401,E85 Bioethanol Cars - Euro 6c - >2000,4. Other Cars,Cars,Other Car,Euro 6c,6,>2000 cc
+EN0402,LPG Cars - Euro 1 - <1400,4. Other Cars,Cars,Other Car,Euro 1,1,<1400 cc
+EN0403,LPG Cars - Euro 1 - 1400-2000,4. Other Cars,Cars,Other Car,Euro 1,1,1400-2000 cc
+EN0404,LPG Cars - Euro 1 - >2000,4. Other Cars,Cars,Other Car,Euro 1,1,>2000 cc
+EN0405,LPG Cars - Euro 2 - <1400,4. Other Cars,Cars,Other Car,Euro 2,2,<1400 cc
+EN0406,LPG Cars - Euro 2 - 1400-2000,4. Other Cars,Cars,Other Car,Euro 2,2,1400-2000 cc
+EN0407,LPG Cars - Euro 2 - >2000,4. Other Cars,Cars,Other Car,Euro 2,2,>2000 cc
+EN0408,LPG Cars - Euro 3 - <1400,4. Other Cars,Cars,Other Car,Euro 3,3,<1400 cc
+EN0409,LPG Cars - Euro 3 - 1400-2000,4. Other Cars,Cars,Other Car,Euro 3,3,1400-2000 cc
+EN0410,LPG Cars - Euro 3 - >2000,4. Other Cars,Cars,Other Car,Euro 3,3,>2000 cc
+EN0411,LPG Cars - Euro 4 - <1400,4. Other Cars,Cars,Other Car,Euro 4,4,<1400 cc
+EN0412,LPG Cars - Euro 4 - 1400-2000,4. Other Cars,Cars,Other Car,Euro 4,4,1400-2000 cc
+EN0413,LPG Cars - Euro 4 - >2000,4. Other Cars,Cars,Other Car,Euro 4,4,>2000 cc
+EN0414,LPG Cars - Euro 5 - <1400,4. Other Cars,Cars,Other Car,Euro 5,5,<1400 cc
+EN0415,LPG Cars - Euro 5 - 1400-2000,4. Other Cars,Cars,Other Car,Euro 5,5,1400-2000 cc
+EN0416,LPG Cars - Euro 5 - >2000,4. Other Cars,Cars,Other Car,Euro 5,5,>2000 cc
+EN0417,LPG Cars - Euro 6 - <1400,4. Other Cars,Cars,Other Car,Euro 6,6,<1400 cc
+EN0418,LPG Cars - Euro 6 - 1400-2000,4. Other Cars,Cars,Other Car,Euro 6,6,1400-2000 cc
+EN0419,LPG Cars - Euro 6 - >2000,4. Other Cars,Cars,Other Car,Euro 6,6,>2000 cc
+EN0420,Full Hybrid Petrol LGV - Euro 4 - N1 (I),5. LGVs,LGVs,Full LGV,Euro 4,4,N1 (I)
+EN0421,Full Hybrid Petrol LGV - Euro 4 - N1 (II),5. LGVs,LGVs,Full LGV,Euro 4,4,N1 (II)
+EN0422,Full Hybrid Petrol LGV - Euro 4 - N1 (III),5. LGVs,LGVs,Full LGV,Euro 4,4,N1 (III)
+EN0423,Full Hybrid Petrol LGV - Euro 5 - N1 (I),5. LGVs,LGVs,Full LGV,Euro 5,5,N1 (I)
+EN0424,Full Hybrid Petrol LGV - Euro 5 - N1 (II),5. LGVs,LGVs,Full LGV,Euro 5,5,N1 (II)
+EN0425,Full Hybrid Petrol LGV - Euro 5 - N1 (III),5. LGVs,LGVs,Full LGV,Euro 5,5,N1 (III)
+EN0426,Full Hybrid Petrol LGV - Euro 6 - N1 (I),5. LGVs,LGVs,Full LGV,Euro 6,6,N1 (I)
+EN0427,Full Hybrid Petrol LGV - Euro 6 - N1 (II),5. LGVs,LGVs,Full LGV,Euro 6,6,N1 (II)
+EN0428,Full Hybrid Petrol LGV - Euro 6 - N1 (III),5. LGVs,LGVs,Full LGV,Euro 6,6,N1 (III)
+EN0429,Full Hybrid Petrol LGV - Euro 6c - N1 (I),5. LGVs,LGVs,Full LGV,Euro 6c,6,N1 (I)
+EN0430,Full Hybrid Petrol LGV - Euro 6c - N1 (II),5. LGVs,LGVs,Full LGV,Euro 6c,6,N1 (II)
+EN0431,Full Hybrid Petrol LGV - Euro 6c - N1 (III),5. LGVs,LGVs,Full LGV,Euro 6c,6,N1 (III)
+EN0432,Plug-In Hybrid Petrol LGV - Pre-Euro 1 - N1 (I),5. LGVs,LGVs,Plug-In LGV,Pre-Euro 1,0,N1 (I)
+EN0433,Plug-In Hybrid Petrol LGV - Pre-Euro 1 - N1 (II),5. LGVs,LGVs,Plug-In LGV,Pre-Euro 1,0,N1 (II)
+EN0434,Plug-In Hybrid Petrol LGV - Pre-Euro 1 - N1 (III),5. LGVs,LGVs,Plug-In LGV,Pre-Euro 1,0,N1 (III)
+EN0435,Plug-In Hybrid Petrol LGV - Euro 5 - N1 (I),5. LGVs,LGVs,Plug-In LGV,Euro 5,5,N1 (I)
+EN0436,Plug-In Hybrid Petrol LGV - Euro 5 - N1 (II),5. LGVs,LGVs,Plug-In LGV,Euro 5,5,N1 (II)
+EN0437,Plug-In Hybrid Petrol LGV - Euro 5 - N1 (III),5. LGVs,LGVs,Plug-In LGV,Euro 5,5,N1 (III)
+EN0438,Plug-In Hybrid Petrol LGV - Euro 6 - N1 (I),5. LGVs,LGVs,Plug-In LGV,Euro 6,6,N1 (I)
+EN0439,Plug-In Hybrid Petrol LGV - Euro 6 - N1 (II),5. LGVs,LGVs,Plug-In LGV,Euro 6,6,N1 (II)
+EN0440,Plug-In Hybrid Petrol LGV - Euro 6 - N1 (III),5. LGVs,LGVs,Plug-In LGV,Euro 6,6,N1 (III)
+EN0441,Plug-In Hybrid Petrol LGV - Euro 6c - N1 (I),5. LGVs,LGVs,Plug-In LGV,Euro 6c,6,N1 (I)
+EN0442,Plug-In Hybrid Petrol LGV - Euro 6c - N1 (II),5. LGVs,LGVs,Plug-In LGV,Euro 6c,6,N1 (II)
+EN0443,Plug-In Hybrid Petrol LGV - Euro 6c - N1 (III),5. LGVs,LGVs,Plug-In LGV,Euro 6c,6,N1 (III)
+EN0444,E85 Bioethanol LGV - Pre-Euro 1 - N1 (I),5. LGVs,LGVs,E85 LGV,Pre-Euro 1,0,N1 (I)
+EN0445,E85 Bioethanol LGV - Pre-Euro 1 - N1 (II),5. LGVs,LGVs,E85 LGV,Pre-Euro 1,0,N1 (II)
+EN0446,E85 Bioethanol LGV - Pre-Euro 1 - N1 (III),5. LGVs,LGVs,E85 LGV,Pre-Euro 1,0,N1 (III)
+EN0447,E85 Bioethanol LGV - Euro 1 - N1 (I),5. LGVs,LGVs,E85 LGV,Euro 1,1,N1 (I)
+EN0448,E85 Bioethanol LGV - Euro 1 - N1 (II),5. LGVs,LGVs,E85 LGV,Euro 1,1,N1 (II)
+EN0449,E85 Bioethanol LGV - Euro 1 - N1 (III),5. LGVs,LGVs,E85 LGV,Euro 1,1,N1 (III)
+EN0450,E85 Bioethanol LGV - Euro 2 - N1 (I),5. LGVs,LGVs,E85 LGV,Euro 2,2,N1 (I)
+EN0451,E85 Bioethanol LGV - Euro 2 - N1 (II),5. LGVs,LGVs,E85 LGV,Euro 2,2,N1 (II)
+EN0452,E85 Bioethanol LGV - Euro 2 - N1 (III),5. LGVs,LGVs,E85 LGV,Euro 2,2,N1 (III)
+EN0453,E85 Bioethanol LGV - Euro 3 - N1 (I),5. LGVs,LGVs,E85 LGV,Euro 3,3,N1 (I)
+EN0454,E85 Bioethanol LGV - Euro 3 - N1 (II),5. LGVs,LGVs,E85 LGV,Euro 3,3,N1 (II)
+EN0455,E85 Bioethanol LGV - Euro 3 - N1 (III),5. LGVs,LGVs,E85 LGV,Euro 3,3,N1 (III)
+EN0456,E85 Bioethanol LGV - Euro 4 - N1 (I),5. LGVs,LGVs,E85 LGV,Euro 4,4,N1 (I)
+EN0457,E85 Bioethanol LGV - Euro 4 - N1 (II),5. LGVs,LGVs,E85 LGV,Euro 4,4,N1 (II)
+EN0458,E85 Bioethanol LGV - Euro 4 - N1 (III),5. LGVs,LGVs,E85 LGV,Euro 4,4,N1 (III)
+EN0459,E85 Bioethanol LGV - Euro 5 - N1 (I),5. LGVs,LGVs,E85 LGV,Euro 5,5,N1 (I)
+EN0460,E85 Bioethanol LGV - Euro 5 - N1 (II),5. LGVs,LGVs,E85 LGV,Euro 5,5,N1 (II)
+EN0461,E85 Bioethanol LGV - Euro 5 - N1 (III),5. LGVs,LGVs,E85 LGV,Euro 5,5,N1 (III)
+EN0462,E85 Bioethanol LGV - Euro 6 - N1 (I),5. LGVs,LGVs,E85 LGV,Euro 6,6,N1 (I)
+EN0463,E85 Bioethanol LGV - Euro 6 - N1 (II),5. LGVs,LGVs,E85 LGV,Euro 6,6,N1 (II)
+EN0464,E85 Bioethanol LGV - Euro 6 - N1 (III),5. LGVs,LGVs,E85 LGV,Euro 6,6,N1 (III)
+EN0465,E85 Bioethanol LGV - Euro 6c - N1 (I),5. LGVs,LGVs,E85 LGV,Euro 6c,6,N1 (I)
+EN0466,E85 Bioethanol LGV - Euro 6c - N1 (II),5. LGVs,LGVs,E85 LGV,Euro 6c,6,N1 (II)
+EN0467,E85 Bioethanol LGV - Euro 6c - N1 (III),5. LGVs,LGVs,E85 LGV,Euro 6c,6,N1 (III)
+EN0468,LPG LGV - Euro 1 - N1 (I),5. LGVs,LGVs,LPG LGV,Euro 1,1,N1 (I)
+EN0469,LPG LGV - Euro 1 - N1 (II),5. LGVs,LGVs,LPG LGV,Euro 1,1,N1 (II)
+EN0470,LPG LGV - Euro 1 - N1 (III),5. LGVs,LGVs,LPG LGV,Euro 1,1,N1 (III)
+EN0471,LPG LGV - Euro 2 - N1 (I),5. LGVs,LGVs,LPG LGV,Euro 2,2,N1 (I)
+EN0472,LPG LGV - Euro 2 - N1 (II),5. LGVs,LGVs,LPG LGV,Euro 2,2,N1 (II)
+EN0473,LPG LGV - Euro 2 - N1 (III),5. LGVs,LGVs,LPG LGV,Euro 2,2,N1 (III)
+EN0474,LPG LGV - Euro 3 - N1 (I),5. LGVs,LGVs,LPG LGV,Euro 3,3,N1 (I)
+EN0475,LPG LGV - Euro 3 - N1 (II),5. LGVs,LGVs,LPG LGV,Euro 3,3,N1 (II)
+EN0476,LPG LGV - Euro 3 - N1 (III),5. LGVs,LGVs,LPG LGV,Euro 3,3,N1 (III)
+EN0477,LPG LGV - Euro 4 - N1 (I),5. LGVs,LGVs,LPG LGV,Euro 4,4,N1 (I)
+EN0478,LPG LGV - Euro 4 - N1 (II),5. LGVs,LGVs,LPG LGV,Euro 4,4,N1 (II)
+EN0479,LPG LGV - Euro 4 - N1 (III),5. LGVs,LGVs,LPG LGV,Euro 4,4,N1 (III)
+EN0480,LPG LGV - Euro 5 - N1 (I),5. LGVs,LGVs,LPG LGV,Euro 5,5,N1 (I)
+EN0481,LPG LGV - Euro 5 - N1 (II),5. LGVs,LGVs,LPG LGV,Euro 5,5,N1 (II)
+EN0482,LPG LGV - Euro 5 - N1 (III),5. LGVs,LGVs,LPG LGV,Euro 5,5,N1 (III)
+EN0483,LPG LGV - Euro 6 - N1 (I),5. LGVs,LGVs,LPG LGV,Euro 6,6,N1 (I)
+EN0484,LPG LGV - Euro 6 - N1 (II),5. LGVs,LGVs,LPG LGV,Euro 6,6,N1 (II)
+EN0485,LPG LGV - Euro 6 - N1 (III),5. LGVs,LGVs,LPG LGV,Euro 6,6,N1 (III)
+EN0486,B100 Rigid HGV - Euro III - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III,3,3.5-7.5 t
+EN0487,B100 Rigid HGV - Euro III - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III,3,7.5-12 t
+EN0488,B100 Rigid HGV - Euro III - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III,3,12-14 t
+EN0489,B100 Rigid HGV - Euro III - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III,3,14-20 t
+EN0490,B100 Rigid HGV - Euro III - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III,3,20-26 t
+EN0491,B100 Rigid HGV - Euro III - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III,3,26-28 t
+EN0492,B100 Rigid HGV - Euro III - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III,3,28-32 t
+EN0493,B100 Rigid HGV - Euro III - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III,3,>32 t
+EN0494,B100 Rigid HGV - Euro IV - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV,4,3.5-7.5 t
+EN0495,B100 Rigid HGV - Euro IV - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV,4,7.5-12 t
+EN0496,B100 Rigid HGV - Euro IV - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV,4,12-14 t
+EN0497,B100 Rigid HGV - Euro IV - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV,4,14-20 t
+EN0498,B100 Rigid HGV - Euro IV - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV,4,20-26 t
+EN0499,B100 Rigid HGV - Euro IV - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV,4,26-28 t
+EN0500,B100 Rigid HGV - Euro IV - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV,4,28-32 t
+EN0501,B100 Rigid HGV - Euro IV - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV,4,>32 t
+EN0502,B100 Rigid HGV - Euro V_EGR - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_EGR,5,3.5-7.5 t
+EN0503,B100 Rigid HGV - Euro V_EGR - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_EGR,5,7.5-12 t
+EN0504,B100 Rigid HGV - Euro V_EGR - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_EGR,5,12-14 t
+EN0505,B100 Rigid HGV - Euro V_EGR - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_EGR,5,14-20 t
+EN0506,B100 Rigid HGV - Euro V_EGR - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_EGR,5,20-26 t
+EN0507,B100 Rigid HGV - Euro V_EGR - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_EGR,5,26-28 t
+EN0508,B100 Rigid HGV - Euro V_EGR - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_EGR,5,28-32 t
+EN0509,B100 Rigid HGV - Euro V_EGR - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_EGR,5,>32 t
+EN0510,B100 Rigid HGV - Euro V_SCR - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_SCR,5,3.5-7.5 t
+EN0511,B100 Rigid HGV - Euro V_SCR - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_SCR,5,7.5-12 t
+EN0512,B100 Rigid HGV - Euro V_SCR - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_SCR,5,12-14 t
+EN0513,B100 Rigid HGV - Euro V_SCR - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_SCR,5,14-20 t
+EN0514,B100 Rigid HGV - Euro V_SCR - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_SCR,5,20-26 t
+EN0515,B100 Rigid HGV - Euro V_SCR - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_SCR,5,26-28 t
+EN0516,B100 Rigid HGV - Euro V_SCR - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_SCR,5,28-32 t
+EN0517,B100 Rigid HGV - Euro V_SCR - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V_SCR,5,>32 t
+EN0518,B100 Rigid HGV - Euro VI - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro VI,6,3.5-7.5 t
+EN0519,B100 Rigid HGV - Euro VI - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro VI,6,7.5-12 t
+EN0520,B100 Rigid HGV - Euro VI - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro VI,6,12-14 t
+EN0521,B100 Rigid HGV - Euro VI - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro VI,6,14-20 t
+EN0522,B100 Rigid HGV - Euro VI - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro VI,6,20-26 t
+EN0523,B100 Rigid HGV - Euro VI - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro VI,6,26-28 t
+EN0524,B100 Rigid HGV - Euro VI - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro VI,6,28-32 t
+EN0525,B100 Rigid HGV - Euro VI - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro VI,6,>32 t
+EN0526,B100 Rigid HGV - Euro II SCRRF - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II SCRRF,2,3.5-7.5 t
+EN0527,B100 Rigid HGV - Euro II SCRRF - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II SCRRF,2,7.5-12 t
+EN0528,B100 Rigid HGV - Euro II SCRRF - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II SCRRF,2,12-14 t
+EN0529,B100 Rigid HGV - Euro II SCRRF - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II SCRRF,2,14-20 t
+EN0530,B100 Rigid HGV - Euro II SCRRF - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II SCRRF,2,20-26 t
+EN0531,B100 Rigid HGV - Euro II SCRRF - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II SCRRF,2,26-28 t
+EN0532,B100 Rigid HGV - Euro II SCRRF - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II SCRRF,2,28-32 t
+EN0533,B100 Rigid HGV - Euro II SCRRF - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro II SCRRF,2,>32 t
+EN0534,B100 Rigid HGV - Euro III SCRRF - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III SCRRF,3,3.5-7.5 t
+EN0535,B100 Rigid HGV - Euro III SCRRF - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III SCRRF,3,7.5-12 t
+EN0536,B100 Rigid HGV - Euro III SCRRF - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III SCRRF,3,12-14 t
+EN0537,B100 Rigid HGV - Euro III SCRRF - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III SCRRF,3,14-20 t
+EN0538,B100 Rigid HGV - Euro III SCRRF - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III SCRRF,3,20-26 t
+EN0539,B100 Rigid HGV - Euro III SCRRF - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III SCRRF,3,26-28 t
+EN0540,B100 Rigid HGV - Euro III SCRRF - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III SCRRF,3,28-32 t
+EN0541,B100 Rigid HGV - Euro III SCRRF - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro III SCRRF,3,>32 t
+EN0542,B100 Rigid HGV - Euro IV SCRRF - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV SCRRF,4,3.5-7.5 t
+EN0543,B100 Rigid HGV - Euro IV SCRRF - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV SCRRF,4,7.5-12 t
+EN0544,B100 Rigid HGV - Euro IV SCRRF - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV SCRRF,4,12-14 t
+EN0545,B100 Rigid HGV - Euro IV SCRRF - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV SCRRF,4,14-20 t
+EN0546,B100 Rigid HGV - Euro IV SCRRF - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV SCRRF,4,20-26 t
+EN0547,B100 Rigid HGV - Euro IV SCRRF - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV SCRRF,4,26-28 t
+EN0548,B100 Rigid HGV - Euro IV SCRRF - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV SCRRF,4,28-32 t
+EN0549,B100 Rigid HGV - Euro IV SCRRF - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro IV SCRRF,4,>32 t
+EN0550,B100 Rigid HGV - Euro V EGR + SCRRF - 3.5-7.5 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V EGR + SCRRF,5,3.5-7.5 t
+EN0551,B100 Rigid HGV - Euro V EGR + SCRRF - 7.5-12 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V EGR + SCRRF,5,7.5-12 t
+EN0552,B100 Rigid HGV - Euro V EGR + SCRRF - 12-14 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V EGR + SCRRF,5,12-14 t
+EN0553,B100 Rigid HGV - Euro V EGR + SCRRF - 14-20 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V EGR + SCRRF,5,14-20 t
+EN0554,B100 Rigid HGV - Euro V EGR + SCRRF - 20-26 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V EGR + SCRRF,5,20-26 t
+EN0555,B100 Rigid HGV - Euro V EGR + SCRRF - 26-28 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V EGR + SCRRF,5,26-28 t
+EN0556,B100 Rigid HGV - Euro V EGR + SCRRF - 28-32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V EGR + SCRRF,5,28-32 t
+EN0557,B100 Rigid HGV - Euro V EGR + SCRRF - >32 t,7. Rigid HGVs,Rigid HGV,Rigid HGV,Euro V EGR + SCRRF,5,>32 t
+EN0558,B100 Artic HGV - Euro III - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III,3,14-20 t
+EN0559,B100 Artic HGV - Euro III - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III,3,20-28 t
+EN0560,B100 Artic HGV - Euro III - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III,3,28-34 t
+EN0561,B100 Artic HGV - Euro III - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III,3,34-40 t
+EN0562,B100 Artic HGV - Euro III - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III,3,40-50 t
+EN0563,B100 Artic HGV - Euro IV - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV,4,14-20 t
+EN0564,B100 Artic HGV - Euro IV - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV,4,20-28 t
+EN0565,B100 Artic HGV - Euro IV - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV,4,28-34 t
+EN0566,B100 Artic HGV - Euro IV - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV,4,34-40 t
+EN0567,B100 Artic HGV - Euro IV - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV,4,40-50 t
+EN0568,B100 Artic HGV - Euro V_EGR - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_EGR,5,14-20 t
+EN0569,B100 Artic HGV - Euro V_EGR - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_EGR,5,20-28 t
+EN0570,B100 Artic HGV - Euro V_EGR - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_EGR,5,28-34 t
+EN0571,B100 Artic HGV - Euro V_EGR - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_EGR,5,34-40 t
+EN0572,B100 Artic HGV - Euro V_EGR - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_EGR,5,40-50 t
+EN0573,B100 Artic HGV - Euro V_SCR - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_SCR,5,14-20 t
+EN0574,B100 Artic HGV - Euro V_SCR - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_SCR,5,20-28 t
+EN0575,B100 Artic HGV - Euro V_SCR - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_SCR,5,28-34 t
+EN0576,B100 Artic HGV - Euro V_SCR - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_SCR,5,34-40 t
+EN0577,B100 Artic HGV - Euro V_SCR - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V_SCR,5,40-50 t
+EN0578,B100 Artic HGV - Euro VI - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro VI,6,14-20 t
+EN0579,B100 Artic HGV - Euro VI - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro VI,6,20-28 t
+EN0580,B100 Artic HGV - Euro VI - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro VI,6,28-34 t
+EN0581,B100 Artic HGV - Euro VI - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro VI,6,34-40 t
+EN0582,B100 Artic HGV - Euro VI - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro VI,6,40-50 t
+EN0583,B100 Artic HGV - Euro II SCRRF - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro II SCRRF,2,14-20 t
+EN0584,B100 Artic HGV - Euro II SCRRF - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro II SCRRF,2,20-28 t
+EN0585,B100 Artic HGV - Euro II SCRRF - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro II SCRRF,2,28-34 t
+EN0586,B100 Artic HGV - Euro II SCRRF - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro II SCRRF,2,34-40 t
+EN0587,B100 Artic HGV - Euro II SCRRF - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro II SCRRF,2,40-50 t
+EN0588,B100 Artic HGV - Euro III SCRRF - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III SCRRF,3,14-20 t
+EN0589,B100 Artic HGV - Euro III SCRRF - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III SCRRF,3,20-28 t
+EN0590,B100 Artic HGV - Euro III SCRRF - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III SCRRF,3,28-34 t
+EN0591,B100 Artic HGV - Euro III SCRRF - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III SCRRF,3,34-40 t
+EN0592,B100 Artic HGV - Euro III SCRRF - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro III SCRRF,3,40-50 t
+EN0593,B100 Artic HGV - Euro IV SCRRF - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV SCRRF,4,14-20 t
+EN0594,B100 Artic HGV - Euro IV SCRRF - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV SCRRF,4,20-28 t
+EN0595,B100 Artic HGV - Euro IV SCRRF - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV SCRRF,4,28-34 t
+EN0596,B100 Artic HGV - Euro IV SCRRF - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV SCRRF,4,34-40 t
+EN0597,B100 Artic HGV - Euro IV SCRRF - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro IV SCRRF,4,40-50 t
+EN0598,B100 Artic HGV - Euro V EGR + SCRRF - 14-20 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V EGR + SCRRF,5,14-20 t
+EN0599,B100 Artic HGV - Euro V EGR + SCRRF - 20-28 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V EGR + SCRRF,5,20-28 t
+EN0600,B100 Artic HGV - Euro V EGR + SCRRF - 28-34 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V EGR + SCRRF,5,28-34 t
+EN0601,B100 Artic HGV - Euro V EGR + SCRRF - 34-40 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V EGR + SCRRF,5,34-40 t
+EN0602,B100 Artic HGV - Euro V EGR + SCRRF - 40-50 t,8. Articulated HGVs,Artic HGV,Artic HGV,Euro V EGR + SCRRF,5,40-50 t
+EN0603,B100 Bus - Euro I - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro I,1,<=15 t
+EN0604,B100 Bus - Euro I - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro I,1,15-18 t
+EN0605,B100 Bus - Euro I - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro I,1,>18 t
+EN0606,B100 Bus - Euro II - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro II,2,<=15 t
+EN0607,B100 Bus - Euro II - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro II,2,15-18 t
+EN0608,B100 Bus - Euro II - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro II,2,>18 t
+EN0609,B100 Bus - Euro III - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro III,3,<=15 t
+EN0610,B100 Bus - Euro III - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro III,3,15-18 t
+EN0611,B100 Bus - Euro III - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro III,3,>18 t
+EN0612,B100 Bus - Euro IV - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro IV,4,<=15 t
+EN0613,B100 Bus - Euro IV - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro IV,4,15-18 t
+EN0614,B100 Bus - Euro IV - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro IV,4,>18 t
+EN0615,B100 Bus - Euro V_EGR - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V_EGR,5,<=15 t
+EN0616,B100 Bus - Euro V_EGR - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V_EGR,5,15-18 t
+EN0617,B100 Bus - Euro V_EGR - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V_EGR,5,>18 t
+EN0618,B100 Bus - Euro V_SCR - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V_SCR,5,<=15 t
+EN0619,B100 Bus - Euro V_SCR - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V_SCR,5,15-18 t
+EN0620,B100 Bus - Euro V_SCR - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V_SCR,5,>18 t
+EN0621,B100 Bus - Euro VI - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro VI,6,<=15 t
+EN0622,B100 Bus - Euro VI - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro VI,6,15-18 t
+EN0623,B100 Bus - Euro VI - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro VI,6,>18 t
+EN0624,B100 Bus - Euro II SCRRF - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro II SCRRF,2,<=15 t
+EN0625,B100 Bus - Euro II SCRRF - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro II SCRRF,2,15-18 t
+EN0626,B100 Bus - Euro II SCRRF - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro II SCRRF,2,>18 t
+EN0627,B100 Bus - Euro III SCRRF - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro III SCRRF,3,<=15 t
+EN0628,B100 Bus - Euro III SCRRF - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro III SCRRF,3,15-18 t
+EN0629,B100 Bus - Euro III SCRRF - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro III SCRRF,3,>18 t
+EN0630,B100 Bus - Euro IV SCRRF - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro IV SCRRF,4,<=15 t
+EN0631,B100 Bus - Euro IV SCRRF - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro IV SCRRF,4,15-18 t
+EN0632,B100 Bus - Euro IV SCRRF - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro IV SCRRF,4,>18 t
+EN0633,B100 Bus - Euro V EGR + SCRRF - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V EGR + SCRRF,5,<=15 t
+EN0634,B100 Bus - Euro V EGR + SCRRF - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V EGR + SCRRF,5,15-18 t
+EN0635,B100 Bus - Euro V EGR + SCRRF - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V EGR + SCRRF,5,>18 t
+EN0636,CNG Bus - All Ages - All Sizes and Ages,6. Buses and Coaches,Buses and coaches,Bus,All Ages,6,All Sizes and Ages
+EN0637,Biomethane Bus - All Sizes and Ages - All Sizes and Ages,6. Buses and Coaches,Buses and coaches,Bus,All Sizes and Ages,6,All Sizes and Ages
+EN0638,Biogas Bus - All Sizes and Ages - All Sizes and Ages,6. Buses and Coaches,Buses and coaches,Bus,All Sizes and Ages,6,All Sizes and Ages
+EN0639,Hybrid Bus - Euro IV - Single Decker,6. Buses and Coaches,Buses and coaches,Bus,Euro IV,4,<=15 t
+EN0640,Hybrid Bus - Euro V_EGR - Single Decker,6. Buses and Coaches,Buses and coaches,Bus,Euro V_EGR,5,<=15 t
+EN0641,Hybrid Bus - Euro V_SCR - Single Decker,6. Buses and Coaches,Buses and coaches,Bus,Euro V_SCR,5,<=15 t
+EN0642,Hybrid Bus - Euro VI - Single Decker,6. Buses and Coaches,Buses and coaches,Bus,Euro VI,6,<=15 t
+EN0643,Hybrid Bus - Euro IV - Double Decker,6. Buses and Coaches,Buses and coaches,Bus,Euro IV,4,15-18 t
+EN0644,Hybrid Bus - Euro V_EGR - Double Decker,6. Buses and Coaches,Buses and coaches,Bus,Euro V_EGR,5,15-18 t
+EN0645,Hybrid Bus - Euro V_SCR - Double Decker,6. Buses and Coaches,Buses and coaches,Bus,Euro V_SCR,5,15-18 t
+EN0646,Hybrid Bus - Euro VI - Double Decker,6. Buses and Coaches,Buses and coaches,Bus,Euro VI,6,15-18 t
+EN0647,Hybrid Bus - Euro IV - Articulated,6. Buses and Coaches,Buses and coaches,Bus,Euro IV,4,>18 t
+EN0648,Hybrid Bus - Euro V_EGR - Articulated,6. Buses and Coaches,Buses and coaches,Bus,Euro V_EGR,5,>18 t
+EN0649,Hybrid Bus - Euro V_SCR - Articulated,6. Buses and Coaches,Buses and coaches,Bus,Euro V_SCR,5,>18 t
+EN0650,Hybrid Bus - Euro VI - Articulated,6. Buses and Coaches,Buses and coaches,Bus,Euro VI,6,>18 t
+EN0651,B100 Coach - Euro I - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro I,1,<=18 t
+EN0652,B100 Coach - Euro I - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro I,1,>18 t
+EN0653,B100 Coach - Euro II - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro II,2,<=18 t
+EN0654,B100 Coach - Euro II - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro II,2,>18 t
+EN0655,B100 Coach - Euro III - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro III,3,<=18 t
+EN0656,B100 Coach - Euro III - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro III,3,>18 t
+EN0657,B100 Coach - Euro IV - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro IV,4,<=18 t
+EN0658,B100 Coach - Euro IV - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro IV,4,>18 t
+EN0659,B100 Coach - Euro V_EGR - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro V_EGR,5,<=18 t
+EN0660,B100 Coach - Euro V_EGR - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro V_EGR,5,>18 t
+EN0661,B100 Coach - Euro V_SCR - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro V_SCR,5,<=18 t
+EN0662,B100 Coach - Euro V_SCR - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro V_SCR,5,>18 t
+EN0663,B100 Coach - Euro VI - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro VI,6,<=18 t
+EN0664,B100 Coach - Euro VI - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro VI,6,>18 t
+EN0665,B100 Coach - Euro II SCRRF - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro II SCRRF,2,<=18 t
+EN0666,B100 Coach - Euro II SCRRF - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro II SCRRF,2,>18 t
+EN0667,B100 Coach - Euro III SCRRF - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro III SCRRF,3,<=18 t
+EN0668,B100 Coach - Euro III SCRRF - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro III SCRRF,3,>18 t
+EN0669,B100 Coach - Euro IV SCRRF - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro IV SCRRF,4,<=18 t
+EN0670,B100 Coach - Euro IV SCRRF - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro IV SCRRF,4,>18 t
+EN0671,B100 Coach - Euro V EGR + SCRRF - Coaches Standard <=18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro V EGR + SCRRF,5,<=18 t
+EN0672,B100 Coach - Euro V EGR + SCRRF - Coaches Articulated >18 t,6. Buses and Coaches,Buses and coaches,Coach,Euro V EGR + SCRRF,5,>18 t
+EN0673,Bus (not London) - Pre-Euro I - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Pre-Euro I,0,<=15 t
+EN0674,Bus (not London) - Pre-Euro I - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Pre-Euro I,0,15-18 t
+EN0675,Bus (not London) - Pre-Euro I - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Pre-Euro I,0,>18 t
+EN0676,Bus (not London) - Euro I - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro I,1,<=15 t
+EN0677,Bus (not London) - Euro I - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro I,1,15-18 t
+EN0678,Bus (not London) - Euro I - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro I,1,>18 t
+EN0679,Bus (not London) - Euro II - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro II,2,<=15 t
+EN0680,Bus (not London) - Euro II - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro II,2,15-18 t
+EN0681,Bus (not London) - Euro II - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro II,2,>18 t
+EN0682,Bus (not London) - Euro III - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro III,3,<=15 t
+EN0683,Bus (not London) - Euro III - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro III,3,15-18 t
+EN0684,Bus (not London) - Euro III - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro III,3,>18 t
+EN0685,Bus (not London) - Euro IV - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro IV,4,<=15 t
+EN0686,Bus (not London) - Euro IV - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro IV,4,15-18 t
+EN0687,Bus (not London) - Euro IV - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro IV,4,>18 t
+EN0688,Bus (not London) - Euro V_EGR - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V_EGR,5,<=15 t
+EN0689,Bus (not London) - Euro V_EGR - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V_EGR,5,15-18 t
+EN0690,Bus (not London) - Euro V_EGR - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V_EGR,5,>18 t
+EN0691,Bus (not London) - Euro V_SCR - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V_SCR,5,<=15 t
+EN0692,Bus (not London) - Euro V_SCR - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V_SCR,5,15-18 t
+EN0693,Bus (not London) - Euro V_SCR - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V_SCR,5,>18 t
+EN0694,Bus (not London) - Euro VI - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro VI,6,<=15 t
+EN0695,Bus (not London) - Euro VI - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro VI,6,15-18 t
+EN0696,Bus (not London) - Euro VI - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro VI,6,>18 t
+EN0697,Bus (not London) - Euro II SCRRF - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro II SCRRF,2,<=15 t
+EN0698,Bus (not London) - Euro II SCRRF - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro II SCRRF,2,15-18 t
+EN0699,Bus (not London) - Euro II SCRRF - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro II SCRRF,2,>18 t
+EN0700,Bus (not London) - Euro III SCRRF - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro III SCRRF,3,<=15 t
+EN0701,Bus (not London) - Euro III SCRRF - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro III SCRRF,3,15-18 t
+EN0702,Bus (not London) - Euro III SCRRF - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro III SCRRF,3,>18 t
+EN0703,Bus (not London) - Euro IV SCRRF - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro IV SCRRF,4,<=15 t
+EN0704,Bus (not London) - Euro IV SCRRF - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro IV SCRRF,4,15-18 t
+EN0705,Bus (not London) - Euro IV SCRRF - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro IV SCRRF,4,>18 t
+EN0706,Bus (not London) - Euro V EGR + SCRRF - Urban Buses Midi <=15 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V EGR + SCRRF,5,<=15 t
+EN0707,Bus (not London) - Euro V EGR + SCRRF - Urban Buses Standard 15 - 18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V EGR + SCRRF,5,15-18 t
+EN0708,Bus (not London) - Euro V EGR + SCRRF - Urban Buses Articulated >18 t,6. Buses and Coaches,Buses and coaches,Bus,Euro V EGR + SCRRF,5,>18 t
+EN0709,Motorcycle - n/a - n/a,1. Motorcycles,Motorcycle,Motorcycle,n/a,6,n/a
+EN0715,Battery EV LGV - All Sizes and Ages - All Sizes and Ages,5. LGVs,LGVs,Battery LGV,All Sizes and Ages,6,All Sizes and Ages
+EN0716,FCEV LGV - All Sizes and Ages - All Sizes and Ages,5. LGVs,LGVs,FCEV LGV,All Sizes and Ages,6,All Sizes and Ages
+EN0717,H2 Fuel Cell Buses - All Ages - All Sizes and Ages,6. Buses and Coaches,Buses and coaches,Bus,All Ages,6,All Sizes and Ages
+EN0718,Battery EV Cars - All Sizes and Ages - All Sizes and Ages,4. Other Cars,Cars,Other Car,All Sizes and Ages,6,All Sizes and Ages cc
+EN0719,FCEV Cars - All Sizes and Ages - All Sizes and Ages,4. Other Cars,Cars,Other Car,All Sizes and Ages,6,All Sizes and Ages cc
+EN0720,Taxi (Black Cab) UK - Pre-Euro 1 - n/a,9. Taxis,Taxi,Taxi,Pre-Euro 1,0,n/a
+EN0721,Taxi (Black Cab) UK - Euro 1 - n/a,9. Taxis,Taxi,Taxi,Euro 1,1,n/a
+EN0722,Taxi (Black Cab) UK - Euro 2 - n/a,9. Taxis,Taxi,Taxi,Euro 2,2,n/a
+EN0723,Taxi (Black Cab) UK - Euro 3 - n/a,9. Taxis,Taxi,Taxi,Euro 3,3,n/a
+EN0724,Taxi (Black Cab) UK - Euro 4 - n/a,9. Taxis,Taxi,Taxi,Euro 4,4,n/a
+EN0725,Taxi (Black Cab) UK - Euro 5 - n/a,9. Taxis,Taxi,Taxi,Euro 5,5,n/a
+EN0726,Taxi (Black Cab) UK - Euro 6 - n/a,9. Taxis,Taxi,Taxi,Euro 6,6,n/a
+EN0727,Taxi (Black Cab) UK - Euro6c - n/a,9. Taxis,Taxi,Taxi,Euro6c,6,n/a
+EN0728,Taxi (Black Cab) UK - Euro6d - n/a,9. Taxis,Taxi,Taxi,Euro6d,6,n/a

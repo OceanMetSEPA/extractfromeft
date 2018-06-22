@@ -249,7 +249,7 @@ def getProportions(ws, ColName, ColProp, ColUser, vehRowStarts,
   return df
 
 
-def readFleetProps(fname):
+def readFleetProps(fname, sites=[]):
   """
   Read the fleet proportion file and return a dictionary with cell references
   and proportions to set.
@@ -271,9 +271,34 @@ def readFleetProps(fname):
 
   if mode == 0:
     csv_df = pd.read_csv(fname)
-    for ii, row in csv_df.iterrows():
-      if row['Cell'] != '---':
-        props[row['Cell']] = row['Proportion']
+    csv_df = csv_df[csv_df['Cell'] != '---']
+    #cells = csv_df['Cell'].unique()
+    allSites = csv_df['Site'].unique()
+    if len(sites) == 0:
+      # No sites have been designated.
+      n_Sites = len(allSites)
+      sites = allSites
+      if n_Sites == 1:
+        print('Using the only available site: {}'.format(sites[0]))
+      else:
+        print('The following sites are available:')
+        print(', '.join(allSites))
+        print(('No sites have been designated, so for each cell, the value used '
+               'will be the average from all sites for that particular cell.'))
+    else:
+      for site in sites:
+        if site not in allSites:
+          raise ValueError('Site {} not in file.'.format(site))
+
+    csv_df = csv_df[csv_df['Site'].isin(sites)]
+    allSites = csv_df['Site'].unique()
+    #print(', '.join(allSites))
+
+    cellgroups = csv_df.groupby('Cell')
+    for cell, group in cellgroups:
+      v = group['Proportion'].mean()
+      props[cell] = v
+
   elif mode == 1:
     for rowID in range(sheet.nrows):
       # Find the "Default?" cells.

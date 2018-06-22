@@ -99,8 +99,8 @@ def getEFTFile(version, directory='input'):
   # return the absolute paths.
   return os.path.abspath(fname)
 
-def doEFT(data, fName, area, year, vehBreakdown, no2file, fleetProportions={},
-          excel='Create', keeptemp=False, saveloc=os.getcwd(), version=7.0):
+def doEFT(data, eftfile, area, year, vehBreakdown, no2file, fleetProportions={},
+          excel='Create', keeptemp=False, saveloc=os.getcwd(), version=7.0, sites=[]):
 
   """
   Function that adds data to the EFT, runs the EFT, and then extracts the data.
@@ -108,7 +108,7 @@ def doEFT(data, fName, area, year, vehBreakdown, no2file, fleetProportions={},
 
   INPUTS
   data  - pandas dataframe - A pandas dataframe containing the
-  fName - string - the path to an empty EFT file that has been set up with the
+  eftfile - string - the path to an empty EFT file that has been set up with the
                    correct year and area. Traffic format must be set to
                    'Detailed Option 1', NOx, PM10, and PM2.5 should be selected
                    under 'Select Pollutants'. 'Air Quality Modelling (g/km)'
@@ -121,6 +121,13 @@ def doEFT(data, fName, area, year, vehBreakdown, no2file, fleetProportions={},
     excelCreated = True
     excel = win32.gencache.EnsureDispatch('Excel.Application')
 
+
+  ## Read the Fleet proportions file, if set.
+  if isinstance(fleetProportions, str):
+    # Fleet proportions ought to be a dict. Perhaps this is the path to a file.
+    fleetProportions = tools.readFleetProps(fleetProportions, sites=sites)
+
+
   # create a copy of the EFT file, and prepare some file paths.
   savedir, bb = os.path.split(saveloc)
   bb, eftext = os.path.splitext(eftfile)
@@ -128,7 +135,9 @@ def doEFT(data, fName, area, year, vehBreakdown, no2file, fleetProportions={},
   tempeftfileM =  os.path.join(savedir, 'TEMP_EFT_{}{}'.format(datetime.strftime(datetime.now(), '%Y%m%d_%H%M%S'), '.xlsm'))
   tempeftfile = os.path.abspath(tempeftfile)
   tempeftfileM = os.path.abspath(tempeftfileM)
+
   shutil.copyfile(eftfile, tempeftfile)
+
 
   # We need to order the appropriate columns so that they can be copied into the
   # EFT input page.
@@ -145,7 +154,6 @@ def doEFT(data, fName, area, year, vehBreakdown, no2file, fleetProportions={},
   # close the warning.
   if ahk_exist:
     subprocess.Popen([tools.ahk_exepath, tools.ahk_ahkpath])
-
 
   # Open the document.
   wb = excel.Workbooks.Open(tempeftfile)
@@ -312,9 +320,7 @@ def doEFT(data, fName, area, year, vehBreakdown, no2file, fleetProportions={},
     excel.Quit()
     del(excelObj) # Make sure it's gone. Apparently some people have found this neccesary.
 
-  # Calculate total emission masses for each road.
-  #data['LengthKM'] = data.length/1000.
-  #data = data.copy()
+  # Calculate total emission masses for each road. (g/km * length)
   for pol in pollutants:
     pol_ = pol.replace('.', '')
     data['T_{}'.format(pol_)] = data['E_{}'.format(pol_)] * data.length/1000.#['LengthKM']
@@ -335,7 +341,8 @@ def processNetwork(shapefile, eftfile, no2file=None, saveloc=None,
                    vehBreakdown=defaultVehBreakdown,
                    speedFieldName='SPEED',
                    classFieldName='class',
-                   MaxRows=10000, Head=False, keeptemp=False):
+                   MaxRows=10000, Head=False, keeptemp=False, version=8.0,
+                   sites=[]):
 
   """
 
@@ -411,7 +418,11 @@ def processNetwork(shapefile, eftfile, no2file=None, saveloc=None,
     print('Processing row {} to {}.'.format(Start, End))
     DataSlice = Data.iloc[Start:End]
     count += len(DataSlice.index)
-    outData, _ = doEFT(DataSlice, eftfile, area, year, vehBreakdown, no2file, excel=excelObj, keeptemp=keeptemp, saveloc=saveloc, version=version, fleetProportions=fleetProportions)
+    outData, _ = doEFT(DataSlice, eftfile, area, year, vehBreakdown,
+                       no2file, keeptemp=keeptemp, saveloc=saveloc,
+                       excel=excelObj, version=version,
+                       fleetProportions=fleetProportions,
+                       sites=sites)
     if First:
       outDataAll = outData
       First = False
@@ -424,7 +435,11 @@ def processNetwork(shapefile, eftfile, no2file=None, saveloc=None,
   print('Processing row {} to {}.'.format(Start, End))
   DataSlice = Data.iloc[Start:End]
   count += len(DataSlice.index)
-  outData, pols = doEFT(DataSlice, eftfile, area, year, vehBreakdown, no2file, keeptemp=keeptemp, saveloc=saveloc, excel=excelObj, version=version, fleetProportions=fleetProportions)
+  outData, pols = doEFT(DataSlice, eftfile, area, year, vehBreakdown,
+                        no2file, keeptemp=keeptemp, saveloc=saveloc,
+                        excel=excelObj, version=version,
+                        fleetProportions=fleetProportions,
+                        sites=sites)
   if First:
     outDataAll = outData
   else:
@@ -441,9 +456,9 @@ def processNetwork(shapefile, eftfile, no2file=None, saveloc=None,
     pol_ = pol.replace('.', '')
     print('{:6}: {:9.0f} kg'.format(pol, Data['T_{}'.format(pol_)].sum()))
 
-  print('Saving output shape file to {}.'.format(OutputShapefile))
+  print('Saving output shape file to {}.'.format(saveloc))
   # Save the updated data file as a shapefile again.
-  Data.to_file(OutputShapefile, driver='ESRI Shapefile', crs_wkt=crs_wkt)
+  Data.to_file(saveloc, driver='ESRI Shapefile', crs_wkt=crs_wkt)
   print('Done.')
 
 if __name__ == '__main__':
@@ -546,9 +561,6 @@ if __name__ == '__main__':
   if year not in availableYears:
     raise ValueError('Year {} is not allowed for EFT version {}.'.format(year, version))
 
-  ## Read the Fleet proportions file, if set.
-  fleetprops = tools.readFleetProps(propfile)
-
   ## see if all the vehicle classes make sense.
   vehs = args.vehCountNames
   gots = [0]*len(vehs)
@@ -571,14 +583,12 @@ if __name__ == '__main__':
       OutputShapefile = '{}_wEmissions{}({}){}'.format(FN, year, t, FE)
     saveloc = OutputShapefile
 
-
-
   processNetwork(shapefile, eftfile,
                  no2file=no2file,
                  saveloc=saveloc,
                  year=year,
                  area=args.a,
-                 fleetProportions=fleetprops,
+                 fleetProportions=propfile,
                  vehFieldNames=vehs,
                  vehBreakdown=vehBreakdown,
                  speedFieldName=args.speedFieldName,
