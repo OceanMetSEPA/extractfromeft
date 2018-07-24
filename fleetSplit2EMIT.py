@@ -3,6 +3,8 @@
 Created on Tue Jun 19 16:05:38 2018
 
 @author: edward.barratt
+
+
 """
 
 import os
@@ -10,43 +12,45 @@ import pandas as pd
 import numpy as np
 import argparse
 
-vehcatfile = os.path.normpath(('C:/Users/edward.barratt/Documents/Development/'
-                               'Python/extractfromeft/input/EMIT/'
-                               'VehCats.csv'))
-
-if __name__ == '__main__':
-  ProgDesc = ("Creates a route type csv file of the type whose contents can be "
-              "copied and pasted in to EMIT to change the proportions of "
-              "different vehicle categories with a particular route type.")
-  ANPRDesc = ("The ANPR file should be a csv file listing all vehicles "
-              "passing the ANPR counter (including double counting of vehicles "
-              "that have passed more than once). There should be a column each "
-              "for vehicle class, euro class, weight class and fuel.")
-  parser = argparse.ArgumentParser(description=ProgDesc)
-  parser.add_argument('anprfile', type=str,
-                      help="The ANPR file to be processed. "+ANPRDesc)
-  parser.add_argument('basefile', type=str,
-                      help=("A file containing the base route type proportions. "
-                            "This should be created by clicking 'copy' on the "
-                            "route type window of EMIT, pasteing the results in "
-                            "to a spreadsheet, and saving as a csv file."))
-  parser.add_argument('--saveloc', metavar='save location',
-                      type=str, nargs='?', default='Auto',
-                      help="Path where the outpt csv file should be saved.")
+vehcatDefault = os.path.normpath(('C:/Users/edward.barratt/Documents/Development/'
+                                 'Python/extractfromeft/input/EMIT/'
+                                 'VehCats.csv'))
 
 
-  args = parser.parse_args()
+# 'C:/Users/edward.barratt/Documents/Development/Python/extractfromeft/input/EMIT/E8.0NOx_11_ScoU17-tx.csv'
+# 'C:/Users/edward.barratt/Documents/Modelling/CAFS/ANPRStuff/DundeeProportion_EuroUFromYear_taxis.csv'
 
-  anprfile = args.anprfile
-  basefile = args.basefile
 
-  # 'C:/Users/edward.barratt/Documents/Development/Python/extractfromeft/input/EMIT/E8.0NOx_11_ScoU17-tx.csv'
-  # 'C:/Users/edward.barratt/Documents/Modelling/CAFS/ANPRStuff/DundeeProportion_EuroUFromYear_taxis.csv'
+def processSplit(anprfile, basefile, vehcatfile=vehcatDefault):
+  """
+  Creates a table of vehicle proportions that can be copied and pasted in to
+  EMIT for the purpose of adjusting the route type, with proportions taken from
+  an Automatic Number Plate Recognition (ANPR) data set.
 
-  saveloc = args.saveloc
-  if args.saveloc == 'Auto':
-    p, x = os.path.splitext(anprfile)
-    saveloc = p + '_4EMIT.csv'
+  INPUTS:
+      anprfile - string
+                 The path to the ANPR data file. The ANPR file should be a csv
+                 file created using fleetSplitFromANPR.
+      basefile - string
+                 The path to a base file upon which to base proportions. This
+                 file should be a csv file created by clicking 'copy' on the
+                 appropriate route type in emit, pasting the table into a
+                 spreadsheet, and saving as a csv. The contents will be used to
+                 distribute vehicles across vehicle types with the same properties.
+                 For example, Euro 5 Rigid HGVs of 14-20 tonne gross weight could
+                 be represented by one of 6 different wehicle sub-categories
+                 (depending on fuel type and technology). Say 5% of Rigid HGVs
+                 in the ANPR data are of that classification, then 5% will be
+                 divided between the 6 sub-categorys, based on the proportions
+                 that are already assigned to those sub-categories.
+      vehcatfile - string OPTIONAL
+                 The path to a file describing each sub-category of vehicle class
+                 a default is provided by default but it may need to be updated
+                 for future emission factors.
+
+
+
+  """
 
   # Read the vehicle category file.
   v_df = pd.read_csv(vehcatfile)
@@ -92,7 +96,7 @@ if __name__ == '__main__':
     v_euros = veh_g[veh_g['ProportionType'] == 'Euro Class - NOx'].copy()
     v_euros['Value'] = pd.to_numeric(v_euros['Value'])
     v_weight = veh_g[veh_g['ProportionType'] == 'Weight Class'].copy()
-    v_fuel = veh_g[veh_g['ProportionType'] == 'Fuel'].copy()
+    #v_fuel = veh_g[veh_g['ProportionType'] == 'Fuel'].copy()
 
     o_veh = o_df[o_df['Vehicle'] == veh]
 
@@ -171,5 +175,44 @@ if __name__ == '__main__':
 
 
   results = results.rename(columns=outRenames)
+
+def getArgs():
+  """
+  Organise command line arguments when run as __main__.
+  """
+  ProgDesc = ("Creates a route type csv file of the type whose contents can be "
+              "copied and pasted in to EMIT to change the proportions of "
+              "different vehicle categories with a particular route type.")
+  ANPRDesc = ("The ANPR file should be a csv file listing all vehicles "
+              "passing the ANPR counter (including double counting of vehicles "
+              "that have passed more than once). There should be a column each "
+              "for vehicle class, euro class, weight class and fuel.")
+  parser = argparse.ArgumentParser(description=ProgDesc)
+  parser.add_argument('anprfile', type=str,
+                      help="The ANPR file to be processed. "+ANPRDesc)
+  parser.add_argument('basefile', type=str,
+                      help=("A file containing the base route type proportions. "
+                            "This should be created by clicking 'copy' on the "
+                            "route type window of EMIT, pasteing the results in "
+                            "to a spreadsheet, and saving as a csv file."))
+  parser.add_argument('--saveloc', metavar='save location',
+                      type=str, nargs='?', default='Auto',
+                      help="Path where the outpt csv file should be saved.")
+
+
+  args = parser.parse_args()
+  return args
+
+if __name__ == '__main__':
+
+  args = getArgs()
+  anprfile = args.anprfile
+  basefile = args.basefile
+  saveloc = args.saveloc
+  if args.saveloc == 'Auto':
+    p, x = os.path.splitext(anprfile)
+    saveloc = p + '_4EMIT.csv'
+
+  results = processSplit(anprfile, basefile)
   results.to_csv(saveloc)
   print('Results saved to {}.'.format(saveloc))
