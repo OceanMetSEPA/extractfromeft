@@ -521,9 +521,9 @@ def parseArgs():
                             "NOx, PM10 and PM2.5. Under Traffic Format select "
                             "'Alternative Technologies'. Select 'Emission Rates "
                             "(g/km)' under 'Select Outputs', and "
-                            "'Euro Compositions' under 'Advanced Options'. All "
-                            "other fields should be either empty or should take "
-                            "their default values."))
+                            "'Euro Compositions' and 'Primary NO2 Fraction' "
+                            "under 'Advanced Options'. All other fields should "
+                            "be either empty or should take their default values."))
   parser.add_argument('outputdir', metavar='output directory',
                       type=str,
                       help=("The directory in which to save output files. If "

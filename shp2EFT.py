@@ -462,22 +462,29 @@ def processNetwork(shapefile, eftfile, no2file=None, saveloc=None,
   print('Done.')
 
 if __name__ == '__main__':
-  ShapefileDescription = ("This programme will take is designed to work with shape files "
-                          "produced for the traffic noise modelling project. "
-                          "See details below.")
 
   parser = argparse.ArgumentParser(description="Processes the contents of a "
                                    "shape file through the Emission Factor "
                                    "Toolkit (EFT).")
   parser.add_argument('shapefile', type=str,
-                      help="The shapefile to be processed.")# "+ShapefileDescription)
+                      help=("The shapefile to be processed. The file must have "
+                            "attributes corresponding to vehicle counts, which "
+                            "can be specified using --vehCountNames."))
   parser.add_argument('eftfile', type=str,
-                      help="The EFT file to use.")
+                      help=("The EFT file to use. This should be a copy of EFT "
+                            "version 7.4 or greater, and it needs a small amount "
+                            "of initial setup. Under Select Pollutants select "
+                            "NOx, PM10 and PM2.5. Under Traffic Format select "
+                            "'Detailed Option 2'. Select 'Emission Rates "
+                            "(g/km)' under 'Select Outputs', and "
+                            "'Euro Compositions' and 'Primary NO2 Fraction' "
+                            "under 'Advanced Options'. All other fields should "
+                            "be either empty or should take their default values."))
   parser.add_argument('--vehFleetSplit', metavar='Vehicle euro class and weight split file.',
                       type=str, nargs='?', default=None,
                       help=("A euro split and weight split proportions file. A "
                             "template is available in the 'input' directory of "
-                            "the repository."))
+                            "the repository as 'ProportionsTemplate.xlsx'."))
   parser.add_argument('--vehCountNames', metavar='Vehicle count field names',
                       type=str, nargs='?', default=defaultVehClasses,
                       help=("The shapefile field names for the vehicles "
@@ -513,7 +520,6 @@ if __name__ == '__main__':
                       type=str,   nargs='?', default=None,
                       help=("The NOx to NO2 conversion factor file to use. Has "
                             "no effect for EFT v8.0. Default {}.".format(defaultNO2File)))
-
 
   parser.add_argument('--keeptemp', metavar='keeptemp',
                       type=bool,  nargs='?', default=False,

@@ -15,7 +15,7 @@ This group of functions is used to extract single vehicle emission factors from
 the EFT. Note that the input EFT file requires some preparation (described in
 the documentation below).
 
-### Usage: extractEFT.py ###
+#### Usage: extractEFT.py ####
 ```text
 usage: extractEFT.py [-h] [-a [areas [areas ...]]] [-y [year [year ...]]]
                      [-e [euro classes [euro classes ...]]] [-w weight mode]
@@ -201,11 +201,13 @@ optional arguments:
 ##  shp2EFT.py ##
 This programme will take a shape file representing roads with associated traffic counts
 and run it through the EFT. It will save a new shapefile with the emission rates for
-NOx, NO2, PM10 and PM2.5.
+NOx, NO2, PM10 and PM2.5, for each road, added as new attributes.
 
 ### Usage shp2EFT.py ###
 ```text
-usage: shp2EFT.py [-h] [--vehCountNames [Vehicle count field names]]
+usage: shp2EFT.py [-h]
+                  [--vehFleetSplit [Vehicle euro class and weight split file.]]
+                  [--vehCountNames [Vehicle count field names]]
                   [--trafficFormat [Traffic Format]] [-a [area]] [-y [year]]
                   [--saveloc [output shape file location]]
                   [--speedFieldName [speed field name]]
@@ -217,13 +219,25 @@ Processes the contents of a shape file through the Emission Factor Toolkit
 (EFT).
 
 positional arguments:
-  shapefile             The shapefile to be processed. This programme is
-                        designed to work with shape files produced for the
-                        traffic noise modelling project. See details below.
-  eftfile               The EFT file to use.
+  shapefile             The shapefile to be processed. The file must have
+                        attributes corresponding to vehicle counts, which can
+                        be specified using --vehCountNames.
+  eftfile               The EFT file to use. This should be a copy of EFT
+                        version 7.4 or greater, and it needs a small amount of
+                        initial setup. Under Select Pollutants select NOx,
+                        PM10 and PM2.5. Under Traffic Format select 'Detailed
+                        Option 2'. Select 'Emission Rates (g/km)' under
+                        'Select Outputs', and 'Euro Compositions' and 'Primary
+                        NO2 Fraction' under 'Advanced Options'. All other
+                        fields should be either empty or should take their
+                        default values.
 
 optional arguments:
   -h, --help            show this help message and exit
+  --vehFleetSplit [Vehicle euro class and weight split file.]
+                        A euro split and weight split proportions file. A
+                        template is available in the 'input' directory of the
+                        repository as 'ProportionsTemplate.xlsx'.
   --vehCountNames [Vehicle count field names]
                         The shapefile field names for the vehicles counts.
                         Default "MCYCLE CAR TAXI LGV RHGV_2X RHGV_3X RHGV_4X
