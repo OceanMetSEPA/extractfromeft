@@ -237,7 +237,9 @@ optional arguments:
   --vehFleetSplit [Vehicle euro class and weight split file.]
                         A euro split and weight split proportions file. A
                         template is available in the 'input' directory of the
-                        repository as 'ProportionsTemplate.xlsx'.
+                        repository as 'ProportionsTemplate.xlsx'. A tool for
+                        creating a file from ANPR data is available in the
+                        OceanMetSEPA.fleetSplit repository.
   --vehCountNames [Vehicle count field names]
                         The shapefile field names for the vehicles counts.
                         Default "MCYCLE CAR TAXI LGV RHGV_2X RHGV_3X RHGV_4X

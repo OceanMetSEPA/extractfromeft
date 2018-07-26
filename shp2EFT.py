@@ -484,7 +484,9 @@ if __name__ == '__main__':
                       type=str, nargs='?', default=None,
                       help=("A euro split and weight split proportions file. A "
                             "template is available in the 'input' directory of "
-                            "the repository as 'ProportionsTemplate.xlsx'."))
+                            "the repository as 'ProportionsTemplate.xlsx'. A "
+                            "tool for creating a file from ANPR data is available "
+                            "in the OceanMetSEPA.fleetSplit repository."))
   parser.add_argument('--vehCountNames', metavar='Vehicle count field names',
                       type=str, nargs='?', default=defaultVehClasses,
                       help=("The shapefile field names for the vehicles "
